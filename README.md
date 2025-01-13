@@ -2,7 +2,21 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Install Git if you haven't.
+
+First, ``cd`` to your preferred directory and clone the repository by opening ``cmd`` and run:
+
+```bash
+git clone https://github.com/TamTonyTong/COS30049.git
+```
+
+Install ``npm`` package if you haven't:
+
+```bash
+npm install
+```
+
+Next, run the development server:
 
 ```bash
 npm run dev

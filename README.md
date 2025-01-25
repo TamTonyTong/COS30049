@@ -1,5 +1,3 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
 ## Getting Started
 
 Install Git if you haven't.
@@ -32,19 +30,113 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How to navigate in the project
 
-## Learn More
+Here is an overview of the important files and folders in the project:
 
-To learn more about Next.js, take a look at the following resources:
+```
+.
+├── src/components/         # Reusable React components
+├── src/app/              # Next.js pages (Where you create your webpage)
+├── src/public/             # Static assets (e.g., images, fonts)
+├── src/styles/             # Global and component-specific styles
+├── utils/              # Helper functions and utilities
+├── README.md           # Project documentation
+```
+### Key Folder: `app/`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The `app/` directory is where you define your application's routes.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `app/page.tsx` → `http://localhost:3000/`
+-> This will be the homepage for the website
 
-## Deploy on Vercel
+### Creating New Pages
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Navigate to the `app/` folder:**
+   All page files must be placed inside the `app/` directory.
+   
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Create a new file:**
+   Add a new folder in the `app/` directory. The file name will automatically become the route.
+   If you want to create new webpage, create a new folder with your desire name, and place a file `page.tsx` inside.
+   Example:
+   ```bash
+   touch app/contact/page.tsx
+   ```
+4. **Add your React component:**
+   Inside the newly created file, define your page as a React component:
+   ```javascript
+   // app/contact/page.tsx
+   import React from 'react';
+
+   const Contact = () => {
+       return (
+           <div>
+               <h1>Contact Us</h1>
+               <p>This is the contact page.</p>
+           </div>
+       );
+   };
+
+   export default Contact;
+   ```
+5. **Access your new page:**
+   Start the development server (`npm run dev`) and navigate to `http://localhost:3000/contact` to view your new page.
+
+
+### Adding Template Components from shadcn/ui
+
+You can easily add pre-designed components to your project using templates from [shadcn/ui themes](https://ui.shadcn.com/themes).
+
+#### Steps to Add a Template Component:
+
+1. **Choose a Component:**
+   Visit [shadcn/ui themes](https://ui.shadcn.com/themes) and select the desired component or theme you want to use.
+
+2. **Copy the Code:**
+   Copy the JSX/React code provided for the component.
+2.1 **Add the component using CLI**
+   Copy the CLI command and paste it to your cmd to automatically install the component. For example:
+   ```bash
+   npx shadcn@latest add alert
+   ```
+4. **Create a New Component File:**
+   Navigate to the `components/` directory and create a new file for the component. For example:
+   ```bash
+   touch components/Button.js
+   ```
+
+5. **Paste the Code:**
+   Paste the copied code into the newly created file and modify it as needed. For example:
+   ```javascript
+   // components/Button.js
+   import React from 'react';
+
+   const Button = ({ children }) => {
+       return (
+           <button className="px-4 py-2 bg-blue-500 text-white rounded">
+               {children}
+           </button>
+       );
+   };
+
+   export default Button;
+   ```
+
+6. **Import and Use the Component:**
+   Import the new component into your pages or other components as needed:
+   ```javascript
+   // app/page.js
+   import Button from '../components/Button';
+
+   const Home = () => {
+       return (
+           <div>
+               <h1>Welcome to the Homepage</h1>
+               <Button>Click Me</Button>
+           </div>
+       );
+   };
+
+   export default Home;
+   ```

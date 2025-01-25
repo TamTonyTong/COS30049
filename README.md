@@ -59,11 +59,8 @@ The `app/` directory is where you define your application's routes.
 3. **Create a new file:**
    Add a new folder in the `app/` directory. The file name will automatically become the route.
    If you want to create new webpage, create a new folder with your desire name, and place a file `page.tsx` inside.
-   Example:
-   ```bash
-   touch app/contact/page.tsx
-   ```
-4. **Add your React component:**
+   
+5. **Add your React component:**
    Inside the newly created file, define your page as a React component:
    ```javascript
    // app/contact/page.tsx
@@ -80,7 +77,7 @@ The `app/` directory is where you define your application's routes.
 
    export default Contact;
    ```
-5. **Access your new page:**
+6. **Access your new page:**
    Start the development server (`npm run dev`) and navigate to `http://localhost:3000/contact` to view your new page.
 
 
@@ -93,23 +90,26 @@ You can easily add pre-designed components to your project using templates from 
 1. **Choose a Component:**
    Visit [shadcn/ui themes](https://ui.shadcn.com/themes) and select the desired component or theme you want to use.
 
-2. **Copy the Code:**
-   Copy the JSX/React code provided for the component.
-2.1 **Add the component using CLI**
+2. **Add the component using CLI**
    Copy the CLI command and paste it to your cmd to automatically install the component. For example:
    ```bash
    npx shadcn@latest add alert
    ```
+(Other Method)
+
+3. **Copy the Code:**
+   Copy the JSX/React code provided for the component.
+
 4. **Create a New Component File:**
    Navigate to the `components/` directory and create a new file for the component. For example:
    ```bash
-   touch components/Button.js
+   components/Button.tsx
    ```
 
 5. **Paste the Code:**
    Paste the copied code into the newly created file and modify it as needed. For example:
    ```javascript
-   // components/Button.js
+   // components/Button.tsx
    import React from 'react';
 
    const Button = ({ children }) => {
@@ -126,7 +126,7 @@ You can easily add pre-designed components to your project using templates from 
 6. **Import and Use the Component:**
    Import the new component into your pages or other components as needed:
    ```javascript
-   // app/page.js
+   // app/page.tsx
    import Button from '../components/Button';
 
    const Home = () => {

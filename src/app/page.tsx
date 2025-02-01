@@ -63,7 +63,7 @@ const TransactionHistory = () => {
             </div>
             <div className="container mx-auto bg-white shadow-md rounded-md p-5">
                 <h3 className="text-xl font-semibold mb-3">Transaction History</h3>
-                <table className="min-w-full bg-white border border-gray-200">
+                <table className="min-w-full bg-white border border-gray-200 text-center">
                     <thead>
                         <tr className="bg-gray-100">
                             <th className="py-2 px-4 border-b">Transaction ID</th>

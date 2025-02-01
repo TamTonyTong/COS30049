@@ -1,19 +1,46 @@
-"use client"
+import { Line } from "react-chartjs-2";
+import { useState, useEffect } from "react";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function TradingChart() {
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+
+const TradingChart = ({ tradingPair }) => {
+  const [prices, setPrices] = useState([]);
+  const [timestamps, setTimestamps] = useState([]);
+
+  useEffect(() => {
+    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${tradingPair.replace("/", "").toLowerCase()}@trade`);
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const newPrice = parseFloat(data.p);
+      const newTime = new Date().toLocaleTimeString();
+
+    };
+
+    return () => ws.close();
+  }, [tradingPair]);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>BTC/USDT</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="w-full h-[400px] bg-muted flex items-center justify-center">
-          <p className="text-muted-foreground">Trading Chart Placeholder</p>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
+    <div className="w-full h-72 p-4 border rounded-lg shadow-lg bg-white">
+      <Line
+        data={{
+          labels: timestamps,
+          datasets: [
+            {
+              label: `${tradingPair} Price`,
+              data: prices,
+              borderColor: "rgb(75, 192, 192)",
+              backgroundColor: "rgba(75, 192, 192, 0.2)",
+              borderWidth: 2,
+            },
+          ],
+        }}
+      />
+    </div>
+  );
+};
 
+export default TradingChart;

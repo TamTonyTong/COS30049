@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-
+import Link from "next/link"
 export default function TradingForm() {
   const [orderType, setOrderType] = useState("buy")
 
@@ -19,7 +19,7 @@ export default function TradingForm() {
         <form className="space-y-4">
           <RadioGroup defaultValue="buy" onValueChange={setOrderType} className="flex space-x-4">
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="buy" id="buy" />
+              <RadioGroupItem value="buy" id="buy" />        
               <Label htmlFor="buy">Buy</Label>
             </div>
             <div className="flex items-center space-x-2">
@@ -35,9 +35,11 @@ export default function TradingForm() {
             <Label htmlFor="price">Price</Label>
             <Input id="price" type="number" placeholder="0.00" />
           </div>
-          <Button className="w-full" type="submit">
-            {orderType === "buy" ? "Buy" : "Sell"} BTC
-          </Button>
+          <Link href={`/trade/${orderType.toLowerCase()}`}>
+      <Button className="w-full" type="submit">
+        {orderType === "buy" ? "Buy" : "Sell"} BTC
+      </Button>
+    </Link>
         </form>
       </CardContent>
     </Card>

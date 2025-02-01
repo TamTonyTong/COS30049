@@ -58,7 +58,7 @@ const TransactionHistory = () => {
     return (
         <div className="min-h-screen flex flex-col items-center bg-gray-100 p-5 text-black">
             <div className="container mx-auto bg-white shadow-md rounded-md p-5 mb-5">
-                <h1 className="text-center text-3xl font-bold mb-5">User Public Info</h1>
+                <h1 className="text-center text-3xl font-bold mb-5">User Public Information</h1>
                 <p className="text-lg mb-4"><strong>Public Address:</strong> 0xABCDEF1234567890</p>
             </div>
             <div className="container mx-auto bg-white shadow-md rounded-md p-5">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Header from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
 export default function SellingPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [price, setPrice] = useState<string>(searchParams.get("price") || "");
   const [amount, setAmount] = useState<string>(searchParams.get("amount") || "");
@@ -22,7 +23,7 @@ export default function SellingPage() {
 
     // Confirm the sell order
     alert(`Order placed: Selling ${amount} BTC at $${price}`);
-    // Implement API call to process the trade here
+    router.push("/trade"); // Navigate back to the trading page
   };
 
   return (
@@ -42,7 +43,7 @@ export default function SellingPage() {
                 placeholder="0.00"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                disabled // Disable editing since it's passed from the previous page
+                disabled
               />
             </div>
             <div>
@@ -53,7 +54,7 @@ export default function SellingPage() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                disabled // Disable editing since it's passed from the previous page
+                disabled
               />
             </div>
             <Button

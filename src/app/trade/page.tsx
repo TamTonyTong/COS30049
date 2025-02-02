@@ -11,12 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+interface Order {
+  id: string;
+  type: "buy" | "sell";
+  pair: string;
+  price: string;
+  amount: string;
+  timestamp: string;
+}
+
 export default function TradingPage() {
   const router = useRouter();
   const [orderType, setOrderType] = useState<string>("buy");
   const [price, setPrice] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [tradingPair, setTradingPair] = useState<string>("btcusdt");
+  const [orders, setOrders] = useState<Order[]>([]); // State to store order history
 
   // Extract the base currency (e.g., BTC, ETH) from the trading pair
   const baseCurrency = tradingPair.replace("usdt", "").toUpperCase();
@@ -37,6 +47,11 @@ export default function TradingPage() {
     );
   };
 
+  // Simulate adding an order to the history
+  const addOrderToHistory = (order: Order) => {
+    setOrders((prevOrders) => [order, ...prevOrders]); // Add the new order to the top of the list
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b">
@@ -54,7 +69,7 @@ export default function TradingPage() {
               <CardHeader>
                 <CardTitle>Place Order</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {/* Trading Pair Selector */}
                 <div className="mb-4">
                   <Label>Trading Pair</Label>
@@ -100,7 +115,7 @@ export default function TradingPage() {
                         />
                       </div>
                       <Button type="submit" className="w-full bg-green-500 hover:bg-green-600">
-                        Buy {baseCurrency} {/* Display the base currency */}
+                        Buy {baseCurrency}
                       </Button>
                     </form>
                   </TabsContent>
@@ -129,11 +144,42 @@ export default function TradingPage() {
                         />
                       </div>
                       <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
-                        Sell {baseCurrency} {/* Display the base currency */}
+                        Sell {baseCurrency}
                       </Button>
                     </form>
                   </TabsContent>
                 </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Order History Section */}
+            <Card className="mt-8">
+              <CardHeader>
+                <CardTitle>Order History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {orders.length === 0 ? (
+                  <p className="text-center text-muted-foreground">No orders yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <div key={order.id} className="border p-4 rounded-lg">
+                        <div className="flex justify-between">
+                          <span className="font-medium">
+                            {order.type === "buy" ? "Buy" : "Sell"} {order.pair.toUpperCase()}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {order.timestamp}
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <p>Price: ${order.price}</p>
+                          <p>Amount: {order.amount}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation"; // Import useRouter
 import Header from "@/components/header";
 import TradingChart from "@/components/trading-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,18 +9,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation"; // Correct import for Next.js 13+
-import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function TradingPage() {
-  const router = useRouter();
+  const router = useRouter(); // Initialize useRouter
   const [orderType, setOrderType] = useState<string>("buy");
   const [price, setPrice] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
+  const [tradingPair, setTradingPair] = useState<string>("btcusdt");
 
+  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.push(`/trade/${orderType}?price=${price}&amount=${amount}`);
+    e.preventDefault(); // Prevent default form submission
+
+    // Validate inputs
+    if (!price || !amount) {
+      alert("Please enter both price and amount.");
+      return;
+    }
+
+    // Navigate to the buy/sell page with query parameters
+    router.push(
+      `/trade/${orderType}?pair=${tradingPair}&price=${price}&amount=${amount}`
+    );
   };
 
   return (
@@ -31,7 +44,7 @@ export default function TradingPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <TradingChart />
+            <TradingChart tradingPair={tradingPair} />
           </div>
           <div>
             <Card>
@@ -39,6 +52,21 @@ export default function TradingPage() {
                 <CardTitle>Place Order</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Trading Pair Selector */}
+                <div className="mb-4">
+                  <Label>Trading Pair</Label>
+                  <Select value={tradingPair} onValueChange={setTradingPair}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Pair" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="btcusdt">BTC/USDT</SelectItem>
+                      <SelectItem value="ethusdt">ETH/USDT</SelectItem>
+                      <SelectItem value="bnbusdt">BNB/USDT</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Tabs defaultValue="buy" className="w-full" onValueChange={setOrderType}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="buy">Buy</TabsTrigger>
@@ -48,26 +76,58 @@ export default function TradingPage() {
                     <form className="space-y-4" onSubmit={handleSubmit}>
                       <div>
                         <Label htmlFor="buy-price">Price</Label>
-                        <Input id="buy-price" type="number" placeholder="0.00" value={price} onChange={(e) => setPrice(e.target.value)} />
+                        <Input
+                          id="buy-price"
+                          type="number"
+                          placeholder="0.00"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          required
+                        />
                       </div>
                       <div>
                         <Label htmlFor="buy-amount">Amount</Label>
-                        <Input id="buy-amount" type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                        <Input
+                          id="buy-amount"
+                          type="number"
+                          placeholder="0.00"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          required
+                        />
                       </div>
-                      <Button type="submit" className="w-full bg-green-500 hover:bg-green-600">Buy BTC</Button>
+                      <Button type="submit" className="w-full bg-green-500 hover:bg-green-600">
+                        Buy {tradingPair.toUpperCase()}
+                      </Button>
                     </form>
                   </TabsContent>
                   <TabsContent value="sell">
                     <form className="space-y-4" onSubmit={handleSubmit}>
                       <div>
                         <Label htmlFor="sell-price">Price</Label>
-                        <Input id="sell-price" type="number" placeholder="0.00" value={price} onChange={(e) => setPrice(e.target.value)} />
+                        <Input
+                          id="sell-price"
+                          type="number"
+                          placeholder="0.00"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          required
+                        />
                       </div>
                       <div>
                         <Label htmlFor="sell-amount">Amount</Label>
-                        <Input id="sell-amount" type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                        <Input
+                          id="sell-amount"
+                          type="number"
+                          placeholder="0.00"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          required
+                        />
                       </div>
-                      <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">Sell BTC</Button>
+                      <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
+                        Sell {tradingPair.toUpperCase()}
+                      </Button>
                     </form>
                   </TabsContent>
                 </Tabs>

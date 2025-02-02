@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,13 +32,21 @@ interface PriceData {
   price: number;
 }
 
-export default function TradingChart() {
+interface TradingChartProps {
+  tradingPair: string;
+}
+
+export default function TradingChart({ tradingPair }: TradingChartProps) {
   const [priceData, setPriceData] = useState<PriceData[]>([]);
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // Connect to Binance WebSocket
-    ws.current = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade");
+    if (ws.current) {
+      ws.current.close();
+    }
+
+    // Connect to Binance WebSocket with dynamic trading pair
+    ws.current = new WebSocket(`wss://stream.binance.com:9443/ws/${tradingPair}@trade`);
 
     ws.current.onmessage = (event) => {
       const message = JSON.parse(event.data);
@@ -49,8 +57,7 @@ export default function TradingChart() {
 
       setPriceData((prevData) => {
         const newData = [...prevData, newPrice];
-        // Keep only the last 100 data points
-        return newData.slice(-100);
+        return newData.slice(-100); // Keep only the last 100 data points
       });
     };
 
@@ -59,13 +66,13 @@ export default function TradingChart() {
         ws.current.close();
       }
     };
-  }, []);
+  }, [tradingPair]); // Reconnect WebSocket when trading pair changes
 
   const chartData: ChartData<"line"> = {
     labels: priceData.map((data) => new Date(data.time).toLocaleTimeString()),
     datasets: [
       {
-        label: "BTC/USDT",
+        label: tradingPair.toUpperCase(),
         data: priceData.map((data) => data.price),
         borderColor: "rgb(75, 192, 192)",
         tension: 0.1,
@@ -77,43 +84,23 @@ export default function TradingChart() {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
-      x: {
-        title: {
-          display: true,
-          text: "Time",
-        },
-      },
-      y: {
-        title: {
-          display: true,
-          text: "Price (USDT)",
-        },
-        ticks: {
-          callback: (value: number | string) => `$${Number(value).toFixed(2)}`,
-        },
+      x: { title: { display: true, text: "Time" } },
+      y: { 
+        title: { display: true, text: "Price (USDT)" },
+        ticks: { callback: (value: number | string) => `$${Number(value).toFixed(2)}` },
       },
     },
     plugins: {
-      legend: {
-        position: "top" as const,
-      },
-      title: {
-        display: true,
-        text: "BTC/USDT Real-time Price",
-      },
-      tooltip: {
-        callbacks: {
-          label: (context: TooltipItem<"line">) =>
-            `Price: $${context.parsed.y.toFixed(2)}`,
-        },
-      },
+      legend: { position: "top" },
+      title: { display: true, text: `${tradingPair.toUpperCase()} Real-time Price` },
+      tooltip: { callbacks: { label: (context: TooltipItem<"line">) => `Price: $${context.parsed.y.toFixed(2)}` } },
     },
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>BTC/USDT Real-time Chart</CardTitle>
+        <CardTitle>{tradingPair.toUpperCase()} Real-time Chart</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="w-full h-[400px]">

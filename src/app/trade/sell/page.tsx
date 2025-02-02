@@ -14,6 +14,13 @@ export default function SellingPage() {
   const [amount, setAmount] = useState<string>(searchParams.get("amount") || "");
 
   const handleConfirmOrder = () => {
+    // Validate inputs
+    if (!price || !amount) {
+      alert("Please enter both price and amount.");
+      return;
+    }
+
+    // Confirm the sell order
     alert(`Order placed: Selling ${amount} BTC at $${price}`);
     // Implement API call to process the trade here
   };
@@ -29,25 +36,30 @@ export default function SellingPage() {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="sell-price">Price</Label>
-              <Input 
-                id="sell-price" 
-                type="number" 
-                placeholder="0.00" 
-                value={price} 
-                onChange={(e) => setPrice(e.target.value)} 
+              <Input
+                id="sell-price"
+                type="number"
+                placeholder="0.00"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                disabled // Disable editing since it's passed from the previous page
               />
             </div>
             <div>
               <Label htmlFor="sell-amount">Amount</Label>
-              <Input 
-                id="sell-amount" 
-                type="number" 
-                placeholder="0.00" 
-                value={amount} 
-                onChange={(e) => setAmount(e.target.value)} 
+              <Input
+                id="sell-amount"
+                type="number"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                disabled // Disable editing since it's passed from the previous page
               />
             </div>
-            <Button className="w-full bg-red-500 hover:bg-red-600" onClick={handleConfirmOrder}>
+            <Button
+              className="w-full bg-red-500 hover:bg-red-600"
+              onClick={handleConfirmOrder}
+            >
               Confirm Sell Order
             </Button>
           </CardContent>

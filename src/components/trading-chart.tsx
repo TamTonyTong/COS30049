@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,46 +11,57 @@ import {
   Title,
   Tooltip,
   Legend,
-} from "chart.js"
-import { Line } from "react-chartjs-2"
+  ChartData,
+  ChartOptions,
+  TooltipItem,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface PriceData {
-  time: number
-  price: number
+  time: number;
+  price: number;
 }
 
 export default function TradingChart() {
-  const [priceData, setPriceData] = useState<PriceData[]>([])
-  const ws = useRef<WebSocket | null>(null)
+  const [priceData, setPriceData] = useState<PriceData[]>([]);
+  const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     // Connect to Binance WebSocket
-    ws.current = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade")
+    ws.current = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade");
 
     ws.current.onmessage = (event) => {
-      const message = JSON.parse(event.data)
+      const message = JSON.parse(event.data);
       const newPrice: PriceData = {
         time: message.E,
         price: Number.parseFloat(message.p),
-      }
+      };
 
       setPriceData((prevData) => {
-        const newData = [...prevData, newPrice]
+        const newData = [...prevData, newPrice];
         // Keep only the last 100 data points
-        return newData.slice(-100)
-      })
-    }
+        return newData.slice(-100);
+      });
+    };
 
     return () => {
       if (ws.current) {
-        ws.current.close()
+        ws.current.close();
       }
-    }
-  }, [])
+    };
+  }, []);
 
-  const chartData = {
+  const chartData: ChartData<"line"> = {
     labels: priceData.map((data) => new Date(data.time).toLocaleTimeString()),
     datasets: [
       {
@@ -60,9 +71,9 @@ export default function TradingChart() {
         tension: 0.1,
       },
     ],
-  }
+  };
 
-  const chartOptions = {
+  const chartOptions: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
@@ -78,7 +89,7 @@ export default function TradingChart() {
           text: "Price (USDT)",
         },
         ticks: {
-          callback: (value: number) => `$${value.toFixed(2)}`,
+          callback: (value: number | string) => `$${Number(value).toFixed(2)}`,
         },
       },
     },
@@ -92,11 +103,12 @@ export default function TradingChart() {
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => `Price: $${context.parsed.y.toFixed(2)}`,
+          label: (context: TooltipItem<"line">) =>
+            `Price: $${context.parsed.y.toFixed(2)}`,
         },
       },
     },
-  }
+  };
 
   return (
     <Card>
@@ -109,6 +121,5 @@ export default function TradingChart() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

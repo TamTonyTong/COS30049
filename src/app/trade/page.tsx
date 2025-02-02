@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 import Header from "@/components/header";
 import TradingChart from "@/components/trading-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +12,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function TradingPage() {
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
   const [orderType, setOrderType] = useState<string>("buy");
   const [price, setPrice] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [tradingPair, setTradingPair] = useState<string>("btcusdt");
+
+  // Extract the base currency (e.g., BTC, ETH) from the trading pair
+  const baseCurrency = tradingPair.replace("usdt", "").toUpperCase();
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
@@ -97,7 +100,7 @@ export default function TradingPage() {
                         />
                       </div>
                       <Button type="submit" className="w-full bg-green-500 hover:bg-green-600">
-                        Buy {tradingPair.toUpperCase()}
+                        Buy {baseCurrency} {/* Display the base currency */}
                       </Button>
                     </form>
                   </TabsContent>
@@ -126,7 +129,7 @@ export default function TradingPage() {
                         />
                       </div>
                       <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
-                        Sell {tradingPair.toUpperCase()}
+                        Sell {baseCurrency} {/* Display the base currency */}
                       </Button>
                     </form>
                   </TabsContent>

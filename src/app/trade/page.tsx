@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/header";
 import TradingChart from "@/components/trading-chart";
@@ -28,6 +28,14 @@ export default function TradingPage() {
   const [tradingPair, setTradingPair] = useState<string>("btcusdt");
   const [orders, setOrders] = useState<Order[]>([]); // State to store order history
 
+  // Load orders from localStorage on component mount
+  useEffect(() => {
+    const savedOrders = localStorage.getItem("orders");
+    if (savedOrders) {
+      setOrders(JSON.parse(savedOrders));
+    }
+  }, []);
+
   // Extract the base currency (e.g., BTC, ETH) from the trading pair
   const baseCurrency = tradingPair.replace("usdt", "").toUpperCase();
 
@@ -47,9 +55,11 @@ export default function TradingPage() {
     );
   };
 
-  // Simulate adding an order to the history
+  // Add an order to the history and save it to localStorage
   const addOrderToHistory = (order: Order) => {
-    setOrders((prevOrders) => [order, ...prevOrders]); // Add the new order to the top of the list
+    const updatedOrders = [order, ...orders];
+    setOrders(updatedOrders);
+    localStorage.setItem("orders", JSON.stringify(updatedOrders)); // Save to localStorage
   };
 
   return (

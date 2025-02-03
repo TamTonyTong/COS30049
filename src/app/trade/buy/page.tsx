@@ -31,8 +31,25 @@ export default function BuyingPage() {
       const isPaymentSuccessful = Math.random() > 0.5; // Randomly simulate success or failure
       if (isPaymentSuccessful) {
         setPaymentStatus("Payment successful! Your order has been placed.");
-        alert(`Order placed: Buying ${amount} BTC at $${price}`);
-        router.push("/trade"); // Navigate back to the trading page
+
+        // Add the order to the history
+        const newOrder = {
+          id: Math.random().toString(36).substring(7), // Generate a random ID
+          type: "buy" as const,
+          pair: searchParams.get("pair") || "btcusdt",
+          price,
+          amount,
+          timestamp: new Date().toLocaleString(),
+        };
+
+        // Save the order to localStorage
+        const savedOrders = localStorage.getItem("orders");
+        const orders = savedOrders ? JSON.parse(savedOrders) : [];
+        orders.unshift(newOrder); // Add the new order to the top
+        localStorage.setItem("orders", JSON.stringify(orders));
+
+        // Navigate back to the trading page
+        router.push("/trade");
       } else {
         setPaymentStatus("Payment failed. Please try again.");
       }

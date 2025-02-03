@@ -25,7 +25,7 @@ export default function TradingPage() {
   const [orderType, setOrderType] = useState<string>("buy");
   const [price, setPrice] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
-  const [tradingPair, setTradingPair] = useState<string>("btcusdt");
+  const [tradingPair, setTradingPair] = useState<string>("bitcoinusdt");
   const [orders, setOrders] = useState<Order[]>([]); // State to store order history
 
   // Load orders from localStorage on component mount
@@ -82,9 +82,9 @@ export default function TradingPage() {
                       <SelectValue placeholder="Select Pair" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="btcusdt">BTC/USDT</SelectItem>
-                      <SelectItem value="ethusdt">ETH/USDT</SelectItem>
-                      <SelectItem value="bnbusdt">BNB/USDT</SelectItem>
+                      <SelectItem value="bitcoin">BTC/USD</SelectItem>
+                      <SelectItem value="ethereum">ETH/USD</SelectItem>
+                      <SelectItem value="bnbusdt">BNB/USD</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

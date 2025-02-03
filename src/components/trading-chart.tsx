@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
-  // CardDescription,
-  // CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -17,11 +15,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-
-// import { TrendingUp } from "lucide-react";
-import { CartesianGrid, 
-  // Label, 
-  Line, LineChart, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 interface PriceData {
   time: string;
@@ -33,53 +27,57 @@ interface TradingChartProps {
 }
 
 export default function TradingChart({ tradingPair }: TradingChartProps) {
-  // const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY
-  
-  const baseCurrency = tradingPair.replace("usdt", " / usdt").toUpperCase();
-  
+  const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY;
+  const baseCurrency = tradingPair.replace("usdt", "").toLowerCase();
+  console.log(baseCurrency)
   const [priceData, setPriceData] = useState<PriceData[]>([]);
-  const ws = useRef<WebSocket | null>(null);
-  
+
   useEffect(() => {
-    if (ws.current) {
-      ws.current.close();
-    }
+    const fetchPriceData = async () => {
+      try {
+        const options = {
+          method: 'GET',
+          headers: {accept: 'application/json', 'x-cg-api-key': `${apiKey}`}
+        };
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/coins/${baseCurrency}/market_chart?vs_currency=usd&days=30`
+          
+          , options)
+          // {
+          //   method: "GET",
+          //   headers: {
+          //     accept: "application/json",
+          //     "x-cg-api-key": apiKey || "",
+          //   },
+          // }
+        ;
+        console.log("Response status:", response.status); // Logs HTTP status
+    console.log("Response headers:", response.headers); // Logs headers
 
+        if (!response.ok) {
+          throw new Error(`API error: ${response.statusText}`);
+        }
 
-    // Connect to Binance WebSocket with dynamic trading pair
-    ws.current = new WebSocket(
-      `wss://stream.binance.com:9443/ws/${tradingPair}@trade`
-    );
+        const data = await response.json();
+        console.log("Raw API data:", data); // Logs the entire API response
+        // Transform the API response into the required format
+        const formattedData = data.prices.map((entry: [number, number]) => ({
+          time: new Date(entry[0]).toLocaleDateString(),
+          price: entry[1],
+        }));
 
-    ws.current.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-
-      const newPrice: PriceData = {
-        time: new Date(message.T).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        price: Number.parseFloat(message.p),
-      };
-
-      setPriceData((prevData) => {
-        const newData = [...prevData, newPrice];
-        return newData.slice(-30); // Keep only the last 100 data points
-      });
-    };
-
-    return () => {
-      if (ws.current) {
-        ws.current.close();
+        setPriceData(formattedData);
+      } catch (error) {
+        console.error("Failed to fetch price data:", error);
       }
     };
-  }, [tradingPair]); // Reconnect WebSocket when trading pair changes
 
+    fetchPriceData();
+  }, [tradingPair, apiKey]);
 
   const chartConfig = {
     price: {
-      label: "Price",
+      label: "Price ",
       color: "hsl(var(--chart-1))",
     },
     time: {
@@ -96,30 +94,18 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
       <CardContent>
         <div className="w-full h-full">
           <ChartContainer config={chartConfig}>
-            <LineChart accessibilityLayer data={priceData}>
+            <LineChart data={priceData}>
               <CartesianGrid strokeDasharray="5" />
               <XAxis dataKey="time" tickMargin={8} />
-              <YAxis
-                domain={[
-                  (dataMin: number) => Math.floor(dataMin * 1), // Slightly lower than min price
-                  (dataMax: number) => Math.ceil(dataMax * 1.00004), // Slightly higher than max price
-                ]}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
+              <YAxis domain={["auto", "auto"]} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
               <Line
                 dataKey="price"
-                type="natural"
+                type="monotone"
                 stroke="#e5b10c"
-                strokeWidth={3}
-                dot={{
-                  fill: "var(--color-desktop)",
-                }}
-                activeDot={{
-                  r: 6,
-                }}
+                strokeWidth={1}
+                dot={false}
+                activeDot={{ r: 1 }}
               />
             </LineChart>
           </ChartContainer>

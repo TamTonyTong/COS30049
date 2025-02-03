@@ -15,7 +15,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { Brush, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 interface PriceData {
   time: string;
@@ -28,10 +28,24 @@ interface TradingChartProps {
 
 export default function TradingChart({ tradingPair }: TradingChartProps) {
   const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY;
-  const baseCurrency = tradingPair.replace("usdt", "").toLowerCase();
+  const Currency = tradingPair;
+  const baseCurrency = Currency.charAt(0).toUpperCase() + Currency.slice(1);
   console.log(baseCurrency)
   const [priceData, setPriceData] = useState<PriceData[]>([]);
 
+  // const CustomTooltip = ({ active, payload }: any) => {
+  //   if (active && payload && payload.length) {
+  //     return (
+  //       <div className="p-4 bg-gray-800 text-white text-lg rounded-lg shadow-xl border border-yellow-400">
+          
+  //         <p className="font-semibold">{`Price: $${payload[0].value.toFixed(0)}`}</p>
+  //         <p className="opacity-75">{`Date: ${payload[0].payload.time}`}</p>
+  //       </div>
+  //     );
+  //   }
+  //   return null;
+  // };
+  
   useEffect(() => {
     const fetchPriceData = async () => {
       try {
@@ -40,7 +54,7 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
           headers: {accept: 'application/json', 'x-cg-api-key': `${apiKey}`}
         };
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${baseCurrency}/market_chart?vs_currency=usd&days=30`
+          `https://api.coingecko.com/api/v3/coins/${baseCurrency}/market_chart?vs_currency=usd&days=7`
           
           , options)
           // {
@@ -89,24 +103,32 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{baseCurrency.toUpperCase()} Real-time Chart</CardTitle>
+        <CardTitle>{baseCurrency} Price Chart </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="w-full h-full">
           <ChartContainer config={chartConfig}>
             <LineChart data={priceData}>
-              <CartesianGrid strokeDasharray="5" />
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#aab8c2" />
               <XAxis dataKey="time" tickMargin={8} />
-              <YAxis domain={["auto", "auto"]} />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+              <YAxis orientation="right" domain={["auto", "auto"]} />
+              <ChartTooltip 
+              cursor={true}
+               
+              content={<ChartTooltipContent indicator="dot" active = {true}
+              />}
+              // content={CustomTooltip}
+              />
+              
               <Line
                 dataKey="price"
                 type="monotone"
                 stroke="#e5b10c"
                 strokeWidth={1}
                 dot={false}
-                activeDot={{ r: 1 }}
+                activeDot={{ r: 5 }}
               />
+              <Brush dataKey="time" height={20} stroke="#e5b10c" />
             </LineChart>
           </ChartContainer>
         </div>

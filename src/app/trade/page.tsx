@@ -25,7 +25,7 @@ export default function TradingPage() {
   const [orderType, setOrderType] = useState<string>("buy");
   const [price, setPrice] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
-  const [tradingPair, setTradingPair] = useState<string>("bitcoinusdt");
+  const [tradingPair, setTradingPair] = useState<string>("bitcoin");
   const [orders, setOrders] = useState<Order[]>([]); // State to store order history
 
   // Load orders from localStorage on component mount
@@ -37,7 +37,8 @@ export default function TradingPage() {
   }, []);
 
   // Extract the base currency (e.g., BTC, ETH) from the trading pair
-  const baseCurrency = tradingPair.replace("usdt", "").toUpperCase();
+  const Currency = tradingPair;
+  const baseCurrency = Currency.charAt(0).toUpperCase() + Currency.slice(1);
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {

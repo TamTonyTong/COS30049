@@ -8,24 +8,13 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-<<<<<<< HEAD
-} from "@/components/ui/card";
-=======
 } from "@/components/ui/card"
 
->>>>>>> parent of 4b913a2 (Update Chart)
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-<<<<<<< HEAD
-} from "@/components/ui/chart";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-
-interface PriceData {
-  time: string; // Time in "HH:MM AM/PM" format
-=======
 } from "@/components/ui/chart"
 
 // import {
@@ -59,7 +48,6 @@ import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
 
 interface PriceData {
   time: number;
->>>>>>> parent of 4b913a2 (Update Chart)
   price: number;
 }
 
@@ -135,18 +123,8 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
 
     ws.current.onmessage = (event) => {
       const message = JSON.parse(event.data);
-<<<<<<< HEAD
-
-      const newPrice: PriceData = {
-        time: new Date(message.T).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-=======
       const newPrice: PriceData = {
         time: message.E,
->>>>>>> parent of 4b913a2 (Update Chart)
         price: Number.parseFloat(message.p),
       };
 
@@ -163,10 +141,6 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
     };
   }, [tradingPair]); // Reconnect WebSocket when trading pair changes
 
-<<<<<<< HEAD
-  // Aggregate data by hour
-  const hourlyData = aggregateDataByHour(priceData);
-=======
   // const chartData: ChartData<"line"> = {
   //   labels: priceData.map((data) => new Date(data.time).toLocaleTimeString()),
   //   datasets: [
@@ -200,7 +174,6 @@ const chartData = {
   //     tooltip: { callbacks: { label: (context: TooltipItem<"line">) => `Price: $${context.parsed.y.toFixed(2)}` } },
   //   },
   // };
->>>>>>> parent of 4b913a2 (Update Chart)
 
   const chartConfig = {
     desktop: {
@@ -222,40 +195,10 @@ const chartData = {
         <div className="w-full h-[400px]">
           {/* <Line data={chartData} options={chartOptions} /> */}
           <ChartContainer config={chartConfig}>
-<<<<<<< HEAD
-            <LineChart accessibilityLayer data={hourlyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" tickMargin={8} />
-              <YAxis
-                domain={[
-                  (dataMin: number) => Math.floor(dataMin * 0.99), // Slightly lower than min price
-                  (dataMax: number) => Math.ceil(dataMax * 1.01), // Slightly higher than max price
-                ]}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Line
-                dataKey="price"
-                type="natural"
-                stroke="#8884d8"
-                strokeWidth={3}
-                dot={{
-                  fill: "var(--color-desktop)",
-                }}
-                activeDot={{
-                  r: 6,
-                }}
-              />
-            </LineChart>
-          </ChartContainer>
-=======
           <LineChart
 
             ></LineChart>
             </ChartContainer>
->>>>>>> parent of 4b913a2 (Update Chart)
         </div>
       </CardContent>
     </Card>

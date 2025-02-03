@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
+  // CardDescription,
+  // CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/chart";
 
 
-import { TrendingUp } from "lucide-react";
-import { CartesianGrid, Label, Line, LineChart, XAxis, YAxis } from "recharts";
+// import { TrendingUp } from "lucide-react";
+import { CartesianGrid, 
+  // Label, 
+  Line, LineChart, XAxis, YAxis } from "recharts";
 
 interface PriceData {
   time: string;
@@ -31,7 +33,7 @@ interface TradingChartProps {
 }
 
 export default function TradingChart({ tradingPair }: TradingChartProps) {
-  const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY
+  // const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY
   
   const baseCurrency = tradingPair.replace("usdt", " / usdt").toUpperCase();
   
@@ -43,13 +45,6 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
       ws.current.close();
     }
 
-    const options = {
-      method: 'GET',
-      headers: {
-        accept: 'application/json',
-        'x-cg-demo-api-key': 'CG-SN5ALUauuH97xSvYaFo88yCo	'
-      }
-    };
 
     // Connect to Binance WebSocket with dynamic trading pair
     ws.current = new WebSocket(
@@ -81,34 +76,6 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
     };
   }, [tradingPair]); // Reconnect WebSocket when trading pair changes
 
-  // const chartData: ChartData<"line"> = {
-  //   labels: priceData.map((data) => new Date(data.time).toLocaleTimeString()),
-  //   datasets: [
-  //     {
-  //       label: tradingPair.toUpperCase(),
-  //       data: priceData.map((data) => data.price),
-  //       borderColor: "rgb(75, 192, 192)",
-  //       tension: 0.1,
-  //     },
-  //   ],
-  // };
-
-  // const chartOptions: ChartOptions<"line"> = {
-  //   responsive: true,
-  //   maintainAspectRatio: false,
-  //   scales: {
-  //     x: { title: { display: true, text: "Time" } },
-  //     y: {
-  //       title: { display: true, text: "Price (USDT)" },
-  //       ticks: { callback: (value: number | string) => `$${Number(value).toFixed(2)}` },
-  //     },
-  //   },
-  //   plugins: {
-  //     legend: { position: "top" },
-  //     title: { display: true, text: `${tradingPair.toUpperCase()} Real-time Price` },
-  //     tooltip: { callbacks: { label: (context: TooltipItem<"line">) => `Price: $${context.parsed.y.toFixed(2)}` } },
-  //   },
-  // };
 
   const chartConfig = {
     price: {

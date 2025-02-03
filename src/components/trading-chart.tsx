@@ -54,7 +54,7 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
           headers: {accept: 'application/json', 'x-cg-api-key': `${apiKey}`}
         };
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${baseCurrency}/market_chart?vs_currency=usd&days=7`
+          `https://api.coingecko.com/api/v3/coins/${baseCurrency.toLowerCase()}/market_chart?vs_currency=usd&days=7`
           
           , options)
           // {

@@ -17,30 +17,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-// import {
-//   Chart as ChartJS,
-//   CategoryScale,
-//   LinearScale,
-//   PointElement,
-//   LineElement,
-//   Title,
-//   Tooltip,
-//   Legend,
-//   ChartData,
-//   ChartOptions,
-//   TooltipItem,
-// } from "chart.js";
-// import { Line } from "react-chartjs-2";
-
-// ChartJS.register(
-//   CategoryScale,
-//   LinearScale,
-//   PointElement,
-//   LineElement,
-//   Title,
-//   Tooltip,
-//   Legend
-// );
 
 import { TrendingUp } from "lucide-react";
 import { CartesianGrid, Label, Line, LineChart, XAxis, YAxis } from "recharts";
@@ -55,6 +31,8 @@ interface TradingChartProps {
 }
 
 export default function TradingChart({ tradingPair }: TradingChartProps) {
+  const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY
+  
   const baseCurrency = tradingPair.replace("usdt", " / usdt").toUpperCase();
   
   const [priceData, setPriceData] = useState<PriceData[]>([]);
@@ -64,6 +42,14 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
     if (ws.current) {
       ws.current.close();
     }
+
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'x-cg-demo-api-key': 'CG-SN5ALUauuH97xSvYaFo88yCo	'
+      }
+    };
 
     // Connect to Binance WebSocket with dynamic trading pair
     ws.current = new WebSocket(

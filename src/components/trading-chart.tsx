@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
+  // CardDescription,
+  // CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -42,8 +42,10 @@ import {
 //   Legend
 // );
 
-import { TrendingUp } from "lucide-react";
-import { CartesianGrid, Label, Line, LineChart, XAxis, YAxis } from "recharts";
+// import { TrendingUp } from "lucide-react";
+import { CartesianGrid, 
+  // Label, 
+  Line, LineChart, XAxis, YAxis } from "recharts";
 
 interface PriceData {
   time: string;

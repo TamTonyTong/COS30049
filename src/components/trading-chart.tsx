@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
+  // CardDescription,
+  // CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -17,8 +17,10 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-import { TrendingUp } from "lucide-react";
-import { CartesianGrid, Label, Line, LineChart, XAxis, YAxis } from "recharts";
+// import { TrendingUp } from "lucide-react";
+import { CartesianGrid, 
+  // Label,
+   Line, LineChart, XAxis, YAxis } from "recharts";
 
 interface PriceData {
   time: string;
@@ -31,12 +33,12 @@ interface TradingChartProps {
 
 export default function TradingChart({ tradingPair }: TradingChartProps) {
   const baseCurrency = tradingPair.replace("usdt", " / usdt").toUpperCase();
-  const apiKey = process.env.Bitquery_API_KEY;
-  const accessToken = process.env.Bitquery_Access_Token;
-  
+  // const apiKey = process.env.Bitquery_API_KEY;
+  // const accessToken = process.env.Bitquery_Access_Token;
+
   const [priceData, setPriceData] = useState<PriceData[]>([]);
   const ws = useRef<WebSocket | null>(null);
-  
+
   useEffect(() => {
     if (ws.current) {
       ws.current.close();

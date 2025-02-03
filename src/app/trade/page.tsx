@@ -56,11 +56,11 @@ export default function TradingPage() {
   };
 
   // Add an order to the history and save it to localStorage
-  const addOrderToHistory = (order: Order) => {
-    const updatedOrders = [order, ...orders];
-    setOrders(updatedOrders);
-    localStorage.setItem("orders", JSON.stringify(updatedOrders)); // Save to localStorage
-  };
+  // const addOrderToHistory = (order: Order) => {
+  //   const updatedOrders = [order, ...orders];
+  //   setOrders(updatedOrders);
+  //   localStorage.setItem("orders", JSON.stringify(updatedOrders)); // Save to localStorage
+  // };
 
   return (
     <div className="min-h-screen bg-background text-foreground">

@@ -5,7 +5,7 @@ import { JsonRpcProvider, Contract, ethers, Wallet } from "ethers";
 
 // Replace with your local node's RPC URL
 const LOCAL_RPC_URL = "http://localhost:8545";
-const ESCROW_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with your deployed contract address
+const ESCROW_CONTRACT_ADDRESS = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"; // Replace with your deployed contract address
 const ESCROW_ABI = [
   // Insert your contract ABI here (found in artifacts/contracts/Escrow.sol/Escrow.json)
   {
@@ -187,6 +187,9 @@ function App() {
   const [signer, setSigner] = useState<Wallet | null>(null);
   const [escrow, setEscrow] = useState<Contract | null>(null);
 
+  // Define the escrow agent address
+  const ESCROW_AGENT_ADDRESS = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -194,8 +197,16 @@ function App() {
         const provider = new JsonRpcProvider(LOCAL_RPC_URL);
 
         // Use a private key from your local node (e.g., from Ganache or Hardhat)
-        const privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Replace with your local account's private key
+        const privateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"; // Replace with your local account's private key
         const signer = new Wallet(privateKey, provider);
+
+        // Log the signer address for debugging
+        console.log("Signer Address:", signer.address);
+
+        // Check if the signer is the escrow agent
+        if (signer.address.toLowerCase() !== ESCROW_AGENT_ADDRESS.toLowerCase()) {
+          console.warn("The signer is not the escrow agent. Ensure the correct private key is used.");
+        }
 
         // Initialize contract
         const contract = new Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, signer);
@@ -206,6 +217,7 @@ function App() {
         setEscrow(contract);
       } catch (error) {
         console.error("Error initializing provider or signer:", error);
+        alert("Failed to initialize provider or signer.");
       }
     };
     init();
@@ -240,15 +252,17 @@ function App() {
   const refundBuyer = async () => {
     if (escrow) {
       try {
-        // Ensure the connected wallet is the escrowAgent
+        // Ensure the connected wallet is the escrow agent
         const accounts = await window.ethereum.request({ method: "eth_accounts" });
-        const escrowAgentAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; // Replace with your escrowAgent address
-  
-        if (accounts[0].toLowerCase() !== escrowAgentAddress.toLowerCase()) {
-          alert("Only the escrow agent can refund the buyer.");
-          return;
-        }
-  
+        console.log(accounts)
+        // const currentAccount = accounts[0];
+        const currentAccount = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+        console.log(currentAccount)
+        // if (currentAccount.toLowerCase() !== ESCROW_AGENT_ADDRESS.toLowerCase()) {
+        //   alert("Only the escrow agent can refund the buyer.");
+        //   return;
+        // }
+
         const tx = await escrow.refundBuyer();
         await tx.wait();
         alert("Funds refunded to buyer!");

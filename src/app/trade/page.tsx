@@ -9,8 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import 'boxicons'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 interface Order {
   id: string;
   type: "buy" | "sell";
@@ -30,10 +35,8 @@ export default function TradingPage() {
 
   // Load orders from localStorage on component mount
   useEffect(() => {
-    const savedOrders = localStorage.getItem("orders");
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
-    }
+    const savedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    setOrders(savedOrders);
   }, []);
 
   // Extract the base currency (e.g., BTC, ETH) from the trading pair
@@ -56,7 +59,7 @@ export default function TradingPage() {
     );
   };
 
-
+  const icon_order = <i className="bx bxs-cart"></i>;
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b">
@@ -72,7 +75,7 @@ export default function TradingPage() {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Place Order</CardTitle>
+                <CardTitle>Place Order {icon_order}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Trading Pair Selector */}
@@ -90,7 +93,11 @@ export default function TradingPage() {
                   </Select>
                 </div>
 
-                <Tabs defaultValue="buy" className="w-full" onValueChange={setOrderType}>
+                <Tabs
+                  defaultValue="buy"
+                  className="w-full"
+                  onValueChange={setOrderType}
+                >
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="buy">Buy</TabsTrigger>
                     <TabsTrigger value="sell">Sell</TabsTrigger>
@@ -119,7 +126,10 @@ export default function TradingPage() {
                           required
                         />
                       </div>
-                      <Button type="submit" className="w-full bg-green-500 hover:bg-green-600 font-sans text-1xl">
+                      <Button
+                        type="submit"
+                        className="w-full bg-green-500 hover:bg-green-600 font-sans text-1xl"
+                      >
                         Buy {baseCurrency}
                       </Button>
                     </form>
@@ -148,7 +158,10 @@ export default function TradingPage() {
                           required
                         />
                       </div>
-                      <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 font-sans text-1xl">
+                      <Button
+                        type="submit"
+                        className="w-full bg-red-500 hover:bg-red-600 font-sans text-1xl"
+                      >
                         Sell {baseCurrency}
                       </Button>
                     </form>
@@ -158,20 +171,36 @@ export default function TradingPage() {
             </Card>
 
             {/* Order History Section */}
-            <Card className="mt-8">
+            <Card className="mt-8 relative">
               <CardHeader>
                 <CardTitle>Order History</CardTitle>
+                {orders.length > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-3 right-3"
+                    onClick={() =>{ 
+                      setOrders([])
+                      localStorage.removeItem("orders")
+                    }}
+                  >
+                    ✕
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {orders.length === 0 ? (
-                  <p className="text-center text-muted-foreground">No orders yet.</p>
+                  <p className="text-center text-muted-foreground">
+                    No orders yet.
+                  </p>
                 ) : (
                   <div className="space-y-4">
                     {orders.map((order) => (
                       <div key={order.id} className="border p-4 rounded-lg">
                         <div className="flex justify-between">
                           <span className="font-medium">
-                            {order.type === "buy" ? "Buy" : "Sell"} {order.pair.toUpperCase()}
+                            {order.type === "buy" ? "Buy" : "Sell"}{" "}
+                            {order.pair.toUpperCase()}
                           </span>
                           <span className="text-sm text-muted-foreground">
                             {order.timestamp}

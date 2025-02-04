@@ -23,12 +23,27 @@ function BuyingForm() {
       alert("Please fill in all payment details.");
       return;
     }
-
+  
     setPaymentStatus("Processing payment...");
     setTimeout(() => {
       const isPaymentSuccessful = Math.random() > 0.5;
       if (isPaymentSuccessful) {
         setPaymentStatus("Payment successful! Your order has been placed.");
+        
+        // Create order object
+        const newOrder = {
+          id: Date.now().toString(),
+          type: "buy",
+          pair: "BTC/USD",
+          price: price,
+          amount: amount,
+          timestamp: new Date().toLocaleString(),
+        };
+  
+        // Save to localStorage
+        const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+        localStorage.setItem("orders", JSON.stringify([...existingOrders, newOrder]));
+  
         alert(`Order placed: Buying ${amount} BTC at $${price}`);
         router.push("/trade");
       } else {

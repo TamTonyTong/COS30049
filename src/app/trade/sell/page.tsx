@@ -19,7 +19,23 @@ function SellingForm() {
       alert("Please enter both price and amount.");
       return;
     }
-
+  
+    // Create the sell order object
+    const newOrder = {
+      id: Date.now().toString(),
+      type: "sell",
+      pair: "BTC/USD",
+      price: price,
+      amount: amount,
+      timestamp: new Date().toLocaleString(),
+    };
+  
+    // Retrieve existing orders from localStorage
+    const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+  
+    // Save the updated orders back to localStorage
+    localStorage.setItem("orders", JSON.stringify([...existingOrders, newOrder]));
+  
     alert(`Order placed: Selling ${amount} BTC at $${price}`);
     router.push("/trade");
   };

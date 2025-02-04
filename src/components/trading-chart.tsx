@@ -16,7 +16,10 @@ import {
 } from "@/components/ui/chart";
 
 import { Brush, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import 'boxicons'
+import 'boxicons/css/boxicons.min.css';
+
+
+
 interface PriceData {
   time: string;
   price: number;
@@ -92,11 +95,12 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
       color: "hsl(var(--chart-2))",
     },
   } satisfies ChartConfig;
-
+const icon_btc = <i className="bx bxl-bitcoin align-middle text-5xl"></i>
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{baseCurrency} Price Chart </CardTitle>
+        <CardTitle>{baseCurrency} Price Chart {icon_btc} </CardTitle>
+        
       </CardHeader>
       <CardContent>
         <div className="w-full h-full">

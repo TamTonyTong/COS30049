@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/chart";
 
 import { Brush, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-
+import 'boxicons'
 interface PriceData {
   time: string;
   price: number;

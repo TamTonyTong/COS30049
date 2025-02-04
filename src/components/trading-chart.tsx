@@ -31,6 +31,7 @@ interface TradingChartProps {
 
 export default function TradingChart({ tradingPair }: TradingChartProps) {
   const apiKey = process.env.GECKO_API_KEY;
+  console.log(apiKey)
   const Currency = tradingPair;
   const baseCurrency = Currency.charAt(0).toUpperCase() + Currency.slice(1);
   console.log(baseCurrency)
@@ -54,7 +55,7 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
       try {
         const options = {
           method: 'GET',
-          headers: {accept: 'application/json', 'x-cg-api-key': `${apiKey}`}
+          headers: {accept: 'application/json', 'x-cg-api-key': ``}
         };
         const response = await fetch(
           // `https://api.coingecko.com/api/v3/coins/${baseCurrency.toLowerCase()}/market_chart?vs_currency=usd&days=7`

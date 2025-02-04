@@ -30,7 +30,7 @@ interface TradingChartProps {
 }
 
 export default function TradingChart({ tradingPair }: TradingChartProps) {
-  const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY;
+  const apiKey = process.env.GECKO_API_KEY;
   const Currency = tradingPair;
   const baseCurrency = Currency.charAt(0).toUpperCase() + Currency.slice(1);
   console.log(baseCurrency)

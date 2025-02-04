@@ -54,19 +54,12 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
           headers: {accept: 'application/json', 'x-cg-api-key': `${apiKey}`}
         };
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${baseCurrency.toLowerCase()}/market_chart?vs_currency=usd&days=7`
-          
+          // `https://api.coingecko.com/api/v3/coins/${baseCurrency.toLowerCase()}/market_chart?vs_currency=usd&days=7`
+          `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7`          
           , options)
-          // {
-          //   method: "GET",
-          //   headers: {
-          //     accept: "application/json",
-          //     "x-cg-api-key": apiKey || "",
-          //   },
-          // }
         ;
         console.log("Response status:", response.status); // Logs HTTP status
-    console.log("Response headers:", response.headers); // Logs headers
+        console.log("Response headers:", response.headers); // Logs headers
 
         if (!response.ok) {
           throw new Error(`API error: ${response.statusText}`);

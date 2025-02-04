@@ -119,7 +119,7 @@ export default function TradingPage() {
                           required
                         />
                       </div>
-                      <Button type="submit" className="w-full bg-green-500 hover:bg-green-600">
+                      <Button type="submit" className="w-full bg-green-500 hover:bg-green-600 font-sans text-1xl">
                         Buy {baseCurrency}
                       </Button>
                     </form>
@@ -148,7 +148,7 @@ export default function TradingPage() {
                           required
                         />
                       </div>
-                      <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
+                      <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 font-sans text-1xl">
                         Sell {baseCurrency}
                       </Button>
                     </form>

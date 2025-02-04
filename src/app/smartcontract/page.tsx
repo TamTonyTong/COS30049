@@ -226,7 +226,7 @@ function App() {
   const deposit = async () => {
     if (escrow) {
       try {
-        const tx = await escrow.deposit({ value: ethers.parseEther("1") });
+        const tx = await escrow.deposit({ value: ethers.parseEther("10") });
         await tx.wait();
         alert("Funds deposited!");
       } catch (error) {
@@ -276,7 +276,7 @@ function App() {
   return (
     <div className="App">
       <h1>Escrow DApp (Local)</h1>
-      <button onClick={deposit}>Deposit 1 ETH</button>
+      <button onClick={deposit}>Deposit 10 ETH</button>
       <button onClick={releaseFunds}>Release Funds</button>
       <button onClick={refundBuyer}>Refund Buyer</button>
     </div>

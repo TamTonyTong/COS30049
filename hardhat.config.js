@@ -1,15 +1,14 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-ignition");
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.20",
+  solidity: "0.8.20", // Match the Solidity version in your contract
   networks: {
     hardhat: {
-      chainId: 31337,
+      // Hardhat local network configuration
     },
     localhost: {
-      url: "http://127.0.0.1:8545", // Make sure this matches your local network
-      accounts: [/* Your private keys here */],
+      url: "http://127.0.0.1:8545", // Local node URL
     },
   },
 };

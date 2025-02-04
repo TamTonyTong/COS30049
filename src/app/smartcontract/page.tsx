@@ -1,10 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { BrowserProvider, Contract, ethers, JsonRpcSigner } from "ethers";
+import { JsonRpcProvider, Contract, ethers, Wallet } from "ethers";
 
-const ESCROW_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+// Replace with your local node's RPC URL
+const LOCAL_RPC_URL = "http://localhost:8545";
+const ESCROW_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with your deployed contract address
 const ESCROW_ABI = [
+  // Insert your contract ABI here (found in artifacts/contracts/Escrow.sol/Escrow.json)
   {
     "inputs": [
       {
@@ -177,29 +180,22 @@ const ESCROW_ABI = [
     "stateMutability": "view",
     "type": "function"
   }
-  // Insert your contract ABI here (found in artifacts/contracts/Escrow.sol/Escrow.json)
 ];
 
 function App() {
-  // Define types for provider, signer, and escrow
-  const [provider, setProvider] = useState<BrowserProvider | null>(null);
-  const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
+  const [provider, setProvider] = useState<JsonRpcProvider | null>(null);
+  const [signer, setSigner] = useState<Wallet | null>(null);
   const [escrow, setEscrow] = useState<Contract | null>(null);
 
   useEffect(() => {
     const init = async () => {
-      if (!window.ethereum) {
-        alert("Please install MetaMask or another Ethereum wallet.");
-        return;
-      }
-
       try {
         // Initialize provider
-        const provider = new BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const provider = new JsonRpcProvider(LOCAL_RPC_URL);
 
-        // Get signer
-        const signer = await provider.getSigner();
+        // Use a private key from your local node (e.g., from Ganache or Hardhat)
+        const privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Replace with your local account's private key
+        const signer = new Wallet(privateKey, provider);
 
         // Initialize contract
         const contract = new Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, signer);
@@ -218,7 +214,6 @@ function App() {
   const deposit = async () => {
     if (escrow) {
       try {
-        // Use `ethers.parseEther` instead of `ethers.utils.parseEther`
         const tx = await escrow.deposit({ value: ethers.parseEther("1") });
         await tx.wait();
         alert("Funds deposited!");
@@ -245,6 +240,15 @@ function App() {
   const refundBuyer = async () => {
     if (escrow) {
       try {
+        // Ensure the connected wallet is the escrowAgent
+        const accounts = await window.ethereum.request({ method: "eth_accounts" });
+        const escrowAgentAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; // Replace with your escrowAgent address
+  
+        if (accounts[0].toLowerCase() !== escrowAgentAddress.toLowerCase()) {
+          alert("Only the escrow agent can refund the buyer.");
+          return;
+        }
+  
         const tx = await escrow.refundBuyer();
         await tx.wait();
         alert("Funds refunded to buyer!");
@@ -257,7 +261,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Escrow DApp</h1>
+      <h1>Escrow DApp (Local)</h1>
       <button onClick={deposit}>Deposit 1 ETH</button>
       <button onClick={releaseFunds}>Release Funds</button>
       <button onClick={refundBuyer}>Refund Buyer</button>

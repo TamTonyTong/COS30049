@@ -1,8 +1,8 @@
-import Layout from "./components/layout"
+import Layout from "../components/layout"
 import { Search } from "lucide-react"
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
-import DashboardPreview from "./components/dashboard-preview"
+import DashboardPreview from "../components/dashboard-preview"
 
 export default function Home() {
   return (

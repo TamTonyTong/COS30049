@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
-import Layout from "../components/layout";
+import Layout from "../../components/layout";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import "dotenv/config";
@@ -69,6 +69,43 @@ export default function WalletScan() {
       setBalance(null);
     }
     setLoading(false);
+  };
+
+  const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
+  const ETHERSCAN_URL = "https://api.etherscan.io/api";
+  
+  const fetchTransactions = async (address: string) => {
+    try {
+      const response = await axios.get(ETHERSCAN_URL, {
+        params: {
+          module: "account",
+          action: "txlist",
+          address: address,
+          startblock: 21782460,
+          endblock: 21782475,
+          page: 1,
+          offset: 10,
+          sort: "desc",
+          apikey: ETHERSCAN_API_KEY,
+        },
+      });
+  
+      if (response.data.status === "1") {
+        const transactions = response.data.result;
+        const edges = transactions.map((tx: any) => ({
+          from: tx.from,
+          to: tx.to,
+        }));
+  
+        return edges;  // Returns an array of transactions as edges
+      } else {
+        console.error("Error fetching transactions:", response.data.message);
+        return [];
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      return [];
+    }
   };
 
   // Fetch ETH price on component mount

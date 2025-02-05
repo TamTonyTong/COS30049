@@ -42,11 +42,19 @@ const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
           enabled: false, // Disable physics simulation
           stabilization: {
             enabled: true, // Enable stabilization
-            iterations: 100, // Number of iterations for stabilization
+            iterations: 300, // Number of iterations for stabilization
           },
         },
+        barnesHut: {
+          gravitationalConstant: 0, // Adjust repulsion between nodes
+          centralGravity: 0.3, // Adjust pull toward the center
+          springLength: 95, // Adjust edge length
+          springConstant: 0.04, // Adjust edge stiffness
+          damping: 0.09, // Adjust damping (slows down movement)
+        },
+        
         interaction: {
-          dragNodes: false, // Disable dragging of nodes
+          dragNodes: true, // Disable dragging of nodes
           dragView: true, // Allow dragging the view (panning)
           zoomView: true, // Allow zooming the view
         }

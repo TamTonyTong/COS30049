@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { JsonRpcProvider, Contract, ethers, Wallet } from "ethers";
 
 // Replace with your local node's RPC URL
-const LOCAL_RPC_URL = "http://localhost:8545";
-const ESCROW_CONTRACT_ADDRESS = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"; // Replace with your deployed contract address
+
 const ESCROW_ABI = [
   // Insert your contract ABI here (found in artifacts/contracts/Escrow.sol/Escrow.json)
   {
@@ -181,14 +180,20 @@ const ESCROW_ABI = [
     "type": "function"
   }
 ];
-
+const LOCAL_RPC_URL = "http://127.0.0.1:8545";
+const ESCROW_CONTRACT_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Replace with your deployed contract address
 function App() {
   const [provider, setProvider] = useState<JsonRpcProvider | null>(null);
-  const [signer, setSigner] = useState<Wallet | null>(null);
   const [escrow, setEscrow] = useState<Contract | null>(null);
 
-  // Define the escrow agent address
+  // Define the addresses
+  const SELLER_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
   const ESCROW_AGENT_ADDRESS = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+  const BUYER_ADDRESS = "0x90F79bf6EB2c4f870365E785982E1f101E93b906";
+
+  // Define private keys
+  const ESCROW_AGENT_PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+  const BUYER_PRIVATE_KEY = "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6"; // Replace with the buyer's private key
 
   useEffect(() => {
     const init = async () => {
@@ -196,24 +201,12 @@ function App() {
         // Initialize provider
         const provider = new JsonRpcProvider(LOCAL_RPC_URL);
 
-        // Use a private key from your local node (e.g., from Ganache or Hardhat)
-        const privateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"; // Replace with your local account's private key
-        const signer = new Wallet(privateKey, provider);
-
-        // Log the signer address for debugging
-        console.log("Signer Address:", signer.address);
-
-        // Check if the signer is the escrow agent
-        if (signer.address.toLowerCase() !== ESCROW_AGENT_ADDRESS.toLowerCase()) {
-          console.warn("The signer is not the escrow agent. Ensure the correct private key is used.");
-        }
-
-        // Initialize contract
-        const contract = new Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, signer);
+        // Initialize contract with a default signer (escrow agent)
+        const defaultSigner = new Wallet(ESCROW_AGENT_PRIVATE_KEY, provider);
+        const contract = new Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, defaultSigner);
 
         // Update state
         setProvider(provider);
-        setSigner(signer);
         setEscrow(contract);
       } catch (error) {
         console.error("Error initializing provider or signer:", error);
@@ -224,9 +217,14 @@ function App() {
   }, []);
 
   const deposit = async () => {
-    if (escrow) {
+    if (escrow && provider) {
       try {
-        const tx = await escrow.deposit({ value: ethers.parseEther("10") });
+        // Create a signer for the buyer
+        const buyerSigner = new Wallet(BUYER_PRIVATE_KEY, provider);
+        const contractWithBuyerSigner = escrow.connect(buyerSigner);
+
+        // Call the deposit function as the buyer
+        const tx = await contractWithBuyerSigner.deposit({ value: ethers.parseEther("10") });
         await tx.wait();
         alert("Funds deposited!");
       } catch (error) {
@@ -239,6 +237,7 @@ function App() {
   const releaseFunds = async () => {
     if (escrow) {
       try {
+        // Call the releaseFunds function as the escrow agent
         const tx = await escrow.releaseFunds();
         await tx.wait();
         alert("Funds released to seller!");
@@ -252,17 +251,7 @@ function App() {
   const refundBuyer = async () => {
     if (escrow) {
       try {
-        // Ensure the connected wallet is the escrow agent
-        const accounts = await window.ethereum.request({ method: "eth_accounts" });
-        console.log(accounts)
-        // const currentAccount = accounts[0];
-        const currentAccount = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-        console.log(currentAccount)
-        // if (currentAccount.toLowerCase() !== ESCROW_AGENT_ADDRESS.toLowerCase()) {
-        //   alert("Only the escrow agent can refund the buyer.");
-        //   return;
-        // }
-
+        // Call the refundBuyer function as the escrow agent
         const tx = await escrow.refundBuyer();
         await tx.wait();
         alert("Funds refunded to buyer!");

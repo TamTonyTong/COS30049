@@ -5,9 +5,10 @@ import { Data } from "vis-network/declarations/network/Network";
 interface GraphProps {
   nodes: { id: string; label: string }[];
   edges: { from: string; to: string; label?: string }[];
+  onNodeClick: (nodeId: string) => void; // Callback for node clicks
 }
 
-const Graph: React.FC<GraphProps> = ({ nodes, edges }) => {
+const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
   const graphRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,12 +45,25 @@ const Graph: React.FC<GraphProps> = ({ nodes, edges }) => {
             iterations: 100, // Number of iterations for stabilization
           },
         },
+        interaction: {
+          dragNodes: false, // Disable dragging of nodes
+          dragView: true, // Allow dragging the view (panning)
+          zoomView: true, // Allow zooming the view
+        }
       };
 
       // Initialize the network
-      new Network(container, graphData, options);
+      const network = new Network(container, graphData, options);
+
+      network.on("click", (event) => {
+        if (event.nodes.length > 0) {
+          const nodeId = event.nodes[0]; // Get the clicked node ID
+          onNodeClick(nodeId); // Call the callback function
+        }
+      });
+    
     }
-  }, [nodes, edges]);
+  }, [nodes, edges, onNodeClick]);
 
   return (
     <div

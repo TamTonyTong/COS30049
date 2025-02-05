@@ -100,10 +100,10 @@ export default function WalletScan() {
           module: "account",
           action: "txlist",
           address: address,
-          startblock: 21782459,
-          endblock: 21782475,
+          startblock: 0,
+          endblock: 99999999,
           page: 1,
-          offset: 10,
+          offset: 5,
           sort: "desc",
           apikey: ETHERSCAN_API_KEY,
         },
@@ -126,6 +126,32 @@ export default function WalletScan() {
       console.error("Error fetching transactions:", error);
       return [];
     }
+  };
+
+  const handleNodeClick = async (nodeId: string) => {
+    setLoading(true);
+    try {
+      // Fetch transactions for the clicked node
+      const transactions = await fetchTransactions(nodeId);
+  
+      // Update graph data with new nodes and edges
+      const newNodes = new Set<string>([...graphData.nodes.map((node) => node.id)]);
+      const newEdges = [...graphData.edges];
+  
+      transactions.forEach((tx) => {
+        newNodes.add(tx.from);
+        newNodes.add(tx.to);
+        newEdges.push(tx);
+      });
+  
+      setGraphData({
+        nodes: Array.from(newNodes).map((id) => ({ id, label: id })),
+        edges: newEdges,
+      });
+    } catch (error) {
+      console.error("Error fetching additional transactions:", error);
+    }
+    setLoading(false);
   };
 
   // Fetch ETH price on component mount
@@ -162,7 +188,7 @@ export default function WalletScan() {
               disabled={loading}
             >
               {loading ? (
-                "Loading..."
+                <p className="text-green-400 font-semibold">Loading...</p>
               ) : (
                 <Search className="w-5 h-5 text-blue-400 mr-4" />
               )}
@@ -184,7 +210,11 @@ export default function WalletScan() {
           {/* Render the Graph component */}
           <div className="mt-8">
             <h2 className="text-xl font-semibold mb-4">Transaction Graph</h2>
-            <Graph nodes={graphData.nodes} edges={graphData.edges} />
+            <Graph 
+            nodes={graphData.nodes} 
+            edges={graphData.edges}
+            onNodeClick={handleNodeClick} // Pass the callback function
+            />
           </div>
         </div>
       </div>

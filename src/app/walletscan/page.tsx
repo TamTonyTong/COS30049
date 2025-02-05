@@ -20,6 +20,23 @@ export default function WalletScan() {
   const [ethPrice, setEthPrice] = useState<number | null>(null); // ETH/USD Price
   const [loading, setLoading] = useState(false);
 
+  // Fetch ETH/USD price from CoinGecko
+  const fetchEthPrice = async () => {
+    try {
+      const response = await axios.get(COINGECKO_API_URL, {
+        params: {
+          ids: "ethereum",
+          vs_currencies: "usd",
+        },
+      });
+
+      const price = response.data.ethereum.usd;
+      setEthPrice(price);
+    } catch (error) {
+      console.error("Error fetching ETH price:", error);
+    }
+  };
+
   // Fetch balance from Etherscan API
   const fetchBalance = async () => {
     if (!address) return;
@@ -37,8 +54,16 @@ export default function WalletScan() {
       });
 
       const balanceInWei = response.data.result;
-      const balanceInEth = (Number(balanceInWei) / 1e18).toFixed(5); // Convert Wei to ETH
-      setBalance(balanceInEth);
+      const balanceInEth = Number(balanceInWei) / 1e18; // Convert Wei to ETH
+      const balanceInEth_string = (Number(balanceInWei) / 1e18).toFixed(5);
+
+      // Convert ETH to USD if price is available
+      if (ethPrice) {
+        const balanceInUsd = balanceInEth * ethPrice;
+        setUsdValue(balanceInUsd.toFixed(0)); // Keep 2 decimal places
+      }
+
+      setBalance(balanceInEth_string);
     } catch (error) {
       console.error("Error fetching balance:", error);
       setBalance(null);
@@ -46,29 +71,12 @@ export default function WalletScan() {
     setLoading(false);
   };
 
-   // Fetch ETH/USD price from CoinGecko
-   const fetchEthPrice = async () => {
-    try {
-      const response = await axios.get(COINGECKO_API_URL, {
-        params: {
-          ids: "ethereum",
-          vs_currencies: "usd",
-        },
-      });
-
-      const price = response.data.ethereum.usd;
-      setEthPrice(price);
-    } catch (error) {
-      console.error("Error fetching ETH price:", error);
-    }
-  };
-
-    // Fetch ETH price on component mount
-    useEffect(() => {
-      fetchEthPrice();
-    }, []);
-    console.log(fetchEthPrice)
-    console.log(ethPrice)
+  // Fetch ETH price on component mount
+  useEffect(() => {
+    fetchEthPrice();
+  }, []);
+  console.log(ethPrice);
+  console.log(usdValue);
   return (
     <Layout>
       <div className="flex flex-col items-left text-center mb-24">
@@ -86,7 +94,7 @@ export default function WalletScan() {
             <Input
               type="text"
               placeholder="Search by Address"
-              className="border-0 bg-transparent text-white placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 ml-2"
+              className="border-0 bg-transparent text-xl text-white placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 ml-2 h-fit"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
@@ -109,10 +117,10 @@ export default function WalletScan() {
               Balance: <span className="text-blue-400">{balance} ETH</span>
             </p>
           )}
-          
-          {ethPrice !== null && (
+
+          {usdValue !== null && (
             <p className="mt-4 text-lg text-white">
-              USD Value: <span className="text-green-400">${ethPrice} USD</span>
+              USD Value: <span className="text-green-400">${usdValue} USD</span>
             </p>
           )}
         </div>

@@ -8,6 +8,7 @@ import { Button } from "@/src/components/ui/button";
 import "dotenv/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import Graph from "../../components/graph"; // Import the Graph component
 
 const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const BASE_URL = "https://api.etherscan.io/api";
@@ -19,6 +20,10 @@ export default function WalletScan() {
   const [usdValue, setUsdValue] = useState<string | null>(null); // USD Balance
   const [ethPrice, setEthPrice] = useState<number | null>(null); // ETH/USD Price
   const [loading, setLoading] = useState(false);
+  const [graphData, setGraphData] = useState<{
+    nodes: { id: string; label: string }[];
+    edges: { from: string; to: string; label?: string }[];
+  }>({ nodes: [], edges: [] }); // State for graph data
 
   // Fetch ETH/USD price from CoinGecko
   const fetchEthPrice = async () => {
@@ -64,6 +69,20 @@ export default function WalletScan() {
       }
 
       setBalance(balanceInEth_string);
+
+      // Fetch transactions and update graph data
+      const transactions = await fetchTransactions(address);
+      const nodes = new Set<string>();
+      const edges = transactions.map((tx: any) => {
+        nodes.add(tx.from);
+        nodes.add(tx.to);
+        return { from: tx.from, to: tx.to, label: tx.label }; // Use the label with ETH value
+      });
+
+      setGraphData({
+        nodes: Array.from(nodes).map((id) => ({ id, label: id })),
+        edges: edges,
+      });
     } catch (error) {
       console.error("Error fetching balance:", error);
       setBalance(null);
@@ -71,42 +90,43 @@ export default function WalletScan() {
     setLoading(false);
   };
 
-const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
-const ETHERSCAN_URL = "https://api.etherscan.io/api";
+  const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
+  const ETHERSCAN_URL = "https://api.etherscan.io/api";
 
-const fetchTransactions = async (address: string) => {
-  try {
-    const response = await axios.get(ETHERSCAN_URL, {
-      params: {
-        module: "account",
-        action: "txlist",
-        address: address,
-        startblock: 0,
-        endblock: 99999999,
-        page: 1,
-        offset: 10,
-        sort: "desc",
-        apikey: ETHERSCAN_API_KEY,
-      },
-    });
+  const fetchTransactions = async (address: string) => {
+    try {
+      const response = await axios.get(ETHERSCAN_URL, {
+        params: {
+          module: "account",
+          action: "txlist",
+          address: address,
+          startblock: 21782459,
+          endblock: 21782475,
+          page: 1,
+          offset: 10,
+          sort: "desc",
+          apikey: ETHERSCAN_API_KEY,
+        },
+      });
 
-    if (response.data.status === "1") {
-      const transactions = response.data.result;
-      const edges = transactions.map((tx: any) => ({
-        from: tx.from,
-        to: tx.to,
-      }));
+      if (response.data.status === "1") {
+        const transactions = response.data.result;
+        const edges = transactions.map((tx: any) => ({
+          from: tx.from,
+          to: tx.to,
+          label: `${(Number(tx.value) / 1e18).toFixed(5)} ETH`, // Convert Wei to ETH
+        }));
 
-      return edges;  // Returns an array of transactions as edges
-    } else {
-      console.error("Error fetching transactions:", response.data.message);
+        return edges; // Returns an array of transactions as edges
+      } else {
+        console.error("Error fetching transactions:", response.data.message);
+        return [];
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
       return [];
     }
-  } catch (error) {
-    console.error("Error fetching transactions:", error);
-    return [];
-  }
-};
+  };
 
   // Fetch ETH price on component mount
   useEffect(() => {
@@ -160,6 +180,12 @@ const fetchTransactions = async (address: string) => {
               USD Value: <span className="text-green-400">${usdValue} USD</span>
             </p>
           )}
+
+          {/* Render the Graph component */}
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">Transaction Graph</h2>
+            <Graph nodes={graphData.nodes} edges={graphData.edges} />
+          </div>
         </div>
       </div>
     </Layout>

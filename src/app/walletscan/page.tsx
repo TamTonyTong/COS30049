@@ -9,6 +9,7 @@ import "dotenv/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import Graph from "../../components/graph"; // Import the Graph component
+import TransactionTable from "../../components/transactiontable";
 
 const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const BASE_URL = "https://api.etherscan.io/api";
@@ -24,7 +25,17 @@ export default function WalletScan() {
     nodes: { id: string; label: string }[];
     edges: { from: string; to: string; label?: string }[];
   }>({ nodes: [], edges: [] }); // State for graph data
-
+  const [transactions, setTransactions] = useState<
+  {
+    hash: string;
+    from: string;
+    to: string;
+    value: string;
+    blockNumber: string;
+    timestamp: string;
+    status: string;
+  }[]
+>([]);
   // Fetch ETH/USD price from CoinGecko
   const fetchEthPrice = async () => {
     try {
@@ -70,14 +81,17 @@ export default function WalletScan() {
 
       setBalance(balanceInEth_string);
 
-      // Fetch transactions and update graph data
-      const transactions = await fetchTransactions(address);
-      const nodes = new Set<string>();
-      const edges = transactions.map((tx: any) => {
-        nodes.add(tx.from);
-        nodes.add(tx.to);
-        return { from: tx.from, to: tx.to, label: tx.label }; // Use the label with ETH value
-      });
+          // Fetch transactions
+    const transactions = await fetchTransactions(address);
+    setTransactions(transactions); // Store transactions in state
+
+    // Update graph data
+    const nodes = new Set<string>();
+    const edges = transactions.map((tx: any) => {
+      nodes.add(tx.from);
+      nodes.add(tx.to);
+      return { from: tx.from, to: tx.to, label: `${tx.value} ETH` };
+    });
 
       setGraphData({
         nodes: Array.from(nodes).map((id) => ({ id, label: id })),
@@ -111,13 +125,15 @@ export default function WalletScan() {
 
       if (response.data.status === "1") {
         const transactions = response.data.result;
-        const edges = transactions.map((tx: any) => ({
-          from: tx.from,
-          to: tx.to,
-          label: `${(Number(tx.value) / 1e18).toFixed(5)} ETH`, // Convert Wei to ETH
+        return transactions.map((tx: any) => ({
+          hash: tx.hash, // Transaction hash
+          from: tx.from, // Sender address
+          to: tx.to, // Recipient address
+          value: (Number(tx.value) / 1e18).toFixed(5), // Convert Wei to ETH
+          blockNumber: tx.blockNumber, // Block number
+          timestamp: new Date(tx.timeStamp * 1000).toLocaleString(), // Convert timestamp to readable format
+          status: tx.isError === "0" ? "Success" : "Failed", // Transaction status
         }));
-
-        return edges; // Returns an array of transactions as edges
       } else {
         console.error("Error fetching transactions:", response.data.message);
         return [];
@@ -216,6 +232,8 @@ export default function WalletScan() {
             onNodeClick={handleNodeClick} // Pass the callback function
             />
           </div>
+
+          <TransactionTable transactions={transactions} />
         </div>
       </div>
     </Layout>

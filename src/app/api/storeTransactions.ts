@@ -3,7 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import driver from "@/lib/neo4j";
 
-const ETHERSCAN_API_KEY = "your_etherscan_api_key";
+const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const ETHERSCAN_URL = "https://api.etherscan.io/api";
 
 export default async function handler(
@@ -25,7 +25,9 @@ export default async function handler(
         address: address,
         startblock: 0,
         endblock: 99999999,
-        sort: "asc",
+        pages:1,
+        offset:100,
+        sort: "desc",
         apikey: ETHERSCAN_API_KEY,
       },
     });

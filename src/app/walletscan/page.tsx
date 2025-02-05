@@ -10,12 +10,14 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Graph from "../../components/graph"; // Import the Graph component
 import TransactionTable from "../../components/transactiontable";
+import handler from "../api/storeTransactions";
 
 const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const BASE_URL = "https://api.etherscan.io/api";
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3/simple/price";
 
 export default function WalletScan() {
+  handler
   const [address, setAddress] = useState(""); // Store user input
   const [balance, setBalance] = useState<string | null>(null); // Store fetched balance
   const [usdValue, setUsdValue] = useState<string | null>(null); // USD Balance
@@ -26,16 +28,31 @@ export default function WalletScan() {
     edges: { from: string; to: string; label?: string }[];
   }>({ nodes: [], edges: [] }); // State for graph data
   const [transactions, setTransactions] = useState<
-  {
-    hash: string;
-    from: string;
-    to: string;
-    value: string;
-    blockNumber: string;
-    timestamp: string;
-    status: string;
-  }[]
->([]);
+    {
+      hash: string;
+      from: string;
+      to: string;
+      value: string;
+      blockNumber: string;
+      timestamp: string;
+      status: string;
+    }[]
+  >([]);
+
+  const fetchTransactionsdb = async () => {
+    if (!address) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.get("/api/gettransactions", {
+        params: { address },
+      });
+      setTransactions(response.data);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+    }
+    setLoading(false);
+  };
   // Fetch ETH/USD price from CoinGecko
   const fetchEthPrice = async () => {
     try {
@@ -81,17 +98,17 @@ export default function WalletScan() {
 
       setBalance(balanceInEth_string);
 
-          // Fetch transactions
-    const transactions = await fetchTransactions(address);
-    setTransactions(transactions); // Store transactions in state
+      // Fetch transactions
+      const transactions = await fetchTransactions(address);
+      setTransactions(transactions); // Store transactions in state
 
-    // Update graph data
-    const nodes = new Set<string>();
-    const edges = transactions.map((tx: any) => {
-      nodes.add(tx.from);
-      nodes.add(tx.to);
-      return { from: tx.from, to: tx.to, label: `${tx.value} ETH` };
-    });
+      // Update graph data
+      const nodes = new Set<string>();
+      const edges = transactions.map((tx: any) => {
+        nodes.add(tx.from);
+        nodes.add(tx.to);
+        return { from: tx.from, to: tx.to, label: `${tx.value} ETH` };
+      });
 
       setGraphData({
         nodes: Array.from(nodes).map((id) => ({ id, label: id })),
@@ -149,17 +166,19 @@ export default function WalletScan() {
     try {
       // Fetch transactions for the clicked node
       const transactions = await fetchTransactions(nodeId);
-  
+
       // Update graph data with new nodes and edges
-      const newNodes = new Set<string>([...graphData.nodes.map((node) => node.id)]);
+      const newNodes = new Set<string>([
+        ...graphData.nodes.map((node) => node.id),
+      ]);
       const newEdges = [...graphData.edges];
-  
+
       transactions.forEach((tx) => {
         newNodes.add(tx.from);
         newNodes.add(tx.to);
         newEdges.push(tx);
       });
-  
+
       setGraphData({
         nodes: Array.from(newNodes).map((id) => ({ id, label: id })),
         edges: newEdges,
@@ -226,15 +245,52 @@ export default function WalletScan() {
           {/* Render the Graph component */}
           <div className="mt-8">
             <h2 className="text-xl font-semibold mb-4">Transaction Graph</h2>
-            <Graph 
-            nodes={graphData.nodes} 
-            edges={graphData.edges}
-            onNodeClick={handleNodeClick} // Pass the callback function
+            <Graph
+              nodes={graphData.nodes}
+              edges={graphData.edges}
+              onNodeClick={handleNodeClick} // Pass the callback function
             />
           </div>
 
           <TransactionTable transactions={transactions} />
         </div>
+      </div>
+      <div>
+        <input
+          type="text"
+          placeholder="Enter wallet address"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+        />
+        <button onClick={fetchTransactionsdb} disabled={loading}>
+          {loading ? "Loading..." : "Fetch Transactions"}
+        </button>
+
+        {/* <div>
+        <h2>Transactions</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>From</th>
+              <th>To</th>
+              <th>Value (ETH)</th>
+              <th>Timestamp</th>
+              <th>Hash</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((tx, index) => (
+              <tr key={index}>
+                <td>{tx.from}</td>
+                <td>{tx.to}</td>
+                <td>{tx.value}</td>
+                <td>{tx.timestamp}</td>
+                <td>{tx.hash}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div> */}
       </div>
     </Layout>
   );

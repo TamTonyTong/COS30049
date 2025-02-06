@@ -139,7 +139,7 @@ const CryptoEscrowABI = [
     "inputs": [],
     "name": "completeTrade",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

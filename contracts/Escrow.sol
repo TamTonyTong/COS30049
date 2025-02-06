@@ -49,8 +49,8 @@ contract CryptoEscrow {
 
     function completeTrade() external onlyEscrowAgent tradeNotCompleted {
         require(buyerDeposited && sellerDeposited, "Both parties must deposit");
-        payable(seller).transfer(ethAmount);
-        payable(buyer).transfer(eth1Amount);
+        // payable(seller).transfer(ethAmount);
+        // payable(buyer).transfer(eth1Amount);
         tradeCompleted = true;
         emit TradeCompleted(buyer, seller, ethAmount, eth1Amount);
     }

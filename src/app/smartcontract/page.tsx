@@ -1,275 +1,461 @@
-"use client"
-
+"use client";
 import { useState, useEffect } from "react";
-import { JsonRpcProvider, Contract, ethers, Wallet } from "ethers";
-
-// Replace with your local node's RPC URL
-
-const ESCROW_ABI = [
-  // Insert your contract ABI here (found in artifacts/contracts/Escrow.sol/Escrow.json)
+import { ethers } from "ethers";
+const CryptoEscrowABI = [
   {
-    "inputs": [
+    inputs: [
       {
-        "internalType": "address",
-        "name": "_seller",
-        "type": "address"
+        internalType: "address",
+        name: "_buyer",
+        type: "address",
       },
       {
-        "internalType": "address",
-        "name": "_escrowAgent",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "buyer",
-        "type": "address"
+        internalType: "address",
+        name: "_seller",
+        type: "address",
       },
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "Deposited",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "buyer",
-        "type": "address"
+        internalType: "uint256",
+        name: "_ethAmount",
+        type: "uint256",
       },
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
+        internalType: "uint256",
+        name: "_usdAmount",
+        type: "uint256",
+      },
     ],
-    "name": "Refunded",
-    "type": "event"
+    stateMutability: "nonpayable",
+    type: "constructor",
   },
   {
-    "anonymous": false,
-    "inputs": [
+    anonymous: false,
+    inputs: [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "seller",
-        "type": "address"
+        indexed: true,
+        internalType: "address",
+        name: "user",
+        type: "address",
       },
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "Released",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "amount",
-    "outputs": [
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
+        indexed: false,
+        internalType: "string",
+        name: "currency",
+        type: "string",
+      },
     ],
-    "stateMutability": "view",
-    "type": "function"
+    name: "Deposit",
+    type: "event",
   },
   {
-    "inputs": [],
-    "name": "buyer",
-    "outputs": [
+    anonymous: false,
+    inputs: [
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "deposit",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "escrowAgent",
-    "outputs": [
+        indexed: true,
+        internalType: "address",
+        name: "user",
+        type: "address",
+      },
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "isCompleted",
-    "outputs": [
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
       {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
+        indexed: false,
+        internalType: "string",
+        name: "currency",
+        type: "string",
+      },
     ],
-    "stateMutability": "view",
-    "type": "function"
+    name: "Refund",
+    type: "event",
   },
   {
-    "inputs": [],
-    "name": "isFunded",
-    "outputs": [
+    anonymous: false,
+    inputs: [
       {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "refundBuyer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "releaseFunds",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "seller",
-    "outputs": [
+        indexed: false,
+        internalType: "address",
+        name: "buyer",
+        type: "address",
+      },
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
+        indexed: false,
+        internalType: "address",
+        name: "seller",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "ethAmount",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "usdAmount",
+        type: "uint256",
+      },
     ],
-    "stateMutability": "view",
-    "type": "function"
-  }
+    name: "TradeCompleted",
+    type: "event",
+  },
+  {
+    inputs: [],
+    name: "restartTrade",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "buyer",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "buyerDeposited",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "completeTrade",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "confirmUSDReceived",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "depositETH",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "escrowAgent",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "ethAmount",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "refundBuyer",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "seller",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "sellerDeposited",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "tradeCompleted",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "usdAmount",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
-const LOCAL_RPC_URL = "http://127.0.0.1:8545";
-const ESCROW_CONTRACT_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Replace with your deployed contract address
-function App() {
-  const [provider, setProvider] = useState<JsonRpcProvider | null>(null);
-  const [escrow, setEscrow] = useState<Contract | null>(null);
+const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with actual contract address
+const escrowAgent = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Replace with actual escrow agent address
+const buyer = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+const seller = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
 
-  // Define the addresses
-  const SELLER_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-  const ESCROW_AGENT_ADDRESS = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-  const BUYER_ADDRESS = "0x90F79bf6EB2c4f870365E785982E1f101E93b906";
-
-  // Define private keys
-  const ESCROW_AGENT_PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
-  const BUYER_PRIVATE_KEY = "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6"; // Replace with the buyer's private key
+export default function Home() {
+  const [account, setAccount] = useState(null);
+  const [escrowContract, setEscrowContract] = useState(null);
+  const [ethAmount, setEthAmount] = useState("0");
+  const [usdAmount, setUsdAmount] = useState("0");
+  const [status, setStatus] = useState("Loading...");
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        // Initialize provider
-        const provider = new JsonRpcProvider(LOCAL_RPC_URL);
-
-        // Initialize contract with a default signer (escrow agent)
-        const defaultSigner = new Wallet(ESCROW_AGENT_PRIVATE_KEY, provider);
-        const contract = new Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, defaultSigner);
-
-        // Update state
-        setProvider(provider);
-        setEscrow(contract);
-      } catch (error) {
-        console.error("Error initializing provider or signer:", error);
-        alert("Failed to initialize provider or signer.");
-      }
-    };
-    init();
+    if (typeof window.ethereum !== "undefined") {
+      window.ethereum.request({ method: "eth_accounts" }).then(handleAccounts);
+    }
   }, []);
 
-  const deposit = async () => {
-    if (escrow && provider) {
+  async function connectWallet() {
+    if (typeof window.ethereum !== "undefined") {
       try {
-        // Create a signer for the buyer
-        const buyerSigner = new Wallet(BUYER_PRIVATE_KEY, provider);
-        const contractWithBuyerSigner = escrow.connect(buyerSigner);
-
-        // Call the deposit function as the buyer
-        const tx = await contractWithBuyerSigner.deposit({ value: ethers.parseEther("10") });
-        await tx.wait();
-        alert("Funds deposited!");
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        handleAccounts(accounts);
       } catch (error) {
-        console.error("Error depositing funds:", error);
-        alert("Failed to deposit funds.");
+        console.error("Error connecting wallet:", error);
       }
     }
-  };
+  }
 
-  const releaseFunds = async () => {
-    if (escrow) {
-      try {
-        // Call the releaseFunds function as the escrow agent
-        const tx = await escrow.releaseFunds();
-        await tx.wait();
-        alert("Funds released to seller!");
-      } catch (error) {
-        console.error("Error releasing funds:", error);
-        alert("Failed to release funds.");
-      }
+  function handleAccounts(accounts) {
+    if (accounts.length > 0) {
+      setAccount(accounts[0]);
+      setupContract();
     }
-  };
+  }
 
-  const refundBuyer = async () => {
-    if (escrow) {
-      try {
-        // Call the refundBuyer function as the escrow agent
-        const tx = await escrow.refundBuyer();
-        await tx.wait();
-        alert("Funds refunded to buyer!");
-      } catch (error) {
-        console.error("Error refunding buyer:", error);
-        alert("Failed to refund buyer.");
-      }
+  async function setupContract() {
+    if (!window.ethereum) return;
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(
+        contractAddress,
+        CryptoEscrowABI,
+        signer
+      );
+      setEscrowContract(contract);
+      updateContractDetails(contract);
+    } catch (error) {
+      console.error("Error setting up contract:", error);
     }
-  };
+  }
 
+  async function updateContractDetails(contract) {
+    try {
+      const eth = await contract.ethAmount();
+      const usd = await contract.usdAmount();
+      setEthAmount(ethers.formatEther(eth));
+      setUsdAmount(usd.toString());
+      setStatus("Ready");
+    } catch (error) {
+      console.error("Error updating contract details:", error);
+    }
+  }
+
+  async function depositETH() {
+    if (!escrowContract) return;
+    try {
+      const tx = await escrowContract.depositETH({
+        value: ethers.parseEther(ethAmount),
+      });
+      await tx.wait();
+      alert("ETH Deposited!");
+    } catch (error) {
+      console.error("Error depositing ETH:", error);
+    }
+  }
+
+  async function confirmUSD() {
+    if (!escrowContract) return;
+    try {
+      const tx = await escrowContract.confirmUSDReceived();
+      await tx.wait();
+      alert("USD Payment Confirmed!");
+    } catch (error) {
+      console.error("Error confirming USD:", error);
+    }
+  }
+
+  async function releaseFunds() {
+    if (!escrowContract) {
+      alert("Contract not loaded!");
+      return;
+    }
+
+    // Convert addresses to checksum format for accurate comparison
+    const checksumAccount = ethers.getAddress(account);
+    const checksumEscrowAgent = ethers.getAddress(escrowAgent);
+
+    console.log("Account:", checksumAccount);
+    console.log("Escrow Agent:", checksumEscrowAgent);
+
+    if (checksumAccount !== checksumEscrowAgent) {
+      alert("Only escrow agent can release funds!");
+      return;
+    }
+
+    try {
+      const tx = await escrowContract.completeTrade();
+      await tx.wait();
+      alert("Funds Released!");
+    } catch (error) {
+      console.error("Error releasing funds:", error);
+      alert("Failed to release funds. Check console for details.");
+    }
+  }
+  console.log(buyer);
+  console.log("The seller:", seller)
+  console.log(escrowAgent);
+  console.log(escrowContract);
+
+
+  async function restartTrade() {
+    if (!escrowContract) return;
+    try {
+      const tx = await escrowContract.restartTrade();
+      await tx.wait();
+      alert("Trade Restarted!");
+      // Reset state if needed, or update contract details again
+      updateContractDetails(escrowContract);
+    } catch (error) {
+      console.error("Error restarting trade:", error);
+    }
+  }
   return (
-    <div className="App">
-      <h1>Escrow DApp (Local)</h1>
-      <button onClick={deposit}>Deposit 10 ETH</button>
-      <button onClick={releaseFunds}>Release Funds</button>
-      <button onClick={refundBuyer}>Refund Buyer</button>
+    <div className="p-6 max-w-md mx-auto bg-transparent rounded-xl shadow-md space-y-4">
+      <h1 className="text-xl font-bold">Crypto Escrow</h1>
+      <p>Status: {status}</p>
+      <p>Connected Wallet: {account || "Not Connected"}</p>
+      <button
+        onClick={connectWallet}
+        className="px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        Connect Wallet
+      </button>
+      <p>ETH Required: {ethAmount} ETH</p>
+      <p>USD Required: ${usdAmount}</p>
+      <button
+        onClick={depositETH}
+        className="px-4 py-2 bg-green-500 text-white rounded"
+      >
+        Deposit ETH
+      </button>
+
+      <button
+        onClick={confirmUSD}
+        className="px-4 py-2 bg-yellow-500 text-white rounded"
+      >
+        Confirm USD Payment
+      </button>
+      <button
+        onClick={releaseFunds}
+        className="px-4 py-2 bg-red-500 text-white rounded"
+      >
+        Release Funds
+      </button>
+
+      <button
+          onClick={restartTrade}
+          className="px-4 py-2 bg-purple-500 text-white rounded"
+        >
+          Restart Trade
+        </button>
+      {account == buyer && (
+        <button
+          onClick={depositETH}
+          className="px-4 py-2 bg-green-500 text-white rounded"
+        >
+          Deposit ETH
+        </button>
+      )}
+      {account === seller && (
+        <button
+          onClick={confirmUSD}
+          className="px-4 py-2 bg-yellow-500 text-white rounded"
+        >
+          Confirm USD Payment
+        </button>
+      )}
+      {account === escrowAgent && (
+        <button
+          onClick={releaseFunds}
+          className="px-4 py-2 bg-red-500 text-white rounded"
+        >
+          Release Funds
+        </button>
+      )}
+      {/* New restart button */}
+      {account === escrowAgent && (
+        <button
+          onClick={restartTrade}
+          className="px-4 py-2 bg-purple-500 text-white rounded"
+        >
+          Restart Trade
+        </button>)}
     </div>
   );
 }
-
-export default App;

@@ -1,64 +1,71 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
-contract Escrow {
-    // Addresses
-    address public buyer; // The buyer is the one who deploys the contract
-    address public seller; // The seller's address (passed as a parameter)
-    address public escrowAgent; // The escrow agent's address (passed as a parameter)
+contract CryptoEscrow {
+    address public escrowAgent;
+    address public buyer;
+    address public seller;
+    uint256 public ethAmount;
+    uint256 public usdAmount;
+    bool public buyerDeposited;
+    bool public sellerDeposited;
+    bool public tradeCompleted;
 
-    // State variables
-    uint256 public amount; // Amount of ETH held in escrow
-    bool public isFunded; // Whether the escrow is funded
-    bool public isCompleted; // Whether the escrow is completed
+    event Deposit(address indexed user, uint256 amount, string currency);
+    event TradeCompleted(address buyer, address seller, uint256 ethAmount, uint256 usdAmount);
+    event Refund(address indexed user, uint256 amount, string currency);
 
-    // Events
-    event Deposited(address indexed buyer, uint256 amount);
-    event Released(address indexed seller, uint256 amount);
-    event Refunded(address indexed buyer, uint256 amount);
-
-    // Constructor
-    constructor(address _seller, address _escrowAgent) {
-        buyer = msg.sender; // The buyer is the one deploying the contract
-        seller = _seller; // Seller's address (passed as a parameter)
-        escrowAgent = _escrowAgent; // Escrow agent's address (passed as a parameter)
-        isFunded = false;
-        isCompleted = false;
+    modifier onlyEscrowAgent() {
+        require(msg.sender == escrowAgent, "Only escrow agent can perform this action");
+        _;
     }
 
-    // Deposit function (only buyer can call)
-    function deposit() external payable {
-        require(msg.sender == buyer, "Only the buyer can deposit funds.");
-        require(msg.value > 0, "You must send some ETH.");
-        require(!isFunded, "Escrow is already funded.");
-
-        amount = msg.value;
-        isFunded = true;
-        emit Deposited(msg.sender, msg.value);
+    modifier tradeNotCompleted() {
+        require(!tradeCompleted, "Trade already completed");
+        _;
     }
 
-    // Release funds to the seller (only escrow agent can call)
-    function releaseFunds() external {
-        require(msg.sender == escrowAgent, "Only the escrow agent can release funds.");
-        require(isFunded, "Escrow is not funded.");
-        require(!isCompleted, "Escrow is already completed.");
-
-        isCompleted = true;
-        payable(seller).transfer(amount);
-        emit Released(seller, amount);
+    constructor(address _buyer, address _seller, uint256 _ethAmount, uint256 _usdAmount) {
+        escrowAgent = msg.sender;
+        buyer = _buyer;
+        seller = _seller;
+        ethAmount = _ethAmount;
+        usdAmount = _usdAmount;
     }
 
-    // Refund funds to the buyer (only escrow agent can call)
-    function refundBuyer() external {
-        require(msg.sender == escrowAgent, "Only the escrow agent can refund the buyer.");
-        require(isFunded, "Escrow is not funded.");
-        require(!isCompleted, "Escrow is already completed.");
-
-        isCompleted = true;
-        payable(buyer).transfer(amount);
-        emit Refunded(buyer, amount);
+    function depositETH() external payable tradeNotCompleted {
+        require(msg.sender == buyer, "Only buyer can deposit ETH");
+        require(msg.value == ethAmount, "Incorrect ETH amount");
+        buyerDeposited = true;
+        emit Deposit(msg.sender, msg.value, "ETH");
     }
 
-    // Fallback function to accept ETH
-    receive() external payable {}
+    function confirmUSDReceived() external tradeNotCompleted {
+        require(msg.sender == seller, "Only seller can confirm USD receipt");
+        sellerDeposited = true;
+        emit Deposit(msg.sender, usdAmount, "USD");
+    }
+
+    function completeTrade() external onlyEscrowAgent tradeNotCompleted {
+        require(buyerDeposited && sellerDeposited, "Both parties must deposit");
+        payable(seller).transfer(ethAmount);
+        tradeCompleted = true;
+        emit TradeCompleted(buyer, seller, ethAmount, usdAmount);
+    }
+
+    function refundBuyer() external onlyEscrowAgent tradeNotCompleted {
+        require(buyerDeposited && !sellerDeposited, "Refund only if seller hasn't confirmed USD");
+        payable(buyer).transfer(ethAmount);
+        buyerDeposited = false;
+        emit Refund(buyer, ethAmount, "ETH");
+    }
+    
+    function restartTrade() external onlyEscrowAgent {
+        require(tradeCompleted, "Trade must be completed to restart");
+
+        // Resetting the state variables
+        buyerDeposited = false;
+        sellerDeposited = false;
+        tradeCompleted = false;
+    }
 }

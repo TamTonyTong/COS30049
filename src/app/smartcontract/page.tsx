@@ -3,251 +3,251 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 const CryptoEscrowABI = [
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "_buyer",
-        type: "address",
+        "internalType": "address",
+        "name": "_buyer",
+        "type": "address"
       },
       {
-        internalType: "address",
-        name: "_seller",
-        type: "address",
+        "internalType": "address",
+        "name": "_seller",
+        "type": "address"
       },
       {
-        internalType: "uint256",
-        name: "_ethAmount",
-        type: "uint256",
+        "internalType": "uint256",
+        "name": "_ethAmount",
+        "type": "uint256"
       },
       {
-        internalType: "uint256",
-        name: "_usdAmount",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "_eth1Amount",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "nonpayable",
-    type: "constructor",
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "user",
-        type: "address",
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       },
       {
-        indexed: false,
-        internalType: "string",
-        name: "currency",
-        type: "string",
-      },
+        "indexed": false,
+        "internalType": "string",
+        "name": "currency",
+        "type": "string"
+      }
     ],
-    name: "Deposit",
-    type: "event",
+    "name": "Deposit",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "user",
-        type: "address",
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       },
       {
-        indexed: false,
-        internalType: "string",
-        name: "currency",
-        type: "string",
-      },
+        "indexed": false,
+        "internalType": "string",
+        "name": "currency",
+        "type": "string"
+      }
     ],
-    name: "Refund",
-    type: "event",
+    "name": "Refund",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: false,
-        internalType: "address",
-        name: "buyer",
-        type: "address",
+        "indexed": false,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "address",
-        name: "seller",
-        type: "address",
+        "indexed": false,
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "ethAmount",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "ethAmount",
+        "type": "uint256"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "usdAmount",
-        type: "uint256",
-      },
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "eth1Amount",
+        "type": "uint256"
+      }
     ],
-    name: "TradeCompleted",
-    type: "event",
+    "name": "TradeCompleted",
+    "type": "event"
   },
   {
-    inputs: [],
-    name: "restartTrade",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "buyer",
-    outputs: [
+    "inputs": [],
+    "name": "buyer",
+    "outputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "buyerDeposited",
-    outputs: [
+    "inputs": [],
+    "name": "buyerDeposited",
+    "outputs": [
       {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "completeTrade",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "inputs": [],
+    "name": "completeTrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "confirmUSDReceived",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "inputs": [],
+    "name": "confirmUSDReceived",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "depositETH",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
+    "inputs": [],
+    "name": "depositETH",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "escrowAgent",
-    outputs: [
+    "inputs": [],
+    "name": "escrowAgent",
+    "outputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "ethAmount",
-    outputs: [
+    "inputs": [],
+    "name": "eth1Amount",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "refundBuyer",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "seller",
-    outputs: [
+    "inputs": [],
+    "name": "ethAmount",
+    "outputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "sellerDeposited",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
+    "inputs": [],
+    "name": "refundBuyer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "tradeCompleted",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
+    "inputs": [],
+    "name": "restartTrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "usdAmount",
-    outputs: [
+    "inputs": [],
+    "name": "seller",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
+  {
+    "inputs": [],
+    "name": "sellerDeposited",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tradeCompleted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
 ];
 const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with actual contract address
 const escrowAgent = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Replace with actual escrow agent address
@@ -258,7 +258,7 @@ export default function Home() {
   const [account, setAccount] = useState(null);
   const [escrowContract, setEscrowContract] = useState(null);
   const [ethAmount, setEthAmount] = useState("0");
-  const [usdAmount, setUsdAmount] = useState("0");
+  const [eth1Amount, setEth1Amount] = useState("0");
   const [status, setStatus] = useState("Loading...");
 
   useEffect(() => {
@@ -307,9 +307,9 @@ export default function Home() {
   async function updateContractDetails(contract) {
     try {
       const eth = await contract.ethAmount();
-      const usd = await contract.usdAmount();
+      const eth1 = await contract.eth1Amount();
       setEthAmount(ethers.formatEther(eth));
-      setUsdAmount(usd.toString());
+      setEth1Amount(ethers.formatEther(eth1));
       setStatus("Ready");
     } catch (error) {
       console.error("Error updating contract details:", error);
@@ -332,7 +332,10 @@ export default function Home() {
   async function confirmUSD() {
     if (!escrowContract) return;
     try {
-      const tx = await escrowContract.confirmUSDReceived();
+      // const tx = await escrowContract.confirmUSDReceived();
+      const tx = await escrowContract.confirmUSDReceived({
+        value: ethers.parseEther(eth1Amount),
+      });
       await tx.wait();
       alert("USD Payment Confirmed!");
     } catch (error) {
@@ -371,7 +374,7 @@ export default function Home() {
   console.log("The seller:", seller)
   console.log(escrowAgent);
   console.log(escrowContract);
-
+  console.log("The account is", account)
 
   async function restartTrade() {
     if (!escrowContract) return;
@@ -397,7 +400,7 @@ export default function Home() {
         Connect Wallet
       </button>
       <p>ETH Required: {ethAmount} ETH</p>
-      <p>USD Required: ${usdAmount}</p>
+      <p>ETH1 Required: {eth1Amount} ETH1</p>
       <button
         onClick={depositETH}
         className="px-4 py-2 bg-green-500 text-white rounded"
@@ -424,7 +427,7 @@ export default function Home() {
         >
           Restart Trade
         </button>
-      {account == buyer && (
+      {account === buyer && (
         <button
           onClick={depositETH}
           className="px-4 py-2 bg-green-500 text-white rounded"

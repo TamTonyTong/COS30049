@@ -6,13 +6,13 @@ contract CryptoEscrow {
     address public buyer;
     address public seller;
     uint256 public ethAmount;
-    uint256 public usdAmount;
+    uint256 public eth1Amount;
     bool public buyerDeposited;
     bool public sellerDeposited;
     bool public tradeCompleted;
 
     event Deposit(address indexed user, uint256 amount, string currency);
-    event TradeCompleted(address buyer, address seller, uint256 ethAmount, uint256 usdAmount);
+    event TradeCompleted(address buyer, address seller, uint256 ethAmount, uint256 eth1Amount);
     event Refund(address indexed user, uint256 amount, string currency);
 
     modifier onlyEscrowAgent() {
@@ -25,12 +25,12 @@ contract CryptoEscrow {
         _;
     }
 
-    constructor(address _buyer, address _seller, uint256 _ethAmount, uint256 _usdAmount) {
+    constructor(address _buyer, address _seller, uint256 _ethAmount, uint256 _eth1Amount) {
         escrowAgent = msg.sender;
         buyer = _buyer;
         seller = _seller;
         ethAmount = _ethAmount;
-        usdAmount = _usdAmount;
+        eth1Amount = _eth1Amount;
     }
 
     function depositETH() external payable tradeNotCompleted {
@@ -40,17 +40,19 @@ contract CryptoEscrow {
         emit Deposit(msg.sender, msg.value, "ETH");
     }
 
-    function confirmUSDReceived() external tradeNotCompleted {
+    function confirmUSDReceived() external payable tradeNotCompleted {
         require(msg.sender == seller, "Only seller can confirm USD receipt");
+        require(msg.value == eth1Amount, "Incorrect ETH amount");
         sellerDeposited = true;
-        emit Deposit(msg.sender, usdAmount, "USD");
+        emit Deposit(msg.sender, msg.value, "ETH");
     }
 
     function completeTrade() external onlyEscrowAgent tradeNotCompleted {
         require(buyerDeposited && sellerDeposited, "Both parties must deposit");
         payable(seller).transfer(ethAmount);
+        payable(buyer).transfer(eth1Amount);
         tradeCompleted = true;
-        emit TradeCompleted(buyer, seller, ethAmount, usdAmount);
+        emit TradeCompleted(buyer, seller, ethAmount, eth1Amount);
     }
 
     function refundBuyer() external onlyEscrowAgent tradeNotCompleted {

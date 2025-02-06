@@ -7,9 +7,9 @@ const CryptoEscrowModule = buildModule("CryptoEscrowModule", (m) => {
     const seller = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
 
     const ethAmount = m.getParameter("ethAmount", "1000000000000000000"); // 1 ETH (in Wei)
-    const usdAmount = m.getParameter("usdAmount", "100000"); // Example: 1000 USD
+    const eth1Amount = m.getParameter("eth1Amount", "1000000000000000000"); // Example: 1000 USD
 
-    const escrow = m.contract("CryptoEscrow", [buyer, seller, ethAmount, usdAmount]);
+    const escrow = m.contract("CryptoEscrow", [buyer, seller, ethAmount, eth1Amount]);
 
     return { escrow };
 });

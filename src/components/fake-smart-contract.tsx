@@ -1,10 +1,17 @@
 class FakeSmartContract {
   private trades: any[] = [];
-  private balances: { [key: string]: number } = { UserA: 1000, UserB: 1000 }; // Fake USD balances
+  private balances: { [key: string]: { USD: number; SCM: number } } = {
+    UserA: { USD: 1000, SCM: 0 },
+    UserB: { USD: 1000, SCM: 500 }, // Seller starts with 500 SCM
+  };
 
   constructor() {
     this.loadTrades();
     this.loadBalances();
+  }
+
+  public getTradeHistory() {
+    return this.trades;
   }
 
   private loadTrades() {
@@ -18,7 +25,26 @@ class FakeSmartContract {
 
   private loadBalances() {
     const savedBalances = localStorage.getItem("fake_balances");
-    this.balances = savedBalances ? JSON.parse(savedBalances) : this.balances;
+    try {
+      const parsedBalances = savedBalances ? JSON.parse(savedBalances) : null;
+      
+      if (parsedBalances && typeof parsedBalances === "object" && parsedBalances.UserA) {
+        this.balances = parsedBalances;
+      } else {
+        this.balances = {
+          UserA: { USD: 1000, SCM: 0 },
+          UserB: { USD: 1000, SCM: 500 }, // Seller starts with 500 SCM
+        };
+        this.saveBalances(); // Save correct structure to localStorage
+      }
+    } catch (error) {
+      console.error("Failed to load balances, resetting to default:", error);
+      this.balances = {
+        UserA: { USD: 1000, SCM: 0 },
+        UserB: { USD: 1000, SCM: 500 },
+      };
+      this.saveBalances();
+    }
   }
 
   private saveBalances() {
@@ -26,12 +52,22 @@ class FakeSmartContract {
   }
 
   public depositUSD(user: string, amount: number) {
-    this.balances[user] = (this.balances[user] || 0) + amount;
+    // Ensure the user has a balance object before modifying it
+    if (!this.balances[user] || typeof this.balances[user] !== "object") {
+      this.balances[user] = { USD: 0, SCM: 0 }; // Initialize user balance
+    }
+  
+    this.balances[user].USD += amount;
     this.saveBalances();
+  }
+  
+
+  public getBalance(user: string) {
+    return this.balances[user];
   }
 
   public initiateTrade(buyer: string, seller: string, asset: string, amount: number, price: number) {
-    if (this.balances[buyer] < price * amount) {
+    if (this.balances[buyer].USD < price * amount) {
       return { error: "Insufficient USD balance." };
     }
 
@@ -44,6 +80,7 @@ class FakeSmartContract {
       asset,
       amount,
       price,
+      sellerDeposit: 0,
       status: "Pending Seller Deposit",
       timestamp: new Date().toISOString(),
     };
@@ -58,12 +95,15 @@ class FakeSmartContract {
     return new Promise((resolve) => {
       setTimeout(() => {
         const trade = this.trades.find((t) => t.txHash === txHash);
-        if (trade) {
+        if (trade && this.balances[trade.seller].SCM >= trade.amount) {
+          this.balances[trade.seller].SCM -= trade.amount;
+          trade.sellerDeposit = trade.amount;
           trade.status = "Pending Trade Completion";
           this.saveTrades();
+          this.saveBalances();
         }
         resolve(trade);
-      }, 3000); // Simulating delay
+      }, 3000);
     });
   }
 
@@ -72,24 +112,17 @@ class FakeSmartContract {
       setTimeout(() => {
         const trade = this.trades.find((t) => t.txHash === txHash);
         if (trade) {
-          this.balances[trade.buyer] -= trade.price * trade.amount;
-          this.balances[trade.seller] += trade.price * trade.amount;
+          this.balances[trade.buyer].USD -= trade.price * trade.amount;
+          this.balances[trade.seller].USD += trade.price * trade.amount;
+          this.balances[trade.buyer].SCM += trade.amount;
 
           trade.status = "Trade Completed";
           this.saveTrades();
           this.saveBalances();
         }
         resolve(trade);
-      }, 5000); // Simulating trade completion delay
+      }, 5000);
     });
-  }
-
-  public getBalance(address: string) {
-    return this.balances[address] || 0;
-  }
-
-  public getTradeHistory() {
-    return this.trades;
   }
 }
 

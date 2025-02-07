@@ -1,7 +1,7 @@
 "use client";
 
 import Header from "@/components/header";
-import BuyingForm from "@/components/buying-form";
+import BuyingForm from "@/components/trading/buying-form";
 
 export default function BuyingPage() {
   return (

@@ -1,7 +1,7 @@
 class FakeSmartContract {
   private trades: any[] = [];
   private balances: { [key: string]: { USD: number; SCM: number } } = {
-    UserA: { USD: 1000, SCM: 0 },
+    UserA: { USD: 0, SCM: 0 },
     UserB: { USD: 1000, SCM: 500 }, // Seller starts with 500 SCM
   };
 

@@ -1,43 +1,75 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Header from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-
+import { fakeSmartContract } from "@/components/trading/transactions/fake-smart-contract-real";
 function SellingForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const price = searchParams.get("price") || "";
   const amount = searchParams.get("amount") || "";
 
-  const handleConfirmOrder = () => {
+  // Smart contract state
+  const [balances, setBalances] = useState({ USD: 0, BTC: 0 });
+  const [tradeStatus, setTradeStatus] = useState<string | null>(null);
+  const [refresh, setRefresh] = useState(false);
+
+  useEffect(() => {
+    updateBalance();
+  }, []);
+
+  const updateBalance = () => {
+    setBalances(fakeSmartContract.getBalance("UserA")); // Seller is UserB
+  };
+
+  const handleConfirmOrder = async () => {
     if (!price || !amount) {
       alert("Please enter both price and amount.");
       return;
     }
-  
-    // Create the sell order object
-    const newOrder = {
-      id: Date.now().toString(),
-      type: "sell",
-      pair: "BTC/USD",
-      price: price,
-      amount: amount,
-      timestamp: new Date().toLocaleString(),
-    };
-  
-    // Retrieve existing orders from localStorage
-    const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-  
-    // Save the updated orders back to localStorage
-    localStorage.setItem("orders", JSON.stringify([...existingOrders, newOrder]));
-  
-    alert(`Order placed: Selling ${amount} BTC at $${price}`);
-    router.push("/trade");
+
+    // Check if the seller has enough BTC to sell
+    if (balances.BTC < Number(amount)) {
+      setTradeStatus("Insufficient BTC balance.");
+      return;
+    }
+
+    setTradeStatus("Initiating trade...");
+
+    // Initiate the trade
+    const trade = fakeSmartContract.initiateTrade("UserB", "UserA", "BTC", Number(amount), Number(price));
+
+    if ("error" in trade) {
+      setTradeStatus(`Trade failed: ${trade.error}`);
+      return;
+    }
+
+    setTradeStatus("Waiting for buyer to deposit USD...");
+
+    // Simulate buyer depositing USD (this would normally be handled by the buyer's form)
+    setTimeout(async () => {
+      setTradeStatus("Buyer deposited USD. Depositing BTC...");
+
+      // Seller deposits BTC
+      const updatedTrade = await fakeSmartContract.sellerDepositBTC(trade.txHash) as {
+        txHash: string;
+        sellerDeposit: number;
+      };
+
+      setTradeStatus("BTC deposited. Completing trade...");
+
+      // Complete the trade
+      await fakeSmartContract.completeTrade(trade.txHash);
+      updateBalance();
+
+      setTradeStatus("Trade completed! Seller received USD, Buyer received BTC.");
+      router.push("/trade");
+    }, 3000);
   };
 
   return (
@@ -54,6 +86,11 @@ function SellingForm() {
           <Label htmlFor="sell-amount">Amount</Label>
           <Input id="sell-amount" type="number" value={amount} disabled />
         </div>
+        <div>
+          <p>USD Balance: ${balances.USD}</p>
+          <p>BTC Balance: {balances.BTC} BTC</p>
+        </div>
+        {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
         <Button className="w-full bg-red-500 hover:bg-red-600" onClick={handleConfirmOrder}>
           Confirm Sell Order
         </Button>

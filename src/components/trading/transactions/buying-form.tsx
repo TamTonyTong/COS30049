@@ -21,6 +21,7 @@ export default function BuyingForm() {
   const [tradeStatus, setTradeStatus] = useState<string | null>(null);
   const [sellerDeposit, setSellerDeposit] = useState<number>(0);
   const [depositAmount, setDepositAmount] = useState("");
+  const [refresh, setRefresh] = useState(false);
 
   const handleDepositUSD = () => {
     fakeSmartContract.depositUSD("UserA", Number(depositAmount));
@@ -45,6 +46,7 @@ export default function BuyingForm() {
 
     setTimeout(() => {
       updateBalance();
+      setRefresh((prev) => !prev); // Force a component re-render
     }, 100);
   };
 

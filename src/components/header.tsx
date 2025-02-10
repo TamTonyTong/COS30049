@@ -28,8 +28,8 @@ export default function Header() {
           <div className="bg-[#1a2b4b] rounded-full px-6 py-2">
             <ul className="flex gap-6 text-gray-300">
               <li>
-                <Link href="#" className="hover:text-white transition-colors">
-                  Buy
+                <Link href="/personal_assets" className="hover:text-white transition-colors">
+                  Personal Assets
                 </Link>
               </li>
               <li>

@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fakeSmartContract } from "@/components/trading/transactions/fake-smart-contract-real";
 interface Order {
   id: string;
   type: "buy" | "sell";
@@ -32,6 +33,38 @@ export default function TradingPage() {
   const [amount, setAmount] = useState<string>("");
   const [tradingPair, setTradingPair] = useState<string>("bitcoin");
   const [orders, setOrders] = useState<Order[]>([]); // State to store order history
+
+  // Smart contract state
+  const [balances, setBalances] = useState({ USD: 0, BTC: 0 });
+  const [tradeStatus, setTradeStatus] = useState<string | null>(null);
+  const [sellerDeposit, setSellerDeposit] = useState<number>(0);
+  const [depositAmount, setDepositAmount] = useState("");
+
+  const handleDepositUSD = () => {
+    fakeSmartContract.depositUSD("UserA", Number(depositAmount));
+    setDepositAmount(""); // Reset input field
+
+    // Add a slight delay to ensure the state updates correctly
+    setTimeout(() => {
+      updateBalance();
+    }, 100);
+  };
+
+  useEffect(() => {
+    updateBalance();
+  }, []);
+
+  const updateBalance = () => {
+    setBalances(fakeSmartContract.getBalance("UserA"));
+  };
+
+  const handleResetUSD = () => {
+    fakeSmartContract.resetUSDBalance("UserA");
+
+    setTimeout(() => {
+      updateBalance();
+    }, 100);
+  };
 
   // Load orders from localStorage on component mount
   useEffect(() => {
@@ -68,7 +101,32 @@ export default function TradingPage() {
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">
+        <div className="flex justify-end">
+          <Card className="w-full max-w-md mt-8">
+            <CardHeader>
+              <CardTitle>Your Balance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between">
+                <p className="bg-transparent">USD Balance: ${balances.USD}</p>
+                <button className="flex items-end" onClick={handleResetUSD}>
+                  Reset USD Balance
+                </button>
+
+              </div>
+              <div>
+                <p>BTC Balance: {balances.BTC} BTC</p>
+              </div>
+              <div>
+                <input className="bg-transparent" placeholder="Deposit Amount" type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
+                <button onClick={handleDepositUSD}>Deposit</button>
+              </div>
+              {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
+            </CardContent>
+          </Card>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
           <div className="lg:col-span-2">
             <TradingChart tradingPair={tradingPair} />
           </div>
@@ -179,7 +237,7 @@ export default function TradingPage() {
                     variant="destructive"
                     size="sm"
                     className="absolute top-3 right-3"
-                    onClick={() =>{ 
+                    onClick={() => {
                       setOrders([])
                       localStorage.removeItem("orders")
                     }}

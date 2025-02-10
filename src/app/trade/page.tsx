@@ -228,56 +228,10 @@ export default function TradingPage() {
                 </Tabs>
               </CardContent>
             </Card>
-
-            {/* Order History Section */}
-            <Card className="mt-8 relative">
-              <CardHeader>
-                <CardTitle>Order History</CardTitle>
-                {orders.length > 0 && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-3 right-3"
-                    onClick={() => {
-                      setOrders([])
-                      localStorage.removeItem("orders")
-                    }}
-                  >
-                    ✕
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                {orders.length === 0 ? (
-                  <p className="text-center text-muted-foreground">
-                    No orders yet.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {orders.map((order) => (
-                      <div key={order.id} className="border p-4 rounded-lg">
-                        <div className="flex justify-between">
-                          <span className="font-medium">
-                            {order.type === "buy" ? "Buy" : "Sell"}{" "}
-                            {order.pair.toUpperCase()}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {order.timestamp}
-                          </span>
-                        </div>
-                        <div className="text-sm">
-                          <p>Price: ${order.price}</p>
-                          <p>Amount: {order.amount}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <TradeHistory></TradeHistory>
           </div>
         </div>
-        <TradeHistory></TradeHistory>
+        
       </main>
     </div>
   );

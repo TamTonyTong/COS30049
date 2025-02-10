@@ -33,13 +33,13 @@ export default function Header() {
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-white transition-colors">
-                  Markets
+                <Link href="/available" className="hover:text-white transition-colors">
+                  Featured Assets
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-white transition-colors">
-                  Trade
+                <Link href="/user_public_info" className="hover:text-white transition-colors">
+                  User's Public Info
                 </Link>
               </li>
               <li>

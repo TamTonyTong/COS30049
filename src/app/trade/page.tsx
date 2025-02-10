@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -37,8 +38,8 @@ export default function TradingPage() {
 
   // Smart contract state
   const [balances, setBalances] = useState({ USD: 0, BTC: 0 });
-  const [tradeStatus, setTradeStatus] = useState<string | null>(null);
-  const [sellerDeposit, setSellerDeposit] = useState<number>(0);
+  const [tradeStatus] = useState<string | null>(null);
+  // const [sellerDeposit, setSellerDeposit] = useState<number>(0);
   const [depositAmount, setDepositAmount] = useState("");
 
   const handleDepositUSD = () => {

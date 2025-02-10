@@ -2,9 +2,20 @@ import { useState, useEffect } from "react";
 import { fakeSmartContract } from "./fake-smart-contract-real";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
+// Define Trade Type
+interface Trade {
+  txHash: string;
+  buyer: string;
+  seller: string;
+  asset: string;
+  amount: number;
+  price: number;
+  sellerDeposit: number;
+  status: string;
+  timestamp: string;
+}
 const TradeHistory = () => {
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<Trade[]>([]);
 
   useEffect(() => {
     setHistory(fakeSmartContract.getTradeHistory());

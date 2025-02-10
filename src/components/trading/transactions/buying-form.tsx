@@ -14,9 +14,6 @@ export default function BuyingForm() {
   const price = searchParams.get("price") || "";
   const amount = searchParams.get("amount") || "";
 
-  const [cardNumber, setCardNumber] = useState<string>("");
-  const [expiryDate, setExpiryDate] = useState<string>("");
-  const [cvv, setCvv] = useState<string>("");
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
 
   // Smart contract state
@@ -67,14 +64,17 @@ export default function BuyingForm() {
 
       const trade = fakeSmartContract.initiateTrade("UserA", "UserB", "BTC", Number(amount), Number(price));
 
-      if (trade.error) {
+      if ("error" in trade) {
         setTradeStatus(`Trade failed: ${trade.error}`);
         return;
       }
 
       setTradeStatus("Waiting for seller to deposit BTC...");
 
-      const updatedTrade = await fakeSmartContract.sellerDepositBTC(trade.txHash);
+      const updatedTrade = await (fakeSmartContract.sellerDepositBTC(trade.txHash)) as {
+        txHash: string;
+        sellerDeposit: number;
+      };
       setSellerDeposit(updatedTrade.sellerDeposit);
       setTradeStatus("Seller deposited BTC. Completing trade...");
 

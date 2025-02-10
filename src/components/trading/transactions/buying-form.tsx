@@ -1,11 +1,12 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { fakeSmartContract } from "./fake-smart-contract-real";
 
 export default function BuyingForm() {
   const router = useRouter();
@@ -16,6 +17,32 @@ export default function BuyingForm() {
   const [expiryDate, setExpiryDate] = useState<string>("");
   const [cvv, setCvv] = useState<string>("");
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+
+//Smart contract
+
+const [depositAmount, setDepositAmount] = useState("");
+const [balances, setBalances] = useState({ USD: 0, SCM: 0 });
+
+
+const updateBalance = () => {
+    setBalances(fakeSmartContract.getBalance("UserA"));
+  };
+  const handleDepositUSD = () => {
+    fakeSmartContract.depositUSD("UserA", Number(depositAmount));
+    setDepositAmount(""); // Reset input field
+  
+    // Add a slight delay to ensure the state updates correctly
+    setTimeout(() => {
+      updateBalance();
+    }, 100);
+  };
+  
+  useEffect(() => {
+    updateBalance();
+  }, [balances]); // Trigger re-render when balance updates
+
+//////////////////////////////////////////////////  
+
 
   const handleConfirmOrder = () => {
     if (!cardNumber || !expiryDate || !cvv) {
@@ -52,7 +79,55 @@ export default function BuyingForm() {
   };
 
   return (
-    <div className="flex justify-center mt-8">
+    <div className="flex justify-between items-end">
+      <Card className="w-full max-w-md items-start mt-8">
+        <CardHeader>
+          <CardTitle>Your Balance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          
+          <div className="flex">
+          <p className="bg-transparent">USD Balance: ${balances.USD}</p>
+          {/* <p className="bg-transparent">USD Balance: </p> */}
+          </div>
+
+          <div>
+          {/* <p>SCM Balance: {balances.SCM} SCM</p> */}
+          <p>SCM Balance: 0 SCM</p>
+          </div>
+          <div>
+          <input className="bg-transparent" placeholder="Deposit Amount" type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
+          <button onClick={handleDepositUSD}>Deposit</button>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="expiry-date">Expiration Date</Label>
+              <Input
+                id="expiry-date"
+                type="text"
+                placeholder="MM/YY"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="cvv">CVV</Label>
+              <Input
+                id="cvv"
+                type="text"
+                placeholder="123"
+                value={cvv}
+                onChange={(e) => setCvv(e.target.value)}
+              />
+            </div>
+          </div>
+          {paymentStatus && <div className="text-center text-sm">{paymentStatus}</div>}
+          <Button className="w-full bg-green-500 hover:bg-green-600" onClick={handleConfirmOrder}>
+            Pay Now
+          </Button>
+        </CardContent>
+      </Card>
+    <div className="flex  mt-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Confirm Buy Order</CardTitle>
@@ -104,6 +179,7 @@ export default function BuyingForm() {
           </Button>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 class FakeSmartContract {
   private trades: any[] = [];
-  private balances: { [key: string]: { USD: number; SCM: number } } = {
-    UserA: { USD: 0, SCM: 0 },
-    UserB: { USD: 1000, SCM: 500 }, // Seller starts with 500 SCM
+  private balances: { [key: string]: { USD: number; BTC: number } } = {
+    UserA: { USD: 0, BTC: 0 },
+    UserB: { USD: 1000, BTC: 500 }, // Seller starts with 500 BTC
   };
 
   constructor() {
@@ -23,6 +23,8 @@ class FakeSmartContract {
     localStorage.setItem("fake_trades", JSON.stringify(this.trades));
   }
 
+  
+
   private loadBalances() {
     const savedBalances = localStorage.getItem("fake_balances");
     try {
@@ -32,16 +34,16 @@ class FakeSmartContract {
         this.balances = parsedBalances;
       } else {
         this.balances = {
-          UserA: { USD: 1000, SCM: 0 },
-          UserB: { USD: 1000, SCM: 500 }, // Seller starts with 500 SCM
+          UserA: { USD: 1000, BTC: 0 },
+          UserB: { USD: 1000, BTC: 500 }, // Seller starts with 500 BTC
         };
         this.saveBalances(); // Save correct structure to localStorage
       }
     } catch (error) {
       console.error("Failed to load balances, resetting to default:", error);
       this.balances = {
-        UserA: { USD: 1000, SCM: 0 },
-        UserB: { USD: 1000, SCM: 500 },
+        UserA: { USD: 1000, BTC: 0 },
+        UserB: { USD: 1000, BTC: 500 },
       };
       this.saveBalances();
     }
@@ -51,10 +53,17 @@ class FakeSmartContract {
     localStorage.setItem("fake_balances", JSON.stringify(this.balances));
   }
 
+  public resetUSDBalance(user: string) {
+    if (this.balances[user]) {
+      this.balances[user].USD = 0;
+      this.saveBalances();
+      console.log("Balance reset for", user, this.balances[user]); // Debugging
+    }
+  }
   public depositUSD(user: string, amount: number) {
     // Ensure the user has a balance object before modifying it
     if (!this.balances[user] || typeof this.balances[user] !== "object") {
-      this.balances[user] = { USD: 0, SCM: 0 }; // Initialize user balance
+      this.balances[user] = { USD: 0, BTC: 0 }; // Initialize user balance
     }
   
     this.balances[user].USD += amount;
@@ -91,12 +100,12 @@ class FakeSmartContract {
     return newTrade;
   }
 
-  public sellerDepositSCM(txHash: string) {
+  public sellerDepositBTC(txHash: string) {
     return new Promise((resolve) => {
       setTimeout(() => {
         const trade = this.trades.find((t) => t.txHash === txHash);
-        if (trade && this.balances[trade.seller].SCM >= trade.amount) {
-          this.balances[trade.seller].SCM -= trade.amount;
+        if (trade && this.balances[trade.seller].BTC >= trade.amount) {
+          this.balances[trade.seller].BTC -= trade.amount;
           trade.sellerDeposit = trade.amount;
           trade.status = "Pending Trade Completion";
           this.saveTrades();
@@ -114,7 +123,7 @@ class FakeSmartContract {
         if (trade) {
           this.balances[trade.buyer].USD -= trade.price * trade.amount;
           this.balances[trade.seller].USD += trade.price * trade.amount;
-          this.balances[trade.buyer].SCM += trade.amount;
+          this.balances[trade.buyer].BTC += trade.amount;
 
           trade.status = "Trade Completed";
           this.saveTrades();

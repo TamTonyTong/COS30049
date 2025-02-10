@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fakeSmartContract } from "@/components/fake-smart-contract";
+import { fakeSmartContract } from "./fake-smart-contract-real";
 
 const TradeHistory = () => {
   const [history, setHistory] = useState([]);
@@ -18,7 +18,7 @@ const TradeHistory = () => {
             <strong>Asset:</strong> {trade.asset} | 
             <strong>Amount:</strong> {trade.amount} | 
             <strong>Price:</strong> {trade.price} | 
-            <strong>Seller Deposit:</strong> {trade.sellerDeposit} SCM |
+            <strong>Seller Deposit:</strong> {trade.sellerDeposit} BTC |
             <strong>Status:</strong> {trade.status}
           </li>
         ))}

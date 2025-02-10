@@ -23,13 +23,13 @@ class FakeSmartContract {
     localStorage.setItem("fake_trades", JSON.stringify(this.trades));
   }
 
-  
+
 
   private loadBalances() {
     const savedBalances = localStorage.getItem("fake_balances");
     try {
       const parsedBalances = savedBalances ? JSON.parse(savedBalances) : null;
-      
+
       if (parsedBalances && typeof parsedBalances === "object" && parsedBalances.UserA) {
         this.balances = parsedBalances;
       } else {
@@ -65,11 +65,11 @@ class FakeSmartContract {
     if (!this.balances[user] || typeof this.balances[user] !== "object") {
       this.balances[user] = { USD: 0, BTC: 0 }; // Initialize user balance
     }
-  
+
     this.balances[user].USD += amount;
     this.saveBalances();
   }
-  
+
 
   public getBalance(user: string) {
     return this.balances[user];
@@ -81,7 +81,7 @@ class FakeSmartContract {
     }
 
     const fakeTxHash = "0x" + Math.random().toString(16).substr(2, 64);
-    
+
     const newTrade = {
       txHash: fakeTxHash,
       buyer,
@@ -104,13 +104,20 @@ class FakeSmartContract {
     return new Promise((resolve) => {
       setTimeout(() => {
         const trade = this.trades.find((t) => t.txHash === txHash);
-        if (trade && this.balances[trade.seller].BTC >= trade.amount) {
-          this.balances[trade.seller].BTC -= trade.amount;
-          trade.sellerDeposit = trade.amount;
-          trade.status = "Pending Trade Completion";
-          this.saveTrades();
-          this.saveBalances();
-        }
+        // if (trade && this.balances[trade.seller].BTC >= trade.amount) {
+        //   this.balances[trade.seller].BTC -= trade.amount;
+        //   trade.sellerDeposit = trade.amount;
+        //   trade.status = "Pending Trade Completion";
+        //   this.saveTrades();
+        //   this.saveBalances();
+        // }
+
+        this.balances[trade.seller].BTC -= trade.amount;
+        trade.sellerDeposit = trade.amount;
+        trade.status = "Pending Trade Completion";
+        this.saveTrades();
+        this.saveBalances();
+
         resolve(trade);
       }, 3000);
     });

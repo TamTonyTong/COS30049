@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fakeSmartContract } from "@/components/trading/transactions/fake-smart-contract-real";
+import TradeHistory from "@/components/trading/transactions/trading-history";
 interface Order {
   id: string;
   type: "buy" | "sell";
@@ -276,6 +277,7 @@ export default function TradingPage() {
             </Card>
           </div>
         </div>
+        <TradeHistory></TradeHistory>
       </main>
     </div>
   );

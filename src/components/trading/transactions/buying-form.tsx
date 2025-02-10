@@ -28,7 +28,7 @@ export default function BuyingForm() {
   const handleDepositUSD = () => {
     fakeSmartContract.depositUSD("UserA", Number(depositAmount));
     setDepositAmount(""); // Reset input field
-  
+
     // Add a slight delay to ensure the state updates correctly
     setTimeout(() => {
       updateBalance();
@@ -52,11 +52,11 @@ export default function BuyingForm() {
   };
 
   const handleConfirmOrder = async () => {
-    
+
 
     setPaymentStatus("Processing payment...");
     setTimeout(async () => {
-      const isPaymentSuccessful = Math.random() > 0.5;
+      const isPaymentSuccessful = true;
       if (!isPaymentSuccessful) {
         setPaymentStatus("Payment failed. Please try again.");
         return;
@@ -82,10 +82,12 @@ export default function BuyingForm() {
       updateBalance();
 
       setTradeStatus("Trade completed! Buyer received BTC, Seller received USD.");
+      // Debugging: Log the final trade details
+      console.log("Final Trade Data:", updatedTrade);
       router.push("/trade");
     }, 2000);
   };
-console.log(balances.BTC)
+  console.log(balances.BTC)
   return (
     <div className="flex justify-start items-end">
       <Card className="w-full max-w-md items-start mt-8">
@@ -98,14 +100,14 @@ console.log(balances.BTC)
             <button className="flex items-end" onClick={handleResetUSD}>
               Reset USD Balance
             </button>
-            
+
           </div>
           <div>
             <p>BTC Balance: {balances.BTC} BTC</p>
           </div>
           <div>
-          <input className="bg-transparent" placeholder="Deposit Amount" type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
-          <button onClick={handleDepositUSD}>Deposit</button>
+            <input className="bg-transparent" placeholder="Deposit Amount" type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
+            <button onClick={handleDepositUSD}>Deposit</button>
           </div>
           {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
         </CardContent>

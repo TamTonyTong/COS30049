@@ -173,7 +173,7 @@ export default function WalletScan() {
       ]);
       const newEdges = [...graphData.edges];
 
-      transactions.forEach((tx) => {
+      transactions.forEach((tx: { from: any; to: any; label?: string | undefined; }) => {
         newNodes.add(tx.from);
         newNodes.add(tx.to);
         newEdges.push(tx);

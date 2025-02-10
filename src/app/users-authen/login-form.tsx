@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import type React from "react" // Added import for React
-import { Button, Input, FormError } from "./components/ui"
+import { Button, Input, FormError } from "../../components/ui"
 
 export default function LoginForm() {
     const [formData, setFormData] = useState({

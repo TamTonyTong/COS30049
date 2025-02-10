@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button, Input, FormError } from "./components/ui"
+import { Button, Input, FormError } from "../../components/ui"
 
 export default function SignUpForm() {
     const [formData, setFormData] = useState({

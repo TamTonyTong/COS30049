@@ -45,7 +45,7 @@ const TradingForm = () => {
     updateBalance();
     setStatus("Trade completed! Buyer received SCM, Seller received USD.");
   };
-
+console.log(balances.SCM)
   return (
     <div>
       <h2>Balance</h2>

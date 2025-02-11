@@ -48,6 +48,16 @@ export default function Header() {
                 </Link>
               </li>
               <li>
+                <Link href="/walletscan" className="hover:text-white transition-colors">
+                  Scan Wallet
+                </Link>
+              </li>
+              <li>
+                <Link href="/transactiondb" className="hover:text-white transition-colors">
+                  Graph Transactions
+                </Link>
+              </li>
+              <li>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="flex items-center hover:text-white transition-colors">
                     More <ChevronDown className="ml-1 h-4 w-4" />

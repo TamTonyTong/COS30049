@@ -18,11 +18,13 @@ export default function CryptoGraph() {
       { id: 6, label: "Frank", title: "Address: 0xF6" },
       { id: 7, label: "Grace", title: "Address: 0xG7" },
       { id: 8, label: "Hank", title: "Address: 0xH8" },
+      { id: 9, label: "Tong", title: "Address: 0xH8" },
     ];
 
     const generateEdges = (centerId) => {
       return addresses
         .filter((node) => node.id !== centerId)
+        .slice(0, 9) // Ensure exactly 8 transactions per node
         .map((node, index) => ({
           from: centerId,
           to: node.id,
@@ -31,20 +33,25 @@ export default function CryptoGraph() {
     };
 
     const getNodePositions = (centerId) => {
-      const radius = 200;
-      return addresses.map((node, index) => {
-        if (node.id === centerId) return { ...node, x: 0, y: 0 };
-        const angle = (index / (addresses.length - 1)) * 2 * Math.PI;
-        return { ...node, x: radius * Math.cos(angle), y: radius * Math.sin(angle) };
-      });
-    };
+        const radius = 200;
+        const otherNodes = addresses.filter((node) => node.id !== centerId).slice(0, 8);
+        return [
+          { id: centerId, label: addresses.find((node) => node.id === centerId).label, title: addresses.find((node) => node.id === centerId).title, x: 0, y: 0 },
+          ...otherNodes.map((node, index) => {
+            const angle = (index / 8) * 2 * Math.PI;
+            return { ...node, x: radius * Math.cos(angle), y: radius * Math.sin(angle) };
+          })
+        ];
+      };
 
     const updateGraph = (centerId) => {
-      setCurrentNode(centerId);
-      const nodes = getNodePositions(centerId);
-      const edges = generateEdges(centerId);
-      network.setData({ nodes, edges });
-    };
+        setCurrentNode(centerId);
+        if (network) {
+          const nodes = getNodePositions(centerId);
+          const edges = generateEdges(centerId);
+          network.setData({ nodes, edges });
+        }
+      };
 
     const initialNodes = getNodePositions(currentNode);
     const initialEdges = generateEdges(currentNode);
@@ -69,7 +76,7 @@ export default function CryptoGraph() {
   return (
     <div>
       <h2>Crypto Transactions Graph</h2>
-      <div ref={networkRef} style={{ height: "500px", border: "1px solid black" }} />
+      <div ref={networkRef} style={{ height: "1000px", border: "1px solid black" }} />
     </div>
   );
 }

@@ -3,8 +3,8 @@
 import { Search } from "lucide-react";
 import Link from "next/link";
 import Layout from "../../components/layout";
-import { Input } from "@/src/components/ui/input";
-import { Button } from "@/src/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import "dotenv/config";
 import axios from "axios";
 import { useEffect, useState } from "react";

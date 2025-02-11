@@ -1,5 +1,4 @@
 import Layout from "../components/layout"
-import Layout from "../components/layout"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

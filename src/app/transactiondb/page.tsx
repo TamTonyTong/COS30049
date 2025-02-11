@@ -57,7 +57,14 @@ export default function CryptoGraph() {
     const initialEdges = generateEdges(currentNode);
 
     const options = {
-      nodes: { shape: "dot", size: 16 },
+      nodes: { 
+        shape: "dot", 
+        size: 16,
+        font: {
+            size: 12,
+            color: "#147565",
+          }, 
+    },
       edges: { arrows: "to" },
       layout: { improvedLayout: false },
       physics: false,

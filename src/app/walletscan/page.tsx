@@ -255,7 +255,7 @@ export default function WalletScan() {
           <TransactionTable transactions={transactions} />
         </div>
       </div>
-      <div>
+      {/* <div>
         <input
           type="text"
           placeholder="Enter wallet address"
@@ -264,7 +264,7 @@ export default function WalletScan() {
         />
         <button onClick={fetchTransactionsdb} disabled={loading}>
           {loading ? "Loading..." : "Fetch Transactions"}
-        </button>
+        </button> */}
 
         {/* <div>
         <h2>Transactions</h2>
@@ -291,7 +291,7 @@ export default function WalletScan() {
           </tbody>
         </table>
       </div> */}
-      </div>
+      {/* </div> */}
     </Layout>
   );
 }

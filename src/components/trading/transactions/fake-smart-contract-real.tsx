@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+"use client"
 class FakeSmartContract {
   private trades: any[] = [];
   private balances: { [key: string]: { USD: number; BTC: number } } = {

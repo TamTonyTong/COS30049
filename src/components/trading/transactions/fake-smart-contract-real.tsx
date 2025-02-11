@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
 class FakeSmartContract {
+  
   private trades: any[] = [];
   private balances: { [key: string]: { USD: number; BTC: number } } = {
     UserA: { USD: 0, BTC: 0 },
@@ -18,42 +18,49 @@ class FakeSmartContract {
   }
 
   private loadTrades() {
-    const savedTrades = localStorage.getItem("fake_trades");
-    this.trades = savedTrades ? JSON.parse(savedTrades) : [];
+    if (typeof window !== "undefined") {
+      const savedTrades = localStorage.getItem("fake_trades");
+      this.trades = savedTrades ? JSON.parse(savedTrades) : [];
+    }
   }
 
   private saveTrades() {
-    localStorage.setItem("fake_trades", JSON.stringify(this.trades));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fake_trades", JSON.stringify(this.trades));
+    }
   }
 
 
-
   private loadBalances() {
-    const savedBalances = localStorage.getItem("fake_balances");
-    try {
-      const parsedBalances = savedBalances ? JSON.parse(savedBalances) : null;
+    if (typeof window !== "undefined") {
+      const savedBalances = localStorage.getItem("fake_balances");
+      try {
+        const parsedBalances = savedBalances ? JSON.parse(savedBalances) : null;
 
-      if (parsedBalances && typeof parsedBalances === "object" && parsedBalances.UserA) {
-        this.balances = parsedBalances;
-      } else {
+        if (parsedBalances && typeof parsedBalances === "object" && parsedBalances.UserA) {
+          this.balances = parsedBalances;
+        } else {
+          this.balances = {
+            UserA: { USD: 1000, BTC: 0 },
+            UserB: { USD: 1000, BTC: 500 }, // Seller starts with 500 BTC
+          };
+          this.saveBalances(); // Save correct structure to localStorage
+        }
+      } catch (error) {
+        console.error("Failed to load balances, resetting to default:", error);
         this.balances = {
           UserA: { USD: 1000, BTC: 0 },
-          UserB: { USD: 1000, BTC: 500 }, // Seller starts with 500 BTC
+          UserB: { USD: 1000, BTC: 500 },
         };
-        this.saveBalances(); // Save correct structure to localStorage
+        this.saveBalances();
       }
-    } catch (error) {
-      console.error("Failed to load balances, resetting to default:", error);
-      this.balances = {
-        UserA: { USD: 1000, BTC: 0 },
-        UserB: { USD: 1000, BTC: 500 },
-      };
-      this.saveBalances();
     }
   }
 
   private saveBalances() {
-    localStorage.setItem("fake_balances", JSON.stringify(this.balances));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fake_balances", JSON.stringify(this.balances));
+    }
   }
 
   public resetUSDBalance(user: string) {

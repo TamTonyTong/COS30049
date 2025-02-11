@@ -1,37 +1,25 @@
 "use client";
 
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { fakeSmartContract } from "./fake-smart-contract-real";
 
-export default function BuyingForm() {
+function BuyingFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const price = searchParams.get("price") || "";
   const amount = searchParams.get("amount") || "";
 
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
-
-  // Smart contract state
   const [balances, setBalances] = useState({ USD: 0, BTC: 0 });
   const [tradeStatus, setTradeStatus] = useState<string | null>(null);
   const [sellerDeposit, setSellerDeposit] = useState<number>(0);
   const [depositAmount, setDepositAmount] = useState("");
   const [refresh, setRefresh] = useState(false);
-
-  const handleDepositUSD = () => {
-    fakeSmartContract.depositUSD("UserA", Number(depositAmount));
-    setDepositAmount(""); // Reset input field
-
-    // Add a slight delay to ensure the state updates correctly
-    setTimeout(() => {
-      updateBalance();
-    }, 100);
-  };
 
   useEffect(() => {
     updateBalance();
@@ -41,18 +29,23 @@ export default function BuyingForm() {
     setBalances(fakeSmartContract.getBalance("UserA"));
   };
 
-  const handleResetUSD = () => {
-    fakeSmartContract.resetUSDBalance("UserA");
-
+  const handleDepositUSD = () => {
+    fakeSmartContract.depositUSD("UserA", Number(depositAmount));
+    setDepositAmount("");
     setTimeout(() => {
       updateBalance();
-      setRefresh((prev) => !prev); // Force a component re-render
+    }, 100);
+  };
+
+  const handleResetUSD = () => {
+    fakeSmartContract.resetUSDBalance("UserA");
+    setTimeout(() => {
+      updateBalance();
+      setRefresh((prev) => !prev);
     }, 100);
   };
 
   const handleConfirmOrder = async () => {
-
-
     setPaymentStatus("Processing payment...");
     setTimeout(async () => {
       const isPaymentSuccessful = true;
@@ -72,24 +65,23 @@ export default function BuyingForm() {
       }
 
       setTradeStatus("Waiting for seller to deposit BTC...");
-
-      const updatedTrade = await (fakeSmartContract.sellerDepositBTC(trade.txHash)) as {
+      const updatedTrade = (await fakeSmartContract.sellerDepositBTC(trade.txHash)) as {
         txHash: string;
         sellerDeposit: number;
       };
       setSellerDeposit(updatedTrade.sellerDeposit);
+      
       setTradeStatus("Seller deposited BTC. Completing trade...");
 
       await fakeSmartContract.completeTrade(trade.txHash);
       updateBalance();
 
       setTradeStatus("Trade completed! Buyer received BTC, Seller received USD.");
-      // Debugging: Log the final trade details
       console.log("Final Trade Data:", updatedTrade);
       router.push("/trade");
     }, 2000);
   };
-  console.log(balances.BTC)
+
   return (
     <div className="flex justify-start items-end">
       <Card className="w-full max-w-md items-start mt-8">
@@ -102,7 +94,6 @@ export default function BuyingForm() {
             <button className="flex items-end" onClick={handleResetUSD}>
               Reset USD Balance
             </button>
-
           </div>
           <div>
             <p>BTC Balance: {balances.BTC} BTC</p>
@@ -137,5 +128,13 @@ export default function BuyingForm() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function BuyingForm() {
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <BuyingFormContent />
+    </Suspense>
   );
 }

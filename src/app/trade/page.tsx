@@ -27,7 +27,7 @@ interface Order {
   timestamp: string;
 }
 
-export default function TradingPage() {
+export default function TradingPage(this: any) {
   const router = useRouter();
   const [orderType, setOrderType] = useState<string>("buy");
   const [price, setPrice] = useState<string>("");

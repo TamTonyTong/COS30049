@@ -5,6 +5,21 @@ import { Input } from "@/src/components/ui/input"
 import DashboardPreview from "../components/dashboard-preview"
 
 export default function Home() {
+  // const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY
+  
+  // const options = {
+  //   method: 'GET',
+  //   headers: {
+  //     accept: 'application/json',
+  //     'x-cg-api-key': `${apiKey}`
+  //   }
+  // };
+
+  // fetch('https://api.coingecko.com/api/v3/ping', options)
+  // .then(res => res.json())
+  // .then(res => console.log(res))
+  // .catch(err => console.error(err));
+  
   return (
     <Layout>
       <div className="flex flex-col items-center text-center mb-24">

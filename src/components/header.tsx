@@ -43,8 +43,8 @@ export default function Header() {
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-white transition-colors">
-                  Community
+                <Link href="/trade" className="hover:text-white transition-colors">
+                  Trading
                 </Link>
               </li>
               <li>

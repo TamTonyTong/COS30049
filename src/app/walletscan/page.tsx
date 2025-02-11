@@ -10,14 +10,12 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Graph from "../../components/graph"; // Import the Graph component
 import TransactionTable from "../../components/transactiontable";
-import handler from "../api/storeTransactions";
 
 const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const BASE_URL = "https://api.etherscan.io/api";
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3/simple/price";
 
 export default function WalletScan() {
-  handler
   const [address, setAddress] = useState(""); // Store user input
   const [balance, setBalance] = useState<string | null>(null); // Store fetched balance
   const [usdValue, setUsdValue] = useState<string | null>(null); // USD Balance

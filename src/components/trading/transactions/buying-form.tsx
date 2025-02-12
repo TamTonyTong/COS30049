@@ -20,6 +20,7 @@ function BuyingFormContent() {
   const [sellerDeposit, setSellerDeposit] = useState<number>(0);
   const [depositAmount, setDepositAmount] = useState("");
   const [refresh, setRefresh] = useState(false);
+  const totalCost = Number(price) * Number(amount);
 
   useEffect(() => {
     updateBalance();
@@ -53,7 +54,13 @@ function BuyingFormContent() {
         setPaymentStatus("Payment failed. Please try again.");
         return;
       }
-
+      try {
+        // Deduct USD from UserA's balance
+        fakeSmartContract.deductUSD("UserA", totalCost);
+      } catch (error) {
+        setTradeStatus("Error: " + (error as Error).message);
+        return;
+      }
       setPaymentStatus("Payment successful! Executing trade...");
       setTradeStatus("Initiating trade...");
 

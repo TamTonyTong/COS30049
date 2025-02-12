@@ -110,18 +110,25 @@ class FakeSmartContract {
     return newTrade;
   }
 
+    // New Function: Deduct USD Balance
+  public deductUSD(user: string, amount: number) {
+    if (!this.balances[user]) {
+      throw new Error(`User ${user} does not exist.`);
+    }
+
+    if (this.balances[user].USD < amount) {
+      throw new Error(`Insufficient USD balance for ${user}.`);
+    }
+
+    this.balances[user].USD -= amount;
+    this.saveBalances();
+    console.log(`Deducted ${amount} USD from ${user}. New balance: ${this.balances[user].USD}`);
+  }
+
   public sellerDepositBTC(txHash: string) {
     return new Promise((resolve) => {
       setTimeout(() => {
         const trade = this.trades.find((t) => t.txHash === txHash);
-        // if (trade && this.balances[trade.seller].BTC >= trade.amount) {
-        //   this.balances[trade.seller].BTC -= trade.amount;
-        //   trade.sellerDeposit = trade.amount;
-        //   trade.status = "Pending Trade Completion";
-        //   this.saveTrades();
-        //   this.saveBalances();
-        // }
-
         this.balances[trade.seller].BTC -= trade.amount;
         trade.sellerDeposit = trade.amount;
         trade.status = "Pending Trade Completion";
@@ -138,7 +145,6 @@ class FakeSmartContract {
       setTimeout(() => {
         const trade = this.trades.find((t) => t.txHash === txHash);
         if (trade) {
-          this.balances[trade.buyer].USD -= trade.price * trade.amount;
           this.balances[trade.seller].USD += trade.price * trade.amount;
           this.balances[trade.buyer].BTC += trade.amount;
 

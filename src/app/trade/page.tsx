@@ -6,7 +6,8 @@ import Header from "@/src/components/header";
 import TradingChart from "@/src/components/trading/trading-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
-import { Input } from "@/src/components/ui/button";
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label";
 import {
   Select,

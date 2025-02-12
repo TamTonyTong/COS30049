@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Layout from '../../components/layout';
 
 const transactions = [
     {
@@ -56,37 +57,39 @@ const transactions = [
 
 const TransactionHistory = () => {
     return (
-        <div className="min-h-screen flex flex-col items-center bg-gray-100 p-5 text-black">
-            <div className="container mx-auto bg-white shadow-md rounded-md p-5 mb-5">
-                <h1 className="text-center text-3xl font-bold mb-5">User Public Information</h1>
-                <p className="text-lg mb-4"><strong>Public Address:</strong> 0xABCDEF1234567890</p>
+        <Layout>
+        <div className="flex flex-col items-center min-h-screen p-5 text-black bg-gray-100">
+            <div className="container p-5 mx-auto mb-5 bg-white rounded-md shadow-md">
+                <h1 className="mb-5 text-3xl font-bold text-center">User Public Information</h1>
+                <p className="mb-4 text-lg"><strong>Public Address:</strong> 0xABCDEF1234567890</p>
             </div>
-            <div className="container mx-auto bg-white shadow-md rounded-md p-5">
-                <h3 className="text-xl font-semibold mb-3">Transaction History</h3>
-                <table className="min-w-full bg-white border border-gray-200 text-center">
+            <div className="container p-5 mx-auto bg-white rounded-md shadow-md">
+                <h3 className="mb-3 text-xl font-semibold">Transaction History</h3>
+                <table className="min-w-full text-center bg-white border border-gray-200">
                     <thead>
                         <tr className="bg-gray-100">
-                            <th className="py-2 px-4 border-b">Transaction ID</th>
-                            <th className="py-2 px-4 border-b">Timestamp</th>
-                            <th className="py-2 px-4 border-b">Type</th>
-                            <th className="py-2 px-4 border-b">Amount</th>
-                            <th className="py-2 px-4 border-b">Status</th>
+                            <th className="px-4 py-2 border-b">Transaction ID</th>
+                            <th className="px-4 py-2 border-b">Timestamp</th>
+                            <th className="px-4 py-2 border-b">Type</th>
+                            <th className="px-4 py-2 border-b">Amount</th>
+                            <th className="px-4 py-2 border-b">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {transactions.map((tx) => (
                             <tr key={tx.id} className="hover:bg-gray-100">
-                                <td className="py-2 px-4 border-b">{tx.id}</td>
-                                <td className="py-2 px-4 border-b">{tx.timestamp}</td>
-                                <td className="py-2 px-4 border-b">{tx.type}</td>
-                                <td className="py-2 px-4 border-b">{tx.amount}</td>
-                                <td className="py-2 px-4 border-b">{tx.status}</td>
+                                <td className="px-4 py-2 border-b">{tx.id}</td>
+                                <td className="px-4 py-2 border-b">{tx.timestamp}</td>
+                                <td className="px-4 py-2 border-b">{tx.type}</td>
+                                <td className="px-4 py-2 border-b">{tx.amount}</td>
+                                <td className="px-4 py-2 border-b">{tx.status}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
         </div>
+        </Layout>
     );
 };
 

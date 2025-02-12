@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar"
+import { Button } from "@/src/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/src/components/ui/dropdown-menu"
 import { User } from "lucide-react"
 import type React from "react" // Added import for React
 
@@ -30,11 +30,11 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {children || (
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
+          <Button variant="ghost" className="relative w-8 h-8 rounded-full">
+            <Avatar className="w-8 h-8">
               <AvatarImage src="/avatars/professional-avatar.png" alt="@username" />
               <AvatarFallback>
-                <User className="h-4 w-4" />
+                <User className="w-4 h-4" />
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -62,10 +62,7 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
             <Link href="/account">Account</Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <Link href="/referral">Referral</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/reward-hub">Reward Hub</Link>
+            <Link href="/reward-hub">History</Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Link href="/settings">Settings</Link>

@@ -1,8 +1,12 @@
 "use client"
 
+import Layout from "@/src/components/layout"
 import { useState } from "react"
 import type React from "react" // Added import for React
 import { Button, Input, FormError } from "../../components/ui"
+import { Label } from "@/src/components/ui/label"
+import Link from "next/link"
+
 
 export default function LoginForm() {
     const [formData, setFormData] = useState({
@@ -60,7 +64,7 @@ export default function LoginForm() {
                     required
                 />
                 {errors.password && <FormError message={errors.password} />}
-                <div className="text-right mt-2">
+                <div className="mt-2 text-right">
                     <a
                         href="#"
                         className="text-sm text-blue-600 hover:underline"

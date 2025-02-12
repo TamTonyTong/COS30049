@@ -2,10 +2,10 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Button } from "@/src/components/ui/button";
+import { Label } from "@/src/components/ui/label";
+import { Input } from "@/src/components/ui/input";
 import { fakeSmartContract } from "./fake-smart-contract-real";
 
 function BuyingFormContent() {
@@ -83,8 +83,8 @@ function BuyingFormContent() {
   };
 
   return (
-    <div className="flex justify-start items-end">
-      <Card className="w-full max-w-md items-start mt-8">
+    <div className="flex items-end justify-start">
+      <Card className="items-start w-full max-w-md mt-8">
         <CardHeader>
           <CardTitle>Your Balance</CardTitle>
         </CardHeader>
@@ -120,7 +120,7 @@ function BuyingFormContent() {
               <Label htmlFor="buy-amount">Amount</Label>
               <Input id="buy-amount" type="number" value={amount} disabled />
             </div>
-            {paymentStatus && <div className="text-center text-sm">{paymentStatus}</div>}
+            {paymentStatus && <div className="text-sm text-center">{paymentStatus}</div>}
             <Button className="w-full bg-green-500 hover:bg-green-600" onClick={handleConfirmOrder}>
               Pay Now
             </Button>

@@ -2,14 +2,14 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
-import Layout from "@/components/layout";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import Layout from "@/src/components/layout";
+import { Input } from "@/src/components/ui/input";
+import { Button } from "@/src/components/ui/button";
 import "dotenv/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import Graph from "@/components/graph"; // Import the Graph component
-import TransactionTable from "@/components/transactiontable";
+import Graph from "@/src/components/graph"; // Import the Graph component
+import TransactionTable from "@/src/components/transactiontable";
 
 const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const BASE_URL = "https://api.etherscan.io/api";
@@ -195,7 +195,7 @@ export default function WalletScan() {
   console.log(usdValue);
   return (
     <Layout>
-      <div className="flex flex-col items-left text-center mb-24">
+      <div className="flex flex-col mb-24 text-center items-left">
         <p className="text-xs">0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5</p>
         <Link
           href="https://etherscan.io/address/0x95222290dd7278aa3ddd389cc1e1d165cc4bafe5"
@@ -204,13 +204,13 @@ export default function WalletScan() {
           <p>Validation</p>
         </Link>
         <div className="relative w-full max-w-2xl mb-16">
-          <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full" />
+          <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl" />
           <p>Example Address</p>
           <div className="relative flex items-center justify-end bg-[#1a2b4b]/80 rounded-full overflow-hidden border border-blue-500/30">
             <Input
               type="text"
               placeholder="Search by Address"
-              className="border-0 bg-transparent text-xl text-white placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 ml-2 h-fit"
+              className="ml-2 text-xl text-white bg-transparent border-0 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 h-fit"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
@@ -221,9 +221,9 @@ export default function WalletScan() {
               disabled={loading}
             >
               {loading ? (
-                <p className="text-green-400 font-semibold">Loading...</p>
+                <p className="font-semibold text-green-400">Loading...</p>
               ) : (
-                <Search className="w-5 h-5 text-blue-400 mr-4" />
+                <Search className="w-5 h-5 mr-4 text-blue-400" />
               )}
             </Button>
           </div>
@@ -242,7 +242,7 @@ export default function WalletScan() {
 
           {/* Render the Graph component */}
           <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Transaction Graph</h2>
+            <h2 className="mb-4 text-xl font-semibold">Transaction Graph</h2>
             <Graph
               nodes={graphData.nodes}
               edges={graphData.edges}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import Graph from '../../components/graph';
+import  Graph  from '../../components/graph';
 
 const ETHERSCAN_API_KEY = 'YOUR_API_KEY'; // Replace with your Etherscan API key
 
@@ -88,7 +88,9 @@ const Home: React.FC = () => {
                 </button>
             </div>
             {error && <p style={{ color: 'red' }}>{error}</p>}
-            <Graph nodes={graphData.nodes} edges={graphData.edges} />
+            <Graph nodes={graphData.nodes} edges={graphData.edges} onNodeClick={function (nodeId: string): void {
+                throw new Error('Function not implemented.');
+            } } />
         </div>
     );
 };

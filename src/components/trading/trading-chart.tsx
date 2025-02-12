@@ -6,14 +6,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/src/components/ui/card";
 
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
+} from "@/src/components/ui/chart";
 
 import { Brush, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import 'boxicons/css/boxicons.min.css';
@@ -40,7 +40,7 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
   // const CustomTooltip = ({ active, payload }: any) => {
   //   if (active && payload && payload.length) {
   //     return (
-  //       <div className="p-4 bg-gray-800 text-white text-lg rounded-lg shadow-xl border border-yellow-400">
+  //       <div className="p-4 text-lg text-white bg-gray-800 border border-yellow-400 rounded-lg shadow-xl">
           
   //         <p className="font-semibold">{`Price: $${payload[0].value.toFixed(0)}`}</p>
   //         <p className="opacity-75">{`Date: ${payload[0].payload.time}`}</p>
@@ -96,7 +96,7 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
       color: "hsl(var(--chart-2))",
     },
   } satisfies ChartConfig;
-const icon_btc = <i className="bx bxl-bitcoin align-middle text-5xl"></i>
+const icon_btc = <i className="text-5xl align-middle bx bxl-bitcoin"></i>
   return (
     <Card>
       <CardHeader>

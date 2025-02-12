@@ -1,7 +1,8 @@
 "use client"
 
+import Layout from "../../components/layout"
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
 
 interface Stock {
@@ -21,6 +22,7 @@ export default function PopularStocks() {
   }, [])
 
   return (
+    <Layout>
     <Card>
       <CardHeader>
         <CardTitle>Popular Stocks</CardTitle>
@@ -28,7 +30,7 @@ export default function PopularStocks() {
       <CardContent>
         <ul className="space-y-4">
           {stocks.map((stock) => (
-            <li key={stock.symbol} className="flex justify-between items-center">
+            <li key={stock.symbol} className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold">{stock.symbol}</h3>
                 <p className="text-sm text-muted-foreground">{stock.name}</p>
@@ -37,9 +39,9 @@ export default function PopularStocks() {
                 <p className="font-semibold">${stock.price.toFixed(2)}</p>
                 <p className={`flex items-center ${stock.change >= 0 ? "text-green-600" : "text-red-600"}`}>
                   {stock.change >= 0 ? (
-                    <ArrowUpIcon className="h-4 w-4 mr-1" />
+                    <ArrowUpIcon className="w-4 h-4 mr-1" />
                   ) : (
-                    <ArrowDownIcon className="h-4 w-4 mr-1" />
+                    <ArrowDownIcon className="w-4 h-4 mr-1" />
                   )}
                   {Math.abs(stock.change).toFixed(2)}%
                 </p>
@@ -49,6 +51,7 @@ export default function PopularStocks() {
         </ul>
       </CardContent>
     </Card>
+    </Layout>
   )
 }
 

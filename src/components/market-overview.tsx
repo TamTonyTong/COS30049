@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
 
 interface MarketIndex {
@@ -23,7 +23,7 @@ export default function MarketOverview() {
         <CardTitle>Market Overview</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {indices.map((index) => (
             <div key={index.name} className="text-center">
               <h3 className="font-semibold">{index.name}</h3>
@@ -32,9 +32,9 @@ export default function MarketOverview() {
                 className={`flex items-center justify-center ${index.change >= 0 ? "text-green-600" : "text-red-600"}`}
               >
                 {index.change >= 0 ? (
-                  <ArrowUpIcon className="h-4 w-4 mr-1" />
+                  <ArrowUpIcon className="w-4 h-4 mr-1" />
                 ) : (
-                  <ArrowDownIcon className="h-4 w-4 mr-1" />
+                  <ArrowDownIcon className="w-4 h-4 mr-1" />
                 )}
                 {Math.abs(index.change).toFixed(2)}%
               </p>

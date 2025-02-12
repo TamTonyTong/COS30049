@@ -1,15 +1,11 @@
-import Layout from "@/components/layout"
+import Layout from "@/src/components/layout"
 import { Search } from "lucide-react"
-<<<<<<< HEAD
+
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import Link from "next/link"
 import DashboardPreview from "../components/dashboard-preview"
-=======
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import DashboardPreview from "@/components/dashboard-preview"
->>>>>>> ab0083807486c54e1e75856915deec4ce0efb9c5
+
 
 export default function Home() {
   // const apiKey = process.env.NEXT_PUBLIC_GECKO_API_KEY

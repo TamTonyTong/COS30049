@@ -1,19 +1,23 @@
 "use client"; // Required for client-side rendering in Next.js
 
-import { Search } from "lucide-react";
 import Link from "next/link";
 import Layout from "@/src/components/layout";
-import { Input } from "@/src/components/ui/input";
-import { Button } from "@/src/components/ui/button";
 import "dotenv/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import Graph from "@/src/components/graph"; // Import the Graph component
 import TransactionTable from "@/src/components/transactiontable";
+import AddressInput from "@/src/components/transactiondb/address_input";
+import BalanceDisplay from "@/src/components/transactiondb/balance_display";
 
 const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const BASE_URL = "https://api.etherscan.io/api";
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3/simple/price";
+
+// Utility function to shorten address
+const shortenAddress = (address: string): string => {
+  return `${address.slice(0, 2)}...${address.slice(-4)}`;
+};
 
 export default function WalletScan() {
   const [address, setAddress] = useState(""); // Store user input
@@ -37,20 +41,7 @@ export default function WalletScan() {
     }[]
   >([]);
 
-  const fetchTransactionsdb = async () => {
-    if (!address) return;
 
-    setLoading(true);
-    try {
-      const response = await axios.get("/api/gettransactions", {
-        params: { address },
-      });
-      setTransactions(response.data);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-    }
-    setLoading(false);
-  };
   // Fetch ETH/USD price from CoinGecko
   const fetchEthPrice = async () => {
     try {
@@ -109,7 +100,10 @@ export default function WalletScan() {
       });
 
       setGraphData({
-        nodes: Array.from(nodes).map((id) => ({ id, label: id })),
+        nodes: Array.from(nodes).map((id) => ({
+          id,
+          label: shortenAddress(id),
+        })),
         edges: edges,
       });
     } catch (error) {
@@ -119,7 +113,6 @@ export default function WalletScan() {
     setLoading(false);
   };
 
-  const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
   const ETHERSCAN_URL = "https://api.etherscan.io/api";
 
   const fetchTransactions = async (address: string) => {
@@ -142,8 +135,8 @@ export default function WalletScan() {
         const transactions = response.data.result;
         return transactions.map((tx: any) => ({
           hash: tx.hash, // Transaction hash
-          from: tx.from, // Sender address
-          to: tx.to, // Recipient address
+          from: tx.from,
+          to: tx.to, // Shortened Recipient address
           value: (Number(tx.value) / 1e18).toFixed(5), // Convert Wei to ETH
           blockNumber: tx.blockNumber, // Block number
           timestamp: new Date(tx.timeStamp * 1000).toLocaleString(), // Convert timestamp to readable format
@@ -159,13 +152,12 @@ export default function WalletScan() {
     }
   };
 
+  
   const handleNodeClick = async (nodeId: string) => {
     setLoading(true);
     try {
-      // Fetch transactions for the clicked node
       const transactions = await fetchTransactions(nodeId);
 
-      // Update graph data with new nodes and edges
       const newNodes = new Set<string>([
         ...graphData.nodes.map((node) => node.id),
       ]);
@@ -178,7 +170,10 @@ export default function WalletScan() {
       });
 
       setGraphData({
-        nodes: Array.from(newNodes).map((id) => ({ id, label: id })),
+        nodes: Array.from(newNodes).map((id) => ({
+          id,
+          label: shortenAddress(id),
+        })),
         edges: newEdges,
       });
     } catch (error) {
@@ -203,56 +198,26 @@ export default function WalletScan() {
         >
           <p>Validation</p>
         </Link>
-        <div className="relative w-full max-w-2xl mb-16">
-          <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl" />
-          <p>Example Address</p>
-          <div className="relative flex items-center justify-end bg-[#1a2b4b]/80 rounded-full overflow-hidden border border-blue-500/30">
-            <Input
-              type="text"
-              placeholder="Search by Address"
-              className="ml-2 text-xl text-white bg-transparent border-0 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 h-fit"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
-
-            <Button
-              className="bg-transparent hover:bg-inherit"
-              onClick={fetchBalance}
-              disabled={loading}
-            >
-              {loading ? (
-                <p className="font-semibold text-green-400">Loading...</p>
-              ) : (
-                <Search className="w-5 h-5 mr-4 text-blue-400" />
-              )}
-            </Button>
-          </div>
-
-          {balance !== null && (
-            <p className="mt-4 text-lg text-white">
-              Balance: <span className="text-blue-400">{balance} ETH</span>
-            </p>
-          )}
-
-          {usdValue !== null && (
-            <p className="mt-4 text-lg text-white">
-              USD Value: <span className="text-green-400">${usdValue} USD</span>
-            </p>
-          )}
-
-          {/* Render the Graph component */}
-          <div className="mt-8">
-            <h2 className="mb-4 text-xl font-semibold">Transaction Graph</h2>
-            <Graph
-              nodes={graphData.nodes}
-              edges={graphData.edges}
-              onNodeClick={handleNodeClick} // Pass the callback function
-            />
-          </div>
-
-          <TransactionTable transactions={transactions} />
+        <AddressInput
+        address={address}
+        setAddress={setAddress}
+        loading={loading}
+        fetchBalance={fetchBalance}
+      />
+      <BalanceDisplay balance={balance} usdValue={usdValue} />
+        {/* Render the Graph component */}
+        <div className="mt-8">
+          <h2 className="mb-4 text-xl font-semibold">Transaction Graph</h2>
+          <Graph
+            nodes={graphData.nodes}
+            edges={graphData.edges}
+            onNodeClick={handleNodeClick} // Pass the callback function
+          />
         </div>
+
+        <TransactionTable transactions={transactions} />
       </div>
+
     </Layout>
   );
 }

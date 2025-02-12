@@ -54,7 +54,7 @@ export default function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem>
-                      <Link href="/test" className="w-full">
+                      <Link href="/walletscan" className="w-full">
                       Transaction
                       </Link>
                     </DropdownMenuItem>

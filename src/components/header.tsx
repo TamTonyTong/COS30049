@@ -1,11 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/src/components/ui/button"
 import { UserNav } from "./user-nav"
 import { useState } from "react"
 import { TrendingUp, ChevronDown } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/src/components/ui/dropdown-menu"
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -33,8 +33,8 @@ export default function Header() {
                 </Link>
               </li>
               <li>
-                <Link href="/available" className="hover:text-white transition-colors">
-                  Featured Assets
+                <Link href="/markets" className="hover:text-white transition-colors">
+                  Markets
                 </Link>
               </li>
               <li>
@@ -54,23 +54,23 @@ export default function Header() {
               </li>
               <li>
                 <Link href="/transactiondb" className="hover:text-white transition-colors">
-                  Graph Transactions
+                  Transactions
                 </Link>
               </li>
               <li>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="flex items-center hover:text-white transition-colors">
-                    More <ChevronDown className="ml-1 h-4 w-4" />
+                    Assets <ChevronDown className="ml-1 h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem>
-                      <Link href="/pay" className="w-full">
-                        Pay
+                      <Link href="/available" className="w-full">
+                      Featured Assets
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Link href="/charity" className="w-full">
-                        Charity
+                      <Link href="/personal_assets" className="w-full">
+                      Personal Assets
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>

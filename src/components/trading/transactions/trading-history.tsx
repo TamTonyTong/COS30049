@@ -13,8 +13,8 @@ interface Trade {
   sellerDeposit: number;
   status: string;
   timestamp: string;
+  userABalanceAtTrade: string;
 }
-
 
 
 const TradeHistory = () => {
@@ -57,6 +57,7 @@ const TradeHistory = () => {
               <th className="px-4 py-2 text-center">Amount</th>
               <th className="px-4 py-2 text-center">Price</th>
               <th className="px-4 py-2 text-center">Status</th>
+              <th className="px-4 py-2 text-center">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -85,6 +86,7 @@ const TradeHistory = () => {
                 >
                   {trade.status}
                 </td>
+                <td className="px-4 py-2 text-center">{trade.price*trade.amount}$</td>
               </tr>
             ))}
           </tbody>

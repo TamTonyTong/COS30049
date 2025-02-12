@@ -90,6 +90,9 @@ class FakeSmartContract {
       return { error: "Insufficient USD balance." };
     }
 
+    const userABalanceAtTrade = this.getBalance("UserA");
+
+
     const fakeTxHash = "0x" + Math.random().toString(16).substr(2, 64);
 
     const newTrade = {
@@ -102,6 +105,7 @@ class FakeSmartContract {
       sellerDeposit: 0,
       status: "Pending Seller Deposit",
       timestamp: new Date().toISOString(),
+      userABalanceAtTrade
     };
 
     this.trades.push(newTrade);

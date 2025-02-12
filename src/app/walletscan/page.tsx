@@ -253,43 +253,6 @@ export default function WalletScan() {
           <TransactionTable transactions={transactions} />
         </div>
       </div>
-      {/* <div>
-        <input
-          type="text"
-          placeholder="Enter wallet address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
-        <button onClick={fetchTransactionsdb} disabled={loading}>
-          {loading ? "Loading..." : "Fetch Transactions"}
-        </button> */}
-
-        {/* <div>
-        <h2>Transactions</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>From</th>
-              <th>To</th>
-              <th>Value (ETH)</th>
-              <th>Timestamp</th>
-              <th>Hash</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((tx, index) => (
-              <tr key={index}>
-                <td>{tx.from}</td>
-                <td>{tx.to}</td>
-                <td>{tx.value}</td>
-                <td>{tx.timestamp}</td>
-                <td>{tx.hash}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div> */}
-      {/* </div> */}
     </Layout>
   );
 }

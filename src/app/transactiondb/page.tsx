@@ -1,5 +1,6 @@
 "use client"
-import { useEffect, useRef, useState } from "react";
+import Layout from "@/src/components/layout";
+import { SetStateAction, useEffect, useRef, useState } from "react";
 import { Network } from "vis-network/standalone";
 
 export default function CryptoGraph() {
@@ -10,7 +11,7 @@ export default function CryptoGraph() {
   useEffect(() => {
     const container = networkRef.current;
     const addresses = [
-      { id: 1, label: "Alice", title: "Address: 0xA1" },
+      { id: 1, label: "Alice", title: "Address: 0xA1"},
       { id: 2, label: "Bob", title: "Address: 0xB2" },
       { id: 3, label: "Charlie", title: "Address: 0xC3" },
       { id: 4, label: "David", title: "Address: 0xD4" },
@@ -21,18 +22,25 @@ export default function CryptoGraph() {
       { id: 9, label: "Tong", title: "Address: 0xH8" },
     ];
 
-    const generateEdges = (centerId) => {
-      return addresses
-        .filter((node) => node.id !== centerId)
-        .slice(0, 9) // Ensure exactly 8 transactions per node
-        .map((node, index) => ({
+    const shuffleArray = (array: any[]) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+
+    const generateEdges = (centerId: number) => {
+      return shuffleArray(addresses.filter((node) => node.id !== centerId))
+        .slice(0, 9)
+        .map((node) => ({
           from: centerId,
           to: node.id,
-          label: `${(index + 1) * 0.5} ETH`,
+          label: `${(Math.random() * 4 + 0.5).toFixed(1)} ETH`, // Random ETH value between 0.5 and 4.5
         }));
     };
 
-    const getNodePositions = (centerId) => {
+    const getNodePositions = (centerId: number) => {
         const radius = 200;
         const otherNodes = addresses.filter((node) => node.id !== centerId).slice(0, 8);
         return [
@@ -44,7 +52,7 @@ export default function CryptoGraph() {
         ];
       };
 
-    const updateGraph = (centerId) => {
+    const updateGraph = (centerId: SetStateAction<number>) => {
         setCurrentNode(centerId);
         if (network) {
           const nodes = getNodePositions(centerId);
@@ -57,17 +65,29 @@ export default function CryptoGraph() {
     const initialEdges = generateEdges(currentNode);
 
     const options = {
+      autoResize: true,
       nodes: { 
-        shape: "dot", 
-        size: 16,
+        shape: "circle", 
         font: {
-            size: 12,
+            size: 20,
             color: "#147565",
           }, 
     },
-      edges: { arrows: "to" },
+      edges: { 
+        arrows: "to",
+        // arrowStrikethrough: true,
+        // endPointOffset: 10 
+        font: {
+          size: 20,
+        }
+      },
       layout: { improvedLayout: false },
       physics: false,
+      interaction: {
+        dragNodes: false,
+        dragView: false,
+        zoomView: false,
+      }
     };
 
     const net = new Network(container, { nodes: initialNodes, edges: initialEdges }, options);
@@ -81,9 +101,9 @@ export default function CryptoGraph() {
   }, [currentNode]);
 
   return (
-    <div>
-      <h2>Crypto Transactions Graph</h2>
-      <div ref={networkRef} style={{ height: "1000px", border: "1px solid black" }} />
-    </div>
+    <Layout>
+      <h1 className=" text-center mb-6 text-5xl font-bold text-white md:text-6xl">Crypto Transactions Graph</h1>
+      <div ref={networkRef} style={{ height: "800px", width:"100%", border: "9px solid black", backgroundColor: "#FFFFFF" }} />
+    </Layout>
   );
 }

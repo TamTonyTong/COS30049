@@ -2,22 +2,21 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/header";
-import TradingChart from "@/components/trading/trading-chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import Header from "@/src/components/header";
+import TradingChart from "@/src/components/trading/trading-chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { Input } from "@/src/components/ui/button";
+import { Label } from "@/src/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { fakeSmartContract } from "@/components/trading/transactions/fake-smart-contract-real";
-import TradeHistory from "@/components/trading/transactions/trading-history";
+} from "@/src/components/ui/select";
+import { fakeSmartContract } from "@/src/components/trading/transactions/fake-smart-contract-real";
+import TradeHistory from "@/src/components/trading/transactions/trading-history";
 interface Order {
   id: string;
   type: "buy" | "sell";
@@ -99,11 +98,11 @@ export default function TradingPage(this: any) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container px-4 py-4 mx-auto">
           <Header />
         </div>
       </header>
-      <main className="container mx-auto px-4 py-8">
+      <main className="container px-4 py-8 mx-auto">
         <div className="flex justify-end">
           <Card className="w-full max-w-md mt-8">
             <CardHeader>
@@ -128,7 +127,7 @@ export default function TradingPage(this: any) {
             </CardContent>
           </Card>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 
           <div className="lg:col-span-2">
             <TradingChart tradingPair={tradingPair} />
@@ -189,7 +188,7 @@ export default function TradingPage(this: any) {
                       </div>
                       <Button
                         type="submit"
-                        className="w-full bg-green-500 hover:bg-green-600 font-sans text-1xl"
+                        className="w-full font-sans bg-green-500 hover:bg-green-600 text-1xl"
                       >
                         Buy {baseCurrency}
                       </Button>
@@ -221,7 +220,7 @@ export default function TradingPage(this: any) {
                       </div>
                       <Button
                         type="submit"
-                        className="w-full bg-red-500 hover:bg-red-600 font-sans text-1xl"
+                        className="w-full font-sans bg-red-500 hover:bg-red-600 text-1xl"
                       >
                         Sell {baseCurrency}
                       </Button>

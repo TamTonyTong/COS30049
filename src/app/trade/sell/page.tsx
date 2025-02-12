@@ -2,12 +2,12 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import Header from "@/components/header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { fakeSmartContract } from "@/components/trading/transactions/fake-smart-contract-real";
+import Header from "@/src/components/header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Button } from "@/src/components/ui/button";
+import { Label } from "@/src/components/ui/label";
+import { Input } from "@/src/components/ui/input";
+import { fakeSmartContract } from "@/src/components/trading/transactions/fake-smart-contract-real";
 function SellingForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -101,7 +101,7 @@ function SellingForm() {
 
 export default function SellingPage() {
   return (
-    <main className="container mx-auto px-4 py-8">
+    <main className="container px-4 py-8 mx-auto">
       <Header />
       <div className="flex justify-center mt-8">
         <Suspense fallback={<div>Loading...</div>}>

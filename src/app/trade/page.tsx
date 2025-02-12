@@ -18,6 +18,7 @@ import {
 } from "@/src/components/ui/select";
 import { fakeSmartContract } from "@/src/components/trading/transactions/fake-smart-contract-real";
 import TradeHistory from "@/src/components/trading/transactions/trading-history";
+import Layout from "@/src/components/layout";
 interface Order {
   id: string;
   type: "buy" | "sell";
@@ -97,144 +98,134 @@ export default function TradingPage(this: any) {
 
   const icon_order = <i className="bx bxs-cart"></i>;
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b">
-        <div className="container px-4 py-4 mx-auto">
-          <Header />
+    <Layout>
+      
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 mb-6">
+        <Card className="w-full max-w-md mt-2 lg:col-start-2">
+          <CardHeader>
+            <CardTitle>Your Balance</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between">
+              <p className="bg-transparent">USD Balance: ${balances.USD}</p>
+              <button className="flex items-end" onClick={handleResetUSD}>
+                Reset USD Balance
+              </button>
+
+            </div>
+            <div>
+              <p>BTC Balance: {balances.BTC} BTC</p>
+            </div>
+            <div>
+              <input className="bg-transparent" placeholder="Deposit Amount" type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
+              <button onClick={handleDepositUSD}>Deposit</button>
+            </div>
+            {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TradingChart tradingPair={tradingPair} />
         </div>
-      </header>
-      <main className="container px-4 py-8 mx-auto">
-        <div className="flex justify-end">
-          <Card className="w-full max-w-md mt-8">
+        <div>
+          <Card>
             <CardHeader>
-              <CardTitle>Your Balance</CardTitle>
+              <CardTitle>Place Order {icon_order}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <p className="bg-transparent">USD Balance: ${balances.USD}</p>
-                <button className="flex items-end" onClick={handleResetUSD}>
-                  Reset USD Balance
-                </button>
+              {/* Trading Pair Selector */}
+              <div className="mb-4">
+                <Label>Trading Pair</Label>
+                <Select value={tradingPair} onValueChange={setTradingPair}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Pair" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bitcoin">BTC/USD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-              </div>
-              <div>
-                <p>BTC Balance: {balances.BTC} BTC</p>
-              </div>
-              <div>
-                <input className="bg-transparent" placeholder="Deposit Amount" type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
-                <button onClick={handleDepositUSD}>Deposit</button>
-              </div>
-              {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
+              <Tabs
+                defaultValue="buy"
+                className="w-full"
+                onValueChange={setOrderType}
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="buy">Buy</TabsTrigger>
+                  <TabsTrigger value="sell">Sell</TabsTrigger>
+                </TabsList>
+                <TabsContent value="buy">
+                  <form className="space-y-4" onSubmit={handleSubmit}>
+                    <div>
+                      <Label htmlFor="buy-price">Price</Label>
+                      <Input
+                        id="buy-price"
+                        type="number"
+                        placeholder="0.00"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="buy-amount">Amount</Label>
+                      <Input
+                        id="buy-amount"
+                        type="number"
+                        placeholder="0.00"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full font-sans bg-green-500 hover:bg-green-600 text-1xl"
+                    >
+                      Buy {baseCurrency}
+                    </Button>
+                  </form>
+                </TabsContent>
+                <TabsContent value="sell">
+                  <form className="space-y-4" onSubmit={handleSubmit}>
+                    <div>
+                      <Label htmlFor="sell-price">Price</Label>
+                      <Input
+                        id="sell-price"
+                        type="number"
+                        placeholder="0.00"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sell-amount">Amount</Label>
+                      <Input
+                        id="sell-amount"
+                        type="number"
+                        placeholder="0.00"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full font-sans bg-red-500 hover:bg-red-600 text-1xl"
+                    >
+                      Sell {baseCurrency}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
+          <TradeHistory></TradeHistory>
         </div>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-
-          <div className="lg:col-span-2">
-            <TradingChart tradingPair={tradingPair} />
-          </div>
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Place Order {icon_order}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Trading Pair Selector */}
-                <div className="mb-4">
-                  <Label>Trading Pair</Label>
-                  <Select value={tradingPair} onValueChange={setTradingPair}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select Pair" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bitcoin">BTC/USD</SelectItem>
-                      <SelectItem value="ethereum">ETH/USD</SelectItem>
-                      <SelectItem value="bnbusdt">BNB/USD</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Tabs
-                  defaultValue="buy"
-                  className="w-full"
-                  onValueChange={setOrderType}
-                >
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="buy">Buy</TabsTrigger>
-                    <TabsTrigger value="sell">Sell</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="buy">
-                    <form className="space-y-4" onSubmit={handleSubmit}>
-                      <div>
-                        <Label htmlFor="buy-price">Price</Label>
-                        <Input
-                          id="buy-price"
-                          type="number"
-                          placeholder="0.00"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="buy-amount">Amount</Label>
-                        <Input
-                          id="buy-amount"
-                          type="number"
-                          placeholder="0.00"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <Button
-                        type="submit"
-                        className="w-full font-sans bg-green-500 hover:bg-green-600 text-1xl"
-                      >
-                        Buy {baseCurrency}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                  <TabsContent value="sell">
-                    <form className="space-y-4" onSubmit={handleSubmit}>
-                      <div>
-                        <Label htmlFor="sell-price">Price</Label>
-                        <Input
-                          id="sell-price"
-                          type="number"
-                          placeholder="0.00"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="sell-amount">Amount</Label>
-                        <Input
-                          id="sell-amount"
-                          type="number"
-                          placeholder="0.00"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <Button
-                        type="submit"
-                        className="w-full font-sans bg-red-500 hover:bg-red-600 text-1xl"
-                      >
-                        Sell {baseCurrency}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-            <TradeHistory></TradeHistory>
-          </div>
-        </div>
-        
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }

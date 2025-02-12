@@ -2,22 +2,22 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Header from "../../components/header";
-import TradingChart from "../../components/trading/trading-chart";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import { Input } from "../../components/ui/input";
-import { Button } from "../../components/ui/button";
-import { Label } from "../../components/ui/label";
+import Header from "@/components/header";
+import TradingChart from "@/components/trading/trading-chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../components/ui/select";
-import { fakeSmartContract } from "../../components/trading/transactions/fake-smart-contract-real";
-import TradeHistory from "../../components/trading/transactions/trading-history";
+} from "@/components/ui/select";
+import { fakeSmartContract } from "@/components/trading/transactions/fake-smart-contract-real";
+import TradeHistory from "@/components/trading/transactions/trading-history";
 interface Order {
   id: string;
   type: "buy" | "sell";

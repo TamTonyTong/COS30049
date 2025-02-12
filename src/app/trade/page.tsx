@@ -128,7 +128,7 @@ export default function TradingPage(this: any) {
         <div className="lg:col-span-2">
           <TradingChart tradingPair={tradingPair} />
         </div>
-        <div>
+        <div className="mt-8">
           <Card>
             <CardHeader>
               <CardTitle>Place Order {icon_order}</CardTitle>
@@ -223,9 +223,9 @@ export default function TradingPage(this: any) {
               </Tabs>
             </CardContent>
           </Card>
-          <TradeHistory></TradeHistory>
         </div>
       </div>
+      <TradeHistory></TradeHistory>
     </Layout>
   );
 }

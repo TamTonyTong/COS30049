@@ -14,6 +14,9 @@ interface Trade {
   status: string;
   timestamp: string;
 }
+
+
+
 const TradeHistory = () => {
   const [history, setHistory] = useState<Trade[]>([]);
 
@@ -22,43 +25,75 @@ const TradeHistory = () => {
   }, []);
 
   return (
-    <Card className="relative w-full max-w-2xl mx-auto mt-6 shadow-lg">
-      <CardHeader>
-        <CardTitle>Trade History</CardTitle>
-        {history.length > 0 && (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="absolute top-3 right-3"
-            onClick={() => {
-              setHistory([])
-              localStorage.removeItem("fake_trades")
-            }}
-          >
-            ✕
-          </Button>)}
-      </CardHeader>
-      <CardContent>
-        {history.length === 0 ? (
-          <p className="text-gray-500">No trade history available.</p>
-        ) : (
-          <div className="space-y-4">
+    <Card className="relative w-full mt-6 shadow-lg">
+  <CardHeader>
+    <CardTitle>Trade History</CardTitle>
+    {history.length > 0 && (
+      <Button
+        variant="destructive"
+        size="sm"
+        className="absolute top-3 right-3"
+        onClick={() => {
+          setHistory([]);
+          localStorage.removeItem("fake_trades");
+        }}
+      >
+        ✕
+      </Button>
+    )}
+  </CardHeader>
+  <CardContent>
+    {history.length === 0 ? (
+      <p className="text-gray-500">No trade history available.</p>
+    ) : (
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-transparent border rounded-lg">
+          <thead>
+            <tr>
+              <th className="px-4 py-2 text-center">Timestamp</th>
+              <th className="px-4 py-2 text-center">Action</th>
+              <th className="px-4 py-2 text-center">Tx</th>
+              <th className="px-4 py-2 text-center">Asset</th>
+              <th className="px-4 py-2 text-center">Amount</th>
+              <th className="px-4 py-2 text-center">Price</th>
+              <th className="px-4 py-2 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
             {history.map((trade, index) => (
-              <div key={index} className="p-4 bg-transparent border rounded-lg">
-                <p><strong>Tx:</strong> {trade.txHash}</p>
-                <p><strong>Asset:</strong> {trade.asset}</p>
-                <p><strong>Amount:</strong> {trade.amount}</p>
-                <p><strong>Price:</strong> ${trade.price}</p>
-                <p><strong>Seller Deposit:</strong> {trade.sellerDeposit || "Pending"} BTC</p>
-                <p className={`font-semibold ${trade.status === "Completed" ? "text-green-600" : "text-yellow-500"}`}>
-                  <strong>Status:</strong> {trade.status}
-                </p>
-              </div>
+              <tr key={index} className="border-t">
+                <td className="px-4 py-2 text-center">{new Date(trade.timestamp).toLocaleString()}</td>
+                <td className="px-4 py-2 text-center">
+                {trade.buyer === "UserA" ? (
+                    <span className={`px-2 py-1 rounded bg-green-100 text-green-800`}>
+                      Buy
+                    </span>
+                  ) : trade.buyer === "UserB" ? (
+                    <span className="px-2 py-1 text-center rounded bg-red-100 text-red-800">Sell</span>
+                  ) : (
+                    "Unknown"
+                  )}
+                </td>
+                <td className="px-4 py-2 text-center">{trade.txHash}</td>
+                <td className="px-4 py-2 text-center">{trade.asset}</td>
+                <td className="px-4 py-2 text-center">{trade.amount}</td>
+                <td className="px-4 py-2 text-center">${trade.price}</td>
+                <td
+                  className={`px-4 py-2 text-center font-semibold ${
+                    trade.status === "Completed" ? "text-green-600" : "text-yellow-500"
+                  }`}
+                >
+                  {trade.status}
+                </td>
+              </tr>
             ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          </tbody>
+        </table>
+      </div>
+    )}
+  </CardContent>
+</Card>
+
   );
 };
 

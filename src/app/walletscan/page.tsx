@@ -2,14 +2,14 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
-import Layout from "../../components/layout";
+import Layout from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import "dotenv/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import Graph from "../../components/graph"; // Import the Graph component
-import TransactionTable from "../../components/transactiontable";
+import Graph from "@/components/graph"; // Import the Graph component
+import TransactionTable from "@/components/transactiontable";
 
 const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const BASE_URL = "https://api.etherscan.io/api";

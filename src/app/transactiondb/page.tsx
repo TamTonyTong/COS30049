@@ -32,7 +32,7 @@ export default function CryptoGraph() {
 
     const generateEdges = (centerId: number) => {
       return shuffleArray(addresses.filter((node) => node.id !== centerId))
-        .slice(0, 9)
+        .slice(0, 8)
         .map((node) => ({
           from: centerId,
           to: node.id,

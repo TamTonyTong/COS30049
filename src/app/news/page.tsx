@@ -30,7 +30,7 @@ const newsItems: NewsItem[] = [
   },
   {
     id: 2,
-    title: "America's Most Famous Stock-Market Measure Is More Broken Than Usual",
+    title: "America's most famous stock-market measure is more broken than usual",
     description:
       "Dow Jones Industrial Average draws outside attention, presenting a distorted picture of their on-going stocks market.",
     source: "Wall Street Journal",
@@ -41,7 +41,7 @@ const newsItems: NewsItem[] = [
   },
   {
     id: 3,
-    title: "AI Regulation Act Passes in EU, Impacts Tech Stocks",
+    title: "AI regulation act passes in EU, impacts tech stocks",
     description:
       "The announcement underscores efforts from the EU to position itself as a key player in the AI race.",
     source: "Wall Street Journal",
@@ -52,9 +52,9 @@ const newsItems: NewsItem[] = [
   },
   {
     id: 4,
-    title: "Oil Prices Retreat After Climb in US Crude Stockpiles Expected",
+    title: "Oil prices retreat after climb in US crude stockpiles expected",
     description:
-      "U.S. crude stockpiles rise by 9.4 million barrels sources cite API data.,",
+      "US crude stockpiles rise by 9.4 million barrels sources cite API data.",
     source: "Reuters",
     date: "2025-02-12",
     category: "Energy",
@@ -63,7 +63,7 @@ const newsItems: NewsItem[] = [
   },
   {
     id: 5,
-    title: "Space Mining Company Secures First Asteroid Resource Rights",
+    title: "Space mining company secures first asteroid resource rights",
     description:
       "A private space mining company obtains rights to mine an asteroid, opening new frontiers in resource extraction and impacting traditional mining stocks.",
     source: "Bloomberg",
@@ -74,7 +74,7 @@ const newsItems: NewsItem[] = [
   },
   {
     id: 6,
-    title: "Global Carbon Tax Agreement Reached at Climate Summit",
+    title: "Global carbon tax agreement reached at climate summit",
     description:
       "World leaders agreed on a standardized global carbon tax price, significantly impacting industries and accelerating the transition to green technologies.",
     source: "The Economist",

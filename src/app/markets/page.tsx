@@ -8,39 +8,48 @@ import { Badge } from "@/src/components/ui/badge"
 import { ArrowUpRight, ArrowDownRight, Search } from "lucide-react"
 import Layout from "../../components/layout"
 
-// Sample digital assets data with market data
-const digitalAssets = [
-  { id: 1, name: "Bitcoin", symbol: "BTC", price: 50000, change: 2.5, volume: "10.5B", marketCap: "950B" },
-  { id: 2, name: "Ethereum", symbol: "ETH", price: 3500, change: -1.2, volume: "8.2B", marketCap: "420B" },
-  { id: 3, name: "Ripple", symbol: "XRP", price: 1.2, change: 0.8, volume: "3.1B", marketCap: "57B" },
-  { id: 4, name: "Litecoin", symbol: "LTC", price: 180, change: -0.5, volume: "1.8B", marketCap: "12B" },
-  { id: 5, name: "Cardano", symbol: "ADA", price: 2.1, change: 3.2, volume: "2.5B", marketCap: "68B" },
-  { id: 6, name: "Polkadot", symbol: "DOT", price: 35, change: 1.7, volume: "1.2B", marketCap: "35B" },
-  { id: 7, name: "Stellar", symbol: "XLM", price: 0.4, change: -0.3, volume: "0.8B", marketCap: "9B" },
-  { id: 8, name: "Chainlink", symbol: "LINK", price: 28, change: 4.1, volume: "1.5B", marketCap: "13B" },
-]
-
 export default function MarketsPage() {
+  interface DigitalAsset {
+    AssetID: string;
+    name: string;
+    shortname: string;
+    value: number;
+    change: number;
+    volume: number;
+    marketCap: number;
+  }
+
+  const [digitalAssets, setDigitalAssets] = useState<DigitalAsset[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate loading delay
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 2000)
-
-    return () => clearTimeout(timer)
+    // Fetch data from the API route
+    fetch("/api/assets")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok")
+        }
+        return response.json()
+      })
+      .then((data) => {
+        setDigitalAssets(data.assets)
+        setIsLoading(false)
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error)
+        setIsLoading(false)
+      })
   }, [])
 
   const filteredAssets = digitalAssets.filter(
     (asset) =>
       asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()),
+      asset.shortname.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   if (isLoading) {
-    return null // This will show the loading.tsx content
+    return <div>Loading...</div>
   }
 
   return (
@@ -74,16 +83,16 @@ export default function MarketsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredAssets.map((asset) => (
-                    <TableRow key={asset.id} className="hover:bg-[#0d1829] transition-colors">
+                    <TableRow key={asset.AssetID} className="hover:bg-[#0d1829] transition-colors">
                       <TableCell className="font-medium text-white">
                         <div className="flex items-center">
                           <Badge variant="outline" className="mr-2">
-                            {asset.symbol}
+                            {asset.shortname}
                           </Badge>
                           {asset.name}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right text-white">${asset.price.toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-white">${asset.value.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <span
                           className={`flex items-center justify-end ${
@@ -111,4 +120,3 @@ export default function MarketsPage() {
     </Layout>
   )
 }
-

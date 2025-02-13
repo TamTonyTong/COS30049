@@ -40,7 +40,7 @@ export default function LoginForm() {
     }
 
     return (
-        <div className="w-full max-w-xs mx-auto">
+        <div className="w-full max-w-xs mx-auto text-black">
             <form onSubmit={handleSubmit} className="space-y-6">
                 <Input
                     label="Email"

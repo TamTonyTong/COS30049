@@ -40,9 +40,9 @@ export default function BalanceCard() {
       <CardContent className="space-y-4">
         <div className="flex justify-between">
           <p className="bg-transparent">USD Balance: ${balances.USD}</p>
-          <button className="flex items-end" onClick={handleResetUSD}>
+          {/* <button className="flex items-end" onClick={handleResetUSD}>
             Reset USD Balance
-          </button>
+          </button> */}
         </div>
         <div>
           <p>BTC Balance: {balances.BTC} BTC</p>

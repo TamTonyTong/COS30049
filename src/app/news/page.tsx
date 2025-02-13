@@ -19,9 +19,9 @@ interface NewsItem {
 const newsItems: NewsItem[] = [
   {
     id: 1,
-    title: "China'stech stocks enter bull market after DeepSeek breakthrough ",
+    title: "China's tech stocks enter bull market after DeepSeek breakthrough",
     description:
-      "Budget AI model triggersglobal reappraisal of Chinese technolofy companies. ",
+      "Budget AI model triggers global reappraisal of Chinese technology companies. ",
     source: "Financial Times",
     date: "2025-02-12",
     category: "Chinese Equities",
@@ -30,9 +30,9 @@ const newsItems: NewsItem[] = [
   },
   {
     id: 2,
-    title: "America's Most Famous Stock-Market Meausre Is More Broken Than Usual",
+    title: "America's Most Famous Stock-Market Measure Is More Broken Than Usual",
     description:
-      "Dow Jones Industrial Average draws outsize attention, presenting a distortes picture of what's going on with stocks.",
+      "Dow Jones Industrial Average draws outside attention, presenting a distorted picture of their on-going stocks market.",
     source: "Wall Street Journal",
     date: "2025-02-12",
     category: "Markets&Finance",
@@ -52,7 +52,7 @@ const newsItems: NewsItem[] = [
   },
   {
     id: 4,
-    title: "Oil prices retreat after climb in US crude stockpiles expected",
+    title: "Oil Prices Retreat After Climb in US Crude Stockpiles Expected",
     description:
       "U.S. crude stockpiles rise by 9.4 million barrels sources cite API data.,",
     source: "Reuters",
@@ -76,7 +76,7 @@ const newsItems: NewsItem[] = [
     id: 6,
     title: "Global Carbon Tax Agreement Reached at Climate Summit",
     description:
-      "World leaders agree on a standardized global carbon tax, significantly impacting industries and accelerating the transition to green technologies.",
+      "World leaders agreed on a standardized global carbon tax price, significantly impacting industries and accelerating the transition to green technologies.",
     source: "The Economist",
     date: "2025-02-11",
     category: "Environment",

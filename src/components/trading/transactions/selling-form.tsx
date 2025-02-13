@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
-import { fakeSmartContract } from "@/src/components/trading/transactions/fake-smart-contract-real";
+import { fakeSmartContract } from "@/src/components/trading/transactions/smart-contract-real";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 

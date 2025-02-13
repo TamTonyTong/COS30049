@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
-import { fakeSmartContract } from "./fake-smart-contract-real";
+import { fakeSmartContract } from "./smart-contract-real";
 
 function BuyingFormContent() {
   const router = useRouter();

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fakeSmartContract } from "./fake-smart-contract-real";
+import { fakeSmartContract } from "./smart-contract-real";
 import { Card, CardHeader, CardTitle, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 // Define Trade Type

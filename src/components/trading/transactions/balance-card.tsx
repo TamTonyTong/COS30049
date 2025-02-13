@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { fakeSmartContract } from "@/src/components/trading/transactions/fake-smart-contract-real";
+import { fakeSmartContract } from "@/src/components/trading/transactions/smart-contract-real";
 
 export default function BalanceCard() {
   const [balances, setBalances] = useState({ USD: 0, BTC: 0 });

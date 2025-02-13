@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import  Graph  from '../../components/graph';
+import  Graph  from '../../components/walletscan/graph';
 
 const ETHERSCAN_API_KEY = 'YOUR_API_KEY'; // Replace with your Etherscan API key
 

@@ -5,7 +5,7 @@ import Layout from "@/src/components/layout";
 import "dotenv/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import Graph from "@/src/components/graph"; // Import the Graph component
+import Graph from "@/src/components/walletscan/graph"; // Import the Graph component
 import TransactionTable from "@/src/components/transactiontable";
 import AddressInput from "@/src/components/walletscan/address_input";
 import BalanceDisplay from "@/src/components/walletscan/balance_display";
@@ -125,7 +125,7 @@ export default function WalletScan() {
           startblock: 0,
           endblock: 99999999,
           page: 1,
-          offset: 5,
+          offset: 6,
           sort: "desc",
           apikey: ETHERSCAN_API_KEY,
         },
@@ -137,7 +137,7 @@ export default function WalletScan() {
           hash: tx.hash, // Transaction hash
           from: tx.from,
           to: tx.to, // Shortened Recipient address
-          value: (Number(tx.value) / 1e18).toFixed(5), // Convert Wei to ETH
+          value: (Number(tx.value) / 1e18).toFixed(4), // Convert Wei to ETH
           blockNumber: tx.blockNumber, // Block number
           timestamp: new Date(tx.timeStamp * 1000).toLocaleString(), // Convert timestamp to readable format
           status: tx.isError === "0" ? "Success" : "Failed", // Transaction status

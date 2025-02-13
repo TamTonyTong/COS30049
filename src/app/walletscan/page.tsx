@@ -83,9 +83,10 @@ export default function WalletScan() {
       if (ethPrice) {
         const balanceInUsd = balanceInEth * ethPrice;
         setUsdValue(balanceInUsd.toFixed(0)); // Keep 2 decimal places
+        setBalance(balanceInEth_string);
       }
 
-      setBalance(balanceInEth_string);
+      
 
       // Fetch transactions
       const transactions = await fetchTransactions(address);

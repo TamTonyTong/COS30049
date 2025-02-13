@@ -190,6 +190,9 @@ export default function WalletScan() {
   console.log(usdValue);
   return (
     <Layout>
+      <h1 className="mb-6 text-5xl font-bold text-white md:text-6xl text-center">
+          Scanning Wallet
+        </h1>
       <div className="flex flex-col mb-24 text-center items-left">
         <p className="text-xs">0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5</p>
         <Link
@@ -214,10 +217,8 @@ export default function WalletScan() {
             onNodeClick={handleNodeClick} // Pass the callback function
           />
         </div>
-
         <TransactionTable transactions={transactions} />
       </div>
-
     </Layout>
   );
 }

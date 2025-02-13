@@ -27,7 +27,7 @@ export default function AddressInput({
         value={address}
         onChange={(e) => setAddress(e.target.value)}
       />
-      <Button onClick={fetchBalance} disabled={loading}>
+      <Button onClick={fetchBalance} disabled={loading} className="bg-transparent hover:bg-current">
         {loading ? (
           <p className="font-semibold text-green-400">Loading...</p>
         ) : (

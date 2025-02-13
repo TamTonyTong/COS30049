@@ -55,12 +55,12 @@ export default function Header() {
                   <DropdownMenuContent>
                     <DropdownMenuItem>
                       <Link href="/walletscan" className="w-full">
-                      Transaction
+                      Wallet Tracking
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       <Link href="/transactiondb" className="w-full">
-                      Graph
+                      Transactions Graph
                       </Link>
                     </DropdownMenuItem>
                     

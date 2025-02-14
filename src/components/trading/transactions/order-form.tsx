@@ -47,19 +47,31 @@ export default function OrderForm({
           <Label htmlFor="buy-price">Price</Label>
           <Input
             id="buy-price"
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="0.00"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (/^\d*\.?\d*$/.test(value)) {
+                setPrice(value);
+              }
+            }}
             required
           />
           <Label htmlFor="buy-amount">Amount</Label>
           <Input
             id="buy-amount"
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="0.00"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (/^\d*\.?\d*$/.test(value)) {
+                setAmount(value);
+              }
+            }}
             required
           />
           <Button type="submit" className="w-full bg-green-500 hover:bg-green-600">
@@ -72,19 +84,31 @@ export default function OrderForm({
           <Label htmlFor="sell-price">Price</Label>
           <Input
             id="sell-price"
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="0.00"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (/^\d*\.?\d*$/.test(value)) {
+                setPrice(value);
+              }
+            }}
             required
           />
           <Label htmlFor="sell-amount">Amount</Label>
           <Input
             id="sell-amount"
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="0.00"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (/^\d*\.?\d*$/.test(value)) {
+                setAmount(value);
+              }
+            }}
             required
           />
           <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">

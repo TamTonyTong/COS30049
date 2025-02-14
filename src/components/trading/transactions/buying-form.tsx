@@ -93,7 +93,7 @@ function BuyingFormContent() {
   return (
     <div className="flex items-end justify-start">
       <BalanceCard/>
-      {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
+      
       <div className="flex mt-8 ml-32">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -112,6 +112,7 @@ function BuyingFormContent() {
             <Button className="w-full bg-green-500 hover:bg-green-600" onClick={handleConfirmOrder}>
               Pay Now
             </Button>
+            {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
           </CardContent>
         </Card>
       </div>

@@ -28,17 +28,16 @@ const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
           arrows: {
             to: {
               enabled: true,
-              // scaleFactor: 0.5, // Standardize arrow size
             },
           },
-          // arrowStrikethrough: true,
-          // endPointOffset: 10 
           font: {
             size: 18,
+            align: "horizontal",
           },
           smooth: {
             type: "dynamic",
-          },      
+          },
+          length: 100,
         },
         // The types with the label inside of it are: ellipse, circle, database, box, text.
         // The ones with the label outside of it are: image, circularImage, diamond, dot, star, triangle, triangleDown, hexagon, square and icon.
@@ -48,25 +47,21 @@ const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
           font: {
             size: 20,
             color: "#147565",
+            bold: {
+              size: 20, 
+              face: "arial",
+              mod: "bold"},
           },
         },
         physics: {
           enabled: false, // Disable physics simulation
-          
         },
         layout: {
           improvedLayout: true,
         },
-        // barnesHut: {
-        //   gravitationalConstant: 0, // Adjust repulsion between nodes
-        //   centralGravity: 0.3, // Adjust pull toward the center
-        //   springLength: 95, // Adjust edge length
-        //   springConstant: 0.04, // Adjust edge stiffness
-        //   damping: 0.09, // Adjust damping (slows down movement)
-        // },
         
         interaction: {
-          dragNodes: true, // Disable dragging of nodes
+          dragNodes: true, // Allow dragging of nodes
           dragView: true, // Allow dragging the view (panning)
           zoomView: true, // Allow zooming the view
         }

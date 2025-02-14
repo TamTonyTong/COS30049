@@ -56,7 +56,7 @@ function BuyingFormContent() {
       }
       try {
         // Deduct USD from UserA's balance
-        fakeSmartContract.deductUSD("UserA", totalCost);
+        fakeSmartContract.BuyerDepositUSD("UserA", totalCost);
       } catch (error) {
         setTradeStatus("Error: " + (error as Error).message);
         return;

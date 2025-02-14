@@ -5,7 +5,7 @@ class FakeSmartContract {
   private trades: any[] = [];
   private balances: { [key: string]: { USD: number; BTC: number } } = {
     UserA: { USD: 0, BTC: 0 },
-    UserB: { USD: 1000, BTC: 500 }, // Seller starts with 500 BTC
+    UserB: { USD: 100000, BTC: 500 }, // Seller starts with 500 BTC
   };
 
   constructor() {
@@ -115,7 +115,7 @@ class FakeSmartContract {
   }
 
     // New Function: Deduct USD Balance
-  public deductUSD(user: string, amount: number) {
+  public BuyerDepositUSD(user: string, amount: number) {
     if (!this.balances[user]) {
       throw new Error(`User ${user} does not exist.`);
     }

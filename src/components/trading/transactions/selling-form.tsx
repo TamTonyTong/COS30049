@@ -11,11 +11,11 @@ export default function SellingForm() {
     const searchParams = useSearchParams();
     const price = searchParams.get("price") || "";
     const amount = searchParams.get("amount") || "";
+    const totalCost = Number(price) * Number(amount);
+    
   
-    // Smart contract state
     const [balances, setBalances] = useState({ USD: 0, BTC: 0 });
     const [tradeStatus, setTradeStatus] = useState<string | null>(null);
-    const [refresh, setRefresh] = useState(false);
   
     useEffect(() => {
       updateBalance();
@@ -49,12 +49,13 @@ export default function SellingForm() {
   
       setTradeStatus("Waiting for buyer to deposit USD...");
   
-      // Simulate buyer depositing USD (this would normally be handled by the buyer's form)
+      // Simulate buyer depositing USD
       setTimeout(async () => {
+        fakeSmartContract.BuyerDepositUSD("UserB", totalCost)
         setTradeStatus("Buyer deposited USD. Depositing BTC...");
   
         // Seller deposits BTC
-        const updatedTrade = await fakeSmartContract.sellerDepositBTC(trade.txHash) as {
+        await fakeSmartContract.sellerDepositBTC(trade.txHash) as {
           txHash: string;
           sellerDeposit: number;
         };

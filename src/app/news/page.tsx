@@ -52,15 +52,16 @@ const newsItems: NewsItem[] = [
   },
   {
     id: 4,
-    title: "Oil prices retreat after climb in US crude stockpiles expected",
+    title: "Oil prices retreat after report of U.S. crude stockpile rise",
     description:
-      "US crude stockpiles rise by 9.4 million barrels sources cite API data.",
+      "Oil prices declined following a report indicating a 4.1 million barrel increase in U.S. crude inventories, raising concerns about supply and demand balance.",
     source: "Reuters",
     date: "2025-02-12",
     category: "Energy",
     impact: "Low",
     url: "https://www.reuters.com/business/energy/oil-prices-retreat-after-report-us-crude-stockpile-rise-2025-02-12/",
   },
+  
   {
     id: 5,
     title: "Space mining company secures first asteroid resource rights",
@@ -70,7 +71,7 @@ const newsItems: NewsItem[] = [
     date: "2025-02-12",
     category: "Space Economy",
     impact: "Medium",
-    url: "#",
+    url: "https://www.bloomberg.com/news/articles/2025-02-12/space-mining-company-secures-asteroid-resource-rights",
   },
   {
     id: 6,
@@ -80,9 +81,10 @@ const newsItems: NewsItem[] = [
     source: "The Economist",
     date: "2025-02-11",
     category: "Environment",
-    impact: "High",
-    url: "#",
+    impact: "Low",
+    url: "https://www.economist.com/international/2025/02/11/global-carbon-tax-agreement-reached-at-climate-summit",
   },
+  
 ]
 
 const getImpactColor = (impact: string) => {

@@ -45,7 +45,7 @@ const newsItems: NewsItem[] = [
     description:
       "The announcement underscores efforts from the EU to position itself as a key player in the AI race.",
     source: "Wall Street Journal",
-    date: "2025-02-111",
+    date: "2025-02-11",
     category: "Technology",
     impact: "High",
     url: "https://www.wsj.com/tech/ai/eu-pledges-200-billion-in-ai-spending-in-bid-to-catch-up-with-u-s-china-7bf82ab5?mod=tech_lead_pos2",
@@ -61,7 +61,6 @@ const newsItems: NewsItem[] = [
     impact: "Low",
     url: "https://www.reuters.com/business/energy/oil-prices-retreat-after-report-us-crude-stockpile-rise-2025-02-12/",
   },
-  
   {
     id: 5,
     title: "Space mining company secures first asteroid resource rights",
@@ -84,7 +83,6 @@ const newsItems: NewsItem[] = [
     impact: "Low",
     url: "https://www.economist.com/international/2025/02/11/global-carbon-tax-agreement-reached-at-climate-summit",
   },
-  
 ]
 
 const getImpactColor = (impact: string) => {
@@ -112,35 +110,41 @@ const newsSourceLinks = [
 export default function NewsPage() {
   return (
     <Layout>
-      <div className="max-w-6xl px-4 mx-auto sm:px-6 lg:px-8">
-        <h1 className="mb-6 text-3xl font-bold text-white">Market News</h1>
-        <div className="grid gap-6 mb-12 md:grid-cols-2 lg:grid-cols-3">
+      <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <h1 className="mb-8 text-4xl font-bold text-white">Market News</h1>
+        <div className="grid grid-cols-1 gap-6 mb-12 md:grid-cols-2 lg:grid-cols-3">
           {newsItems.map((item) => (
-            <Card key={item.id} className="bg-[#1a2b4b] border-blue-500/30">
-              <CardHeader>
-                <CardTitle className="text-white">{item.title}</CardTitle>
-                <CardDescription className="flex items-center text-gray-400">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {item.date} | {item.source}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            <Card key={item.id} className="bg-[#1a2b4b] border-blue-500/30 flex flex-col">
+              <CardHeader className="flex-1">
+                <div className="flex items-center gap-2 mb-3 text-sm text-gray-400">
+                  <Clock className="w-4 h-4" />
+                  <span>
+                    {item.date} | {item.source}
+                  </span>
+                </div>
+                <h2 className="mb-4 text-xl font-bold text-white">{item.title}</h2>
                 <p className="mb-4 text-gray-300">{item.description}</p>
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">{item.category}</Badge>
-                  <Badge className={getImpactColor(item.impact)}>
-                    <BarChart2 className="w-4 h-4 mr-1" />
+              </CardHeader>
+              
+              <CardContent className="mt-auto">
+                <div className="flex items-center justify-between mb-4">
+                  <Badge variant="secondary" className="bg-[#0d1829]">
+                    {item.category}
+                  </Badge>
+                  
+                  <Badge
+                    className={getImpactColor(item.impact)}
+                  >
                     {item.impact} Impact
                   </Badge>
+                  
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button asChild className="w-full bg-blue-500 hover:bg-blue-600">
-                  <Link href={item.url} className="flex items-center justify-center">
+                <Button asChild className="flex items-center justify-center w-full bg-blue-500 hover:bg-blue-600">
+                  <Link href={item.url} target="_blank" rel="noopener noreferrer">
                     Read More <ArrowUpRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>
-              </CardFooter>
+              </CardContent>
             </Card>
           ))}
         </div>
@@ -166,4 +170,3 @@ export default function NewsPage() {
     </Layout>
   )
 }
-

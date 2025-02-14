@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useState} from "react";
-import TradingChart from "@/src/components/trading/trading-chart";
+import TradingChart from "@/src/components/trading/transactions/trading-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import TradeHistory from "@/src/components/trading/transactions/trading-history";
 import Layout from "@/src/components/layout";

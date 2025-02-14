@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
+import Layout from "../../components/layout"
 
 // Define the types for the props
 type Asset = {
@@ -26,86 +28,91 @@ type DigitalAssetsProps = {
 // DigitalAssets Component
 const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transactions }) => {
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-100 p-5 text-gray-700">
-      <div className="container mx-auto bg-white shadow-md rounded-md p-5">
-        <h1 className="text-2xl font-semibold mb-4">Personal Digital Assets</h1>
+    <Layout>
+      <div className="container px-4 py-8 mx-auto">
+        <Card className="bg-[#1a2b4b] border-blue-500/30">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-white">Personal Asset</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* User Balance */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="left-3 text-xl font-medium text-white">Balance (USD)</h2>
+              </div>
+              <table className="min-w-full bg-[#1a2b4b] border border-gray-700 text-center">
+                <thead>
+                  <tr className="bg-[#0d1829]">
+                    <th className="py-2 px-4 border-b text-white">Balance (USD)</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-[#06203E]">
+                  <tr className="hover:bg-[#0d1829]">
+                    <td className="py-2 px-4 border-b text-white">{balance} USD</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-        {/* User Balance */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-medium">Balance (USD)</h2>
-          </div>
-          <table className="min-w-full bg-white border border-gray-200 text-center">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-2 px-4 border-b">Balance (USD)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="hover:bg-gray-100">
-                <td className="py-2 px-4 border-b">{balance} USD</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            {/* User Assets */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-medium text-white">Assets</h2>
+              </div>
+              <table className="min-w-full bg-[#0d1829] border border-gray-700 text-center">
+                <thead>
+                  <tr className="bg-[#0d1829] text-white">
+                    <th className="py-2 px-4 border-b">Cryptocurrency</th>
+                    <th className="py-2 px-4 border-b">Amount</th>
+                    <th className="py-2 px-4 border-b">Price (USD)</th>
+                    <th className="py-2 px-4 border-b">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-[#06203E]">
+                  {assets.map((asset, index) => (
+                    <tr key={index} className="hover:bg-[#0d1829] text-white">
+                      <td className="py-2 px-4 border-b">{asset.name}</td>
+                      <td className="py-2 px-4 border-b">{asset.amount}</td>
+                      <td className="py-2 px-4 border-b">{asset.price}</td>
+                      <td className="py-2 px-4 border-b">
+                        <a href={`/trade`} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Trade</a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        {/* User Assets */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-medium">Assets</h2>
-          </div>
-          <table className="min-w-full bg-white border border-gray-200 text-center">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-2 px-4 border-b">Cryptocurrency</th>
-                <th className="py-2 px-4 border-b">Amount</th>
-                <th className="py-2 px-4 border-b">Price (USD)</th>
-                <th className="py-2 px-4 border-b">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assets.map((asset, index) => (
-                <tr key={index} className="hover:bg-gray-100">
-                  <td className="py-2 px-4 border-b">{asset.name}</td>
-                  <td className="py-2 px-4 border-b">{asset.amount}</td>
-                  <td className="py-2 px-4 border-b">{asset.price}</td>
-                  <td className="py-2 px-4 border-b">
-                    <a href={`/trade`} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Trade</a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Transactions History */}
-        <div className="mb-6">
-          <h2 className="text-xl font-medium mb-3">Transaction History</h2>
-          <table className="min-w-full bg-white border border-gray-200 text-center">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-2 px-4 border-b">Transaction ID</th>
-                <th className="py-2 px-4 border-b">Timestamp</th>
-                <th className="py-2 px-4 border-b">Type</th>
-                <th className="py-2 px-4 border-b">Amount</th>
-                <th className="py-2 px-4 border-b">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-100">
-                  <td className="py-2 px-4 border-b">{tx.id}</td>
-                  <td className="py-2 px-4 border-b">{tx.timestamp}</td>
-                  <td className="py-2 px-4 border-b">{tx.type}</td>
-                  <td className="py-2 px-4 border-b">{tx.amount}</td>
-                  <td className="py-2 px-4 border-b">{tx.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            {/* Transactions History */}
+            <div className="mb-6">
+              <h2 className="text-xl font-medium text-white mb-3">Transaction History</h2>
+              <table className="min-w-full bg-[#1a2b4b] border border-gray-700 text-center">
+                <thead>
+                  <tr className="bg-[#0d1829] text-white">
+                    <th className="py-2 px-4 border-b">Transaction ID</th>
+                    <th className="py-2 px-4 border-b">Timestamp</th>
+                    <th className="py-2 px-4 border-b">Type</th>
+                    <th className="py-2 px-4 border-b">Amount</th>
+                    <th className="py-2 px-4 border-b">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-[#06203E]">
+                  {transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-[#0d1829] text-white">
+                      <td className="py-2 px-4 border-b">{tx.id}</td>
+                      <td className="py-2 px-4 border-b">{tx.timestamp}</td>
+                      <td className="py-2 px-4 border-b">{tx.type}</td>
+                      <td className="py-2 px-4 border-b">{tx.amount}</td>
+                      <td className="py-2 px-4 border-b">{tx.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </Layout>
   );
 };
 
@@ -117,7 +124,7 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-//fetch data from the fake API
+  //fetch data from the fake API
   useEffect(() => {
     const userId = 'personal';
     fetch(`/api/${userId}`)

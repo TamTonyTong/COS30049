@@ -34,11 +34,6 @@ const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transact
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-medium">Balance (USD)</h2>
-            <div>
-              <button className="bg-green-500 text-white px-4 py-2 mx-1 rounded-md hover:bg-green-600">Deposit</button>
-              <button className="bg-yellow-500 text-white px-4 py-2 mx-1 rounded-md hover:bg-yellow-600">Withdraw</button>
-              <button className="bg-red-500 text-white px-4 py-2 mx-1 rounded-md hover:bg-red-600">Transfer</button>
-            </div>
           </div>
           <table className="min-w-full bg-white border border-gray-200 text-center">
             <thead>
@@ -58,7 +53,6 @@ const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transact
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-medium">Assets</h2>
-            <a href="/available-assets" className="text-blue-500 underline">View All Coins &gt;</a>
           </div>
           <table className="min-w-full bg-white border border-gray-200 text-center">
             <thead>
@@ -76,7 +70,7 @@ const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transact
                   <td className="py-2 px-4 border-b">{asset.amount}</td>
                   <td className="py-2 px-4 border-b">{asset.price}</td>
                   <td className="py-2 px-4 border-b">
-                    <a href={`/trade/${asset.name}`} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Trade</a>
+                    <a href={`/trade`} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Trade</a>
                   </td>
                 </tr>
               ))}
@@ -125,7 +119,7 @@ const HomePage: React.FC = () => {
 
 //fetch data from the fake API
   useEffect(() => {
-    const userId = 'alice';
+    const userId = 'default';
     fetch(`/api/${userId}`)
       .then((res) => res.json())
       .then((data) => {

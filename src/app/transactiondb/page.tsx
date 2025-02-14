@@ -75,8 +75,6 @@ export default function CryptoGraph() {
     },
       edges: { 
         arrows: "to",
-        // arrowStrikethrough: true,
-        // endPointOffset: 10 
         font: {
           size: 20,
         }

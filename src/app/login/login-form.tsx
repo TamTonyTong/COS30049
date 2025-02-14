@@ -1,12 +1,9 @@
 "use client"
 
-import Layout from "@/src/components/layout"
 import { useState } from "react"
 import type React from "react" // Added import for React
 import { Button, Input, FormError } from "../../components/ui"
-import { Label } from "@/src/components/ui/label"
-import Link from "next/link"
-
+import { useRouter } from "next/navigation"; // Import useRouter
 
 export default function LoginForm() {
     const [formData, setFormData] = useState({
@@ -14,6 +11,7 @@ export default function LoginForm() {
         password: "",
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const router = useRouter(); // Initialize useRouter
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
@@ -31,11 +29,24 @@ export default function LoginForm() {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (validateForm()) {
-            // Here you would typically send the login credentials to your backend API
-            console.log("Login attempt with:", formData)
-            // Simulating an API call
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-            alert("Login successful!")
+            try {
+                const response = await fetch("/api/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Login successful:", data);
+                    router.push("/personal_assets"); // Redirect to personal_assets page
+                } else {
+                    const errorData = await response.json();
+                    setErrors({ general: errorData.message });
+                }
+            } catch (error) {
+                setErrors({ general: "An unexpected error occurred. Please try again." });
+            }
         }
     }
 
@@ -70,7 +81,6 @@ export default function LoginForm() {
                         className="text-sm text-blue-600 hover:underline"
                         onClick={(e) => {
                             e.preventDefault()
-                            // Here you would typically handle the forgot password action
                             console.log("Forgot password clicked")
                         }}
                     >

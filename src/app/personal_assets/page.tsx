@@ -119,7 +119,7 @@ const HomePage: React.FC = () => {
 
 //fetch data from the fake API
   useEffect(() => {
-    const userId = 'default';
+    const userId = 'personal';
     fetch(`/api/${userId}`)
       .then((res) => res.json())
       .then((data) => {

@@ -7,6 +7,7 @@ import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { fakeSmartContract } from "./smart-contract-real";
+import BalanceCard from "./balance-card";
 
 function BuyingFormContent() {
   const router = useRouter();
@@ -91,28 +92,8 @@ function BuyingFormContent() {
 
   return (
     <div className="flex items-end justify-start">
-      <Card className="items-start w-full max-w-md mt-8">
-        <CardHeader>
-          <CardTitle>Your Balance</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between">
-            <p className="bg-transparent">USD Balance: ${balances.USD}</p>
-            <button className="flex items-end" onClick={handleResetUSD}>
-              Reset USD Balance
-            </button>
-          </div>
-          <div>
-            <p>BTC Balance: {balances.BTC} BTC</p>
-          </div>
-          <div>
-            <input className="bg-transparent" placeholder="Deposit Amount" type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
-            <button onClick={handleDepositUSD}>Deposit</button>
-          </div>
-          {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
-        </CardContent>
-      </Card>
-
+      <BalanceCard/>
+      {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
       <div className="flex mt-8 ml-32">
         <Card className="w-full max-w-md">
           <CardHeader>

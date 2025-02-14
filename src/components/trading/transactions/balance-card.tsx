@@ -51,9 +51,15 @@ export default function BalanceCard() {
           <input
             className="bg-transparent"
             placeholder="Deposit Amount"
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={depositAmount}
-            onChange={(e) => setDepositAmount(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (/^\d*\.?\d*$/.test(value)) {
+                setDepositAmount(value);
+              }
+            }}
           />
           <button onClick={handleDepositUSD}>Deposit</button>
         </div>

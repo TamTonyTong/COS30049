@@ -1,0 +1,12 @@
+{
+  "balance": 5000,
+  "assets": [
+    { "name": "Bitcoin", "amount": 1.2, "price": 45000 },
+    { "name": "Ethereum", "amount": 5, "price": 2800 },
+    { "name": "Litecoin", "amount": 100, "price": 200 }
+  ],
+  "transactions": [
+    { "id": "txn1", "timestamp": "2025-02-12 10:00:00", "type": "Buy", "amount": "0.2 BTC", "status": "Completed" },
+    { "id": "txn2", "timestamp": "2025-02-11 09:30:00", "type": "Sell", "amount": "1 ETH", "status": "Pending" }
+  ]
+}

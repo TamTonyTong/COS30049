@@ -1,0 +1,13 @@
+{
+    "balance": 12000,
+    "assets": [
+      { "name": "Bitcoin", "amount": 2.0, "price": 45000 },
+      { "name": "Ethereum", "amount": 15, "price": 2800 },
+      { "name": "Ripple", "amount": 5000, "price": 1 }
+    ],
+    "transactions": [
+      { "id": "txn1", "timestamp": "2025-02-12 11:00:00", "type": "Buy", "amount": "0.5 BTC", "status": "Completed" },
+      { "id": "txn2", "timestamp": "2025-02-11 12:00:00", "type": "Transfer", "amount": "10 ETH", "status": "Completed" }
+    ]
+  }
+  

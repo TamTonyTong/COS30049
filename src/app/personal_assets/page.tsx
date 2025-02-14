@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Define the types for the props
 type Asset = {
@@ -115,30 +115,43 @@ const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transact
   );
 };
 
-// Example Data and Page Component
+// HomePage Component
 const HomePage: React.FC = () => {
-  const exampleBalance = 2534.25;
-  const exampleAssets: Asset[] = [
-    { name: 'Bitcoin', amount: 2.5, price: 40000 },
-    { name: 'Ethereum', amount: 10, price: 2500 },
-    { name: 'Ripple', amount: 5000, price: 1 },
-  ];
-  const exampleTransactions: Transaction[] = [
-    { id: 'qwer5678901234st', timestamp: '2025-01-31 10:00:00', type: 'Buy', amount: '1.2 BTC', status: 'Completed' },
-    { id: 'uvwx4321098765yz', timestamp: '2025-01-25 14:30:00', type: 'Sell', amount: '0.5 ETH', status: 'Pending' },
-    { id: 'abcd5678901234ef', timestamp: '2025-01-20 09:15:00', type: 'Transfer', amount: '3.0 LTC', status: 'Cancelled' },
-    { id: 'abcd1234567890ef', timestamp: '2025-02-01 11:45:00', type: 'Deposit', amount: '2.5 BTC', status: 'Completed' },
-    { id: 'ghij0987654321kl', timestamp: '2025-01-29 16:20:00', type: 'Withdraw', amount: '1.0 ETH', status: 'Pending' },
-    { id: 'mnop5678901234qr', timestamp: '2025-01-27 08:05:00', type: 'Buy', amount: '4.0 LTC', status: 'Completed' },
-  ];
+  const [balance, setBalance] = useState<number>(0);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+//fetch data from the fake API
+  useEffect(() => {
+    const userId = 'alice';
+    fetch(`/api/${userId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setBalance(data.balance);
+          setAssets(data.assets);
+          setTransactions(data.transactions);
+        }
+      })
+      .catch((err) => setError('Error fetching data'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <div>
-      <DigitalAssets
-        balance={exampleBalance}
-        assets={exampleAssets}
-        transactions={exampleTransactions}
-      />
+      <DigitalAssets balance={balance} assets={assets} transactions={transactions} />
     </div>
   );
 };

@@ -37,18 +37,18 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
   console.log(baseCurrency)
   const [priceData, setPriceData] = useState<PriceData[]>([]);
 
-  // const CustomTooltip = ({ active, payload }: any) => {
-  //   if (active && payload && payload.length) {
-  //     return (
-  //       <div className="p-4 text-lg text-white bg-gray-800 border border-yellow-400 rounded-lg shadow-xl">
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="p-4 text-lg text-white bg-gray-800 border border-yellow-400 rounded-lg shadow-xl">
           
-  //         <p className="font-semibold">{`Price: $${payload[0].value.toFixed(0)}`}</p>
-  //         <p className="opacity-75">{`Date: ${payload[0].payload.time}`}</p>
-  //       </div>
-  //     );
-  //   }
-  //   return null;
-  // };
+          <p className="font-semibold">{`Price: $${payload[0].value.toFixed(0)}`}</p>
+          <p className="opacity-75">{`Date: ${payload[0].payload.time}`}</p>
+        </div>
+      );
+    }
+    return null;
+  };
   
   useEffect(() => {
     const fetchPriceData = async () => {
@@ -59,7 +59,7 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
         };
         const response = await fetch(
           // `https://api.coingecko.com/api/v3/coins/${baseCurrency.toLowerCase()}/market_chart?vs_currency=usd&days=7`
-          `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7`          
+          `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=14`          
           , options)
         ;
         console.log("Response status:", response.status); // Logs HTTP status
@@ -112,10 +112,9 @@ const icon_btc = <i className="text-5xl align-middle bx bxl-bitcoin"></i>
               <YAxis orientation="right" domain={["auto", "auto"]} />
               <ChartTooltip 
               cursor={true}
-               
-              content={<ChartTooltipContent indicator="dot" active = {true}
-              />}
-              // content={CustomTooltip}
+              
+              // content={<ChartTooltipContent indicator="dot" active = {true}/>}
+              content={CustomTooltip}
               />
               
               <Line

@@ -47,7 +47,7 @@ export default function BalanceCard() {
         <div>
           <p>BTC Balance: {balances.BTC} BTC</p>
         </div>
-        <div>
+        {/* <div>
           <input
             className="bg-transparent"
             placeholder="Deposit Amount"
@@ -62,7 +62,7 @@ export default function BalanceCard() {
             }}
           />
           <button onClick={handleDepositUSD}>Deposit</button>
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );

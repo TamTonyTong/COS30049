@@ -10,10 +10,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  const handleLogin = () => {
-    setIsLoggedIn(true)
-  }
-
   useEffect(() => {
     // Check login state on component mount
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";

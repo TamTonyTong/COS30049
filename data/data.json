@@ -80,34 +80,6 @@
             "phone": "123-456-7890",
             "password": "passwordAlice",
             "balance": 5000
-        },
-        {
-            "UserID": 102,
-            "email": "bob@example.com",
-            "phone": "234-567-8901",
-            "password": "passwordBob",
-            "balance": 12000
-        },
-        {
-            "UserID": 103,
-            "email": "charlie@example.com",
-            "phone": "345-678-9012",
-            "password": "passwordCharlie",
-            "balance": 7500
-        },
-        {
-            "UserID": 104,
-            "email": "diana@example.com",
-            "phone": "456-789-0123",
-            "password": "passwordDiana",
-            "balance": 9500
-        },
-        {
-            "UserID": 105,
-            "email": "edward@example.com",
-            "phone": "567-890-1234",
-            "password": "passwordEdward",
-            "balance": 6200
         }
     ]
 }

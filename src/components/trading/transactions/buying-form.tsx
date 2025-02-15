@@ -12,8 +12,8 @@ import BalanceCard from "./balance-card";
 function BuyingFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const price = searchParams.get("price") || "";
-  const amount = searchParams.get("amount") || "";
+  const price = searchParams?.get("price") || "";
+  const amount = searchParams?.get("amount") || "";
 
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [balances, setBalances] = useState({ USD: 0, BTC: 0 });

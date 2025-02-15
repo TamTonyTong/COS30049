@@ -9,8 +9,8 @@ import { useEffect, useState } from "react";
 export default function SellingForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const price = searchParams.get("price") || "";
-    const amount = searchParams.get("amount") || "";
+    const price = searchParams?.get("price") || "";
+    const amount = searchParams?.get("amount") || "";
     const totalCost = Number(price) * Number(amount);
     
   

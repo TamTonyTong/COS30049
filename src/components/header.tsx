@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/src/components/ui/button"
 import { UserNav } from "./user-nav"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { TrendingUp, ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/src/components/ui/dropdown-menu"
 
@@ -13,6 +13,16 @@ export default function Header() {
   const handleLogin = () => {
     setIsLoggedIn(true)
   }
+
+  useEffect(() => {
+    // Check login state on component mount
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (loggedIn) {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
+    }
+  }, []);
 
   return (
     <header className="py-4 px-6 bg-[#0d1829]/80 backdrop-blur-sm">

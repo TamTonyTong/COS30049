@@ -22,6 +22,7 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
 
   const handleLogout = () => {
     // Implement logout logic here
+    localStorage.setItem("isLoggedIn", "false");
     console.log("Logging out...")
     router.push("/")
   }

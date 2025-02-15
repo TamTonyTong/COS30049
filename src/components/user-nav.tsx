@@ -71,7 +71,9 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
+          <Link href="/" onClick={handleLogout}>
           Log out
+          </Link>
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>

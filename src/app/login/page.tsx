@@ -56,6 +56,9 @@ export default function LoginPage() {
     <Layout>
       <div className="max-w-md mx-auto mt-8 p-6 bg-[#1a2b4b] rounded-lg shadow-lg">
         <h1 className="mb-6 text-2xl font-bold text-center text-white">Login to TradePro</h1>
+        <p className="text-center">alice@example.com</p>
+        <p className="text-center">passwordAlice</p><br/>
+        <p className="text-center">Example Account</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="email" className="text-white">
@@ -67,7 +70,8 @@ export default function LoginPage() {
               name="email"
               placeholder="Enter your email"
               className="mt-1"
-              value={formData.email}
+              // value={formData.email}
+              value = "alice@example.com"
               onChange={handleChange}
             />
             {errors.email && <p className="mt-1 text-red-500 text-sm">{errors.email}</p>}
@@ -82,7 +86,8 @@ export default function LoginPage() {
               name="password"
               placeholder="Enter your password"
               className="mt-1"
-              value={formData.password}
+              // value={formData.password}
+              value = "passwordAlice"
               onChange={handleChange}
             />
             {errors.password && <p className="mt-1 text-red-500 text-sm">{errors.password}</p>}

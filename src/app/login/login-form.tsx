@@ -39,7 +39,7 @@ export default function LoginForm() {
                 if (response.ok) {
                     const data = await response.json();
                     console.log("Login successful:", data);
-                    router.push("/personal_assets"); // Redirect to personal_assets page
+                    router.push("/personal-assets"); // Redirect to personal-assets page
                 } else {
                     const errorData = await response.json();
                     setErrors({ general: errorData.message });

@@ -41,7 +41,7 @@ export default function LoginPage() {
           console.log("Login successful:", data);
           // Set login state in localStorage
           localStorage.setItem("isLoggedIn", "true");
-          router.push("/personal_assets"); // Redirect to the desired page
+          router.push("/personal-assets"); // Redirect to the desired page
         } else {
           const errorData = await response.json();
           setErrors({ general: errorData.message });

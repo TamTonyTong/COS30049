@@ -7,8 +7,8 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Graph from "@/src/components/walletscan/graph"; // Import the Graph component
 import TransactionTable from "@/src/components/transactiontable";
-import AddressInput from "@/src/components/walletscan/address_input";
-import BalanceDisplay from "@/src/components/walletscan/balance_display";
+import AddressInput from "@/src/components/walletscan/address-input";
+import BalanceDisplay from "@/src/components/walletscan/balance-display";
 
 const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 const BASE_URL = "https://api.etherscan.io/api";

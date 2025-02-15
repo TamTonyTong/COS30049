@@ -78,7 +78,7 @@ export default function Header() {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem>
-                          <Link href="/personal_assets" className="w-full">
+                          <Link href="/personal-assets" className="w-full">
                             Personal Assets
                           </Link>
                         </DropdownMenuItem>

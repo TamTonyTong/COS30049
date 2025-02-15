@@ -1,4 +1,5 @@
 {
+  "address": "0x1234567890abcdef",
   "balance": 1000,
   "assets": [
     { "name": "Bitcoin", "amount": 1.2, "price": 45000 },

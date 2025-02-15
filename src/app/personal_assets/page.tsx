@@ -20,13 +20,14 @@ type Transaction = {
 };
 
 type DigitalAssetsProps = {
+  address: string;
   balance: number;
   assets: Asset[];
   transactions: Transaction[];
 };
 
 // DigitalAssets Component
-const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transactions }) => {
+const DigitalAssets: React.FC<DigitalAssetsProps> = ({ address, balance, assets, transactions }) => {
   return (
     <Layout>
       <div className="container px-4 py-8 mx-auto">
@@ -35,6 +36,13 @@ const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transact
             <CardTitle className="text-2xl font-bold text-white">Personal Asset</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* User Address */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="left-3 text-xl text-white">Address: {address}</h2>
+              </div>
+            </div>
+
             {/* User Balance */}
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
@@ -118,6 +126,7 @@ const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transact
 
 // HomePage Component
 const HomePage: React.FC = () => {
+  const [address, setAddress] = useState<string>('0x1234567890abcdef');
   const [balance, setBalance] = useState<number>(0);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -133,6 +142,7 @@ const HomePage: React.FC = () => {
         if (data.error) {
           setError(data.error);
         } else {
+          setAddress(data.address);
           setBalance(data.balance);
           setAssets(data.assets);
           setTransactions(data.transactions);
@@ -152,7 +162,7 @@ const HomePage: React.FC = () => {
 
   return (
     <div>
-      <DigitalAssets balance={balance} assets={assets} transactions={transactions} />
+      <DigitalAssets address={address} balance={balance} assets={assets} transactions={transactions} />
     </div>
   );
 };

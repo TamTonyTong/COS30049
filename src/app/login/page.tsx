@@ -70,8 +70,8 @@ export default function LoginPage() {
               name="email"
               placeholder="Enter your email"
               className="mt-1"
-              // value={formData.email}
-              value = "alice@example.com"
+              value={formData.email}
+              // value = "alice@example.com"
               onChange={handleChange}
             />
             {errors.email && <p className="mt-1 text-red-500 text-sm">{errors.email}</p>}
@@ -86,8 +86,8 @@ export default function LoginPage() {
               name="password"
               placeholder="Enter your password"
               className="mt-1"
-              // value={formData.password}
-              value = "passwordAlice"
+              value={formData.password}
+              // value = "passwordAlice"
               onChange={handleChange}
             />
             {errors.password && <p className="mt-1 text-red-500 text-sm">{errors.password}</p>}

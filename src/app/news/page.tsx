@@ -111,10 +111,12 @@ export default function NewsPage() {
   return (
     <Layout>
       <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <h1 className="mb-8 text-4xl font-bold text-white">Market News</h1>
+      <h1 className="mb-8 ml-4 text-3xl font-bold text-white">Market News</h1>
         <div className="grid grid-cols-1 gap-6 mb-12 md:grid-cols-2 lg:grid-cols-3">
           {newsItems.map((item) => (
-            <Card key={item.id} className="bg-[#1a2b4b] border-blue-500/30 flex flex-col">
+            <Card key={item.id} 
+            className="bg-[rgba(10,15,30,0.8)] border-blue-500/30 shadow-lg shadow-blue-500/20 
+                        hover:shadow-blue-400/30 transition duration-300 flex flex-col">
               <CardHeader className="flex-1">
                 <div className="flex items-center gap-2 mb-3 text-sm text-gray-400">
                   <Clock className="w-4 h-4" />
@@ -149,7 +151,8 @@ export default function NewsPage() {
           ))}
         </div>
 
-        <div className="bg-[#1a2b4b] border border-blue-500/30 rounded-lg p-6 mb-8">
+        <div className="bg-[rgba(10,15,30,0.8)] border border-blue-500/30 shadow-lg shadow-blue-500/20 
+                        hover:shadow-blue-400/30 transition duration-300 rounded-lg p-6 mb-8">
           <h2 className="mb-4 text-2xl font-bold text-white">More Financial News Sources</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {newsSourceLinks.map((source, index) => (

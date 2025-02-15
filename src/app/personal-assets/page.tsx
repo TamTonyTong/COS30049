@@ -159,22 +159,29 @@ export default function HomePage() {
                     <TableHead className="text-white">Cryptocurrency</TableHead>
                     <TableHead className="text-right text-white">Amount</TableHead>
                     <TableHead className="text-right text-white">Price (USD)</TableHead>
+                    <TableHead className="text-right text-white">Total</TableHead>
                     <TableHead className="text-right text-white">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assets.map((asset, index) => (
+                {/* {assets.map((asset, index) => (
                     <TableRow key={index}>
                       <TableCell className="text-white">{asset.name}</TableCell>
                       <TableCell className="text-right text-white">{asset.amount.toFixed(6)}</TableCell>
-                      <TableCell className="text-right text-white">${asset.price.toFixed(2)}</TableCell>
+                      <TableCell className="text-right text-white">${asset.price.toFixed(2)}</TableCell> */}
+                    {/* <TableRow key={index}> */}
+                    <TableRow>
+                      <TableCell className="text-white">BTC</TableCell>
+                      <TableCell className="text-right text-white">{balances.BTC}</TableCell>
+                      <TableCell className="text-right text-white">100$</TableCell>
+                      <TableCell className="text-right text-white">{balances.BTC*100}$</TableCell>
                       <TableCell className="text-right">
                         <Link href="/trade">
                           <Button className="text-white bg-blue-500 hover:bg-blue-600">Trade</Button>
                         </Link>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  {/* ))} */}
                 </TableBody>
               </Table>
             </div>

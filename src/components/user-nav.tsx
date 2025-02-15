@@ -22,6 +22,7 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
 
   const handleLogout = () => {
     // Implement logout logic here
+    localStorage.setItem("isLoggedIn", "false");
     console.log("Logging out...")
     router.push("/")
   }
@@ -70,7 +71,9 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
+          <Link href="/" onClick={handleLogout}>
           Log out
+          </Link>
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>

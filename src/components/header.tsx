@@ -52,31 +52,41 @@ export default function Header() {
                   News
                 </Link>
               </li>
-              <li>
-                <Link href="/trade" className="transition-colors hover:text-white">
-                  Trade
-                </Link>
-              </li>
-              <li>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="flex items-center transition-colors hover:text-white">
-                    More <ChevronDown className="w-4 h-4 ml-1" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Link href="/walletscan" className="w-full">
-                      Wallet Tracking
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link href="/transactiondb" className="w-full">
-                      Transactions Graph
-                      </Link>
-                    </DropdownMenuItem>
-                    
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </li>
+
+              {/* Check if user is logged in */}
+              {isLoggedIn && (
+                <>
+                  <li>
+                    <Link href="/trade" className="transition-colors hover:text-white">
+                      Trade
+                    </Link>
+                  </li>
+                  <li>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="flex items-center transition-colors hover:text-white">
+                        More <ChevronDown className="w-4 h-4 ml-1" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>
+                          <Link href="/walletscan" className="w-full">
+                            Wallet Tracking
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Link href="/transactiondb" className="w-full">
+                            Transactions Graph
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Link href="/personal_assets" className="w-full">
+                            Personal Assets
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         </div>
@@ -86,18 +96,18 @@ export default function Header() {
             <UserNav />
           ) : (
             <>
-            <Link href="/signup">
-              <Button variant="ghost" className="text-white hover:text-white hover:bg-[#1a2b4b]">
-                Sign Up
-              </Button>
+              <Link href="/signup">
+                <Button variant="ghost" className="text-white hover:text-white hover:bg-[#1a2b4b]">
+                  Sign Up
+                </Button>
               </Link>
-              
+
               <Link href="/login">
-              <Button variant="secondary" className="bg-[#1a2b4b] text-white hover:bg-[#243860]" >
-                Login
-              </Button>
+                <Button variant="secondary" className="bg-[#1a2b4b] text-white hover:bg-[#243860]" >
+                  Login
+                </Button>
               </Link>
-              
+
             </>
           )}
         </div>

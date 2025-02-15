@@ -27,13 +27,6 @@ export default function OrderForm({
   const router = useRouter();
   const baseCurrency = tradingPair.charAt(0).toUpperCase() + tradingPair.slice(1);
 
-  // Set a fixed price for BTC
-  const FIXED_BTC_PRICE = "100"; // Fixed BTC price in USD
-  // Update price if the trading pair is BTC
-  if (tradingPair.toUpperCase() === "BTCUSD" && price !== FIXED_BTC_PRICE) {
-    setPrice(FIXED_BTC_PRICE);
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!price || !amount) {

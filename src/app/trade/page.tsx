@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import { useState} from "react";
+import { useEffect, useState} from "react";
 import TradingChart from "@/src/components/trading/transactions/trading-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import TradeHistory from "@/src/components/trading/transactions/trading-history";
@@ -15,6 +15,14 @@ export default function TradingPage(this: any) {
   const [amount, setAmount] = useState<string>("");
   const [tradingPair, setTradingPair] = useState<string>("bitcoin");
   const icon_order = <i className="bx bxs-cart"></i>;
+  
+  // Set a fixed price for BTC
+  const FIXED_BTC_PRICE = "100"; // Fixed BTC price in USD
+
+  useEffect(() => {
+    // Set the fixed price once when the component mounts
+    setPrice(FIXED_BTC_PRICE);
+  }, []); // Empty dependency array ensures this runs only once
   return (
     <Layout>
       <div className="grid gap-8 lg:grid-cols-3 mb-6">

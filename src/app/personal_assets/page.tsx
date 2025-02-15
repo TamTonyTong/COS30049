@@ -1,160 +1,213 @@
-'use client';
+"use client"
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from "react"
+import Layout from "@/src/components/layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
-import Layout from "../../components/layout"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Button } from "@/src/components/ui/button"
+import { Badge } from "@/src/components/ui/badge"
+import { Skeleton } from "@/src/components/ui/skeleton"
+import Link from "next/link" // Add Link import for navigation
+import { DollarSign, Activity, Clock } from "lucide-react"
 
 // Define the types for the props
 type Asset = {
-  name: string;
-  amount: number;
-  price: number;
-};
+  name: string
+  amount: number
+  price: number
+}
 
 type Transaction = {
-  id: string;
-  timestamp: string;
-  type: string;
-  amount: string;
-  status: string;
-};
+  id: string
+  timestamp: string
+  type: string
+  amount: string
+  status: string
+}
 
 type DigitalAssetsProps = {
-  balance: number;
-  assets: Asset[];
-  transactions: Transaction[];
-};
+  balance: number
+  assets: Asset[]
+  transactions: Transaction[]
+}
 
 // DigitalAssets Component
 const DigitalAssets: React.FC<DigitalAssetsProps> = ({ balance, assets, transactions }) => {
   return (
     <Layout>
       <div className="container px-4 py-8 mx-auto">
-        <Card className="bg-[#1a2b4b] border-blue-500/30">
+        <Card className="bg-[#1a2b4b] border-blue-500/30 mb-8">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-white">Personal Asset</CardTitle>
+            <CardTitle className="flex items-center text-3xl font-bold text-white">
+              <DollarSign className="mr-2" /> Personal Assets
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {/* User Balance */}
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="left-3 text-xl font-medium text-white">Balance (USD)</h2>
+              <h2 className="flex items-center mb-4 text-2xl font-medium text-white">
+                <Activity className="mr-2" /> Balance (USD)
+              </h2>
+              <div className="bg-[#0d1829] p-6 rounded-lg">
+                <span className="text-4xl font-bold text-green-400">${balance.toLocaleString()}</span>
               </div>
-              <table className="min-w-full bg-[#1a2b4b] border border-gray-700 text-center">
-                <thead>
-                  <tr className="bg-[#0d1829]">
-                    <th className="py-2 px-4 border-b text-white">Balance (USD)</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-[#06203E]">
-                  <tr className="hover:bg-[#0d1829]">
-                    <td className="py-2 px-4 border-b text-white">{balance} USD</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
 
             {/* User Assets */}
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-medium text-white">Assets</h2>
+              <h2 className="mb-4 text-2xl font-medium text-white">Assets</h2>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xl text-white">Cryptocurrency</TableHead>
+                      <TableHead className="text-xl text-right text-white">Amount</TableHead>
+                      <TableHead className="text-xl text-right text-white">Price (USD)</TableHead>
+                      <TableHead className="text-xl text-right text-white">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assets.map((asset, index) => (
+                      <TableRow key={index} className="hover:bg-[#0d1829] transition-colors">
+                        <TableCell className="font-medium text-white v">
+                          <Badge variant="outline" className="font-bold">
+                            {asset.name}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-white">{asset.amount.toFixed(6)}</TableCell>
+                        <TableCell className="text-right text-white">${asset.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <Link href="/trade" passHref>
+                            <Button
+                              size="sm"
+                              className="text-white bg-blue-500 hover:bg-blue-600"
+                            >
+                              Trade
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              <table className="min-w-full bg-[#0d1829] border border-gray-700 text-center">
-                <thead>
-                  <tr className="bg-[#0d1829] text-white">
-                    <th className="py-2 px-4 border-b">Cryptocurrency</th>
-                    <th className="py-2 px-4 border-b">Amount</th>
-                    <th className="py-2 px-4 border-b">Price (USD)</th>
-                    <th className="py-2 px-4 border-b">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-[#06203E]">
-                  {assets.map((asset, index) => (
-                    <tr key={index} className="hover:bg-[#0d1829] text-white">
-                      <td className="py-2 px-4 border-b">{asset.name}</td>
-                      <td className="py-2 px-4 border-b">{asset.amount}</td>
-                      <td className="py-2 px-4 border-b">{asset.price}</td>
-                      <td className="py-2 px-4 border-b">
-                        <a href={`/trade`} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Trade</a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
 
             {/* Transactions History */}
-            <div className="mb-6">
-              <h2 className="text-xl font-medium text-white mb-3">Transaction History</h2>
-              <table className="min-w-full bg-[#1a2b4b] border border-gray-700 text-center">
-                <thead>
-                  <tr className="bg-[#0d1829] text-white">
-                    <th className="py-2 px-4 border-b">Transaction ID</th>
-                    <th className="py-2 px-4 border-b">Timestamp</th>
-                    <th className="py-2 px-4 border-b">Type</th>
-                    <th className="py-2 px-4 border-b">Amount</th>
-                    <th className="py-2 px-4 border-b">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-[#06203E]">
-                  {transactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-[#0d1829] text-white">
-                      <td className="py-2 px-4 border-b">{tx.id}</td>
-                      <td className="py-2 px-4 border-b">{tx.timestamp}</td>
-                      <td className="py-2 px-4 border-b">{tx.type}</td>
-                      <td className="py-2 px-4 border-b">{tx.amount}</td>
-                      <td className="py-2 px-4 border-b">{tx.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div>
+              <h2 className="flex items-center mb-4 text-2xl font-medium text-white">
+                <Clock className="mr-2" /> Transaction History
+              </h2>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xl text-white">Transaction ID</TableHead>
+                      <TableHead className="text-xl text-white">Timestamp</TableHead>
+                      <TableHead className="text-xl text-white">Type</TableHead>
+                      <TableHead className="text-xl text-right text-white">Amount</TableHead>
+                      <TableHead className="text-xl text-right text-white">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((tx) => (
+                      <TableRow key={tx.id} className="hover:bg-[#0d1829] transition-colors">
+                        <TableCell className="font-medium text-white">{tx.id}</TableCell>
+                        <TableCell className="text-gray-300">{tx.timestamp}</TableCell>
+                        <TableCell className="text-gray-300">{tx.type}</TableCell>
+                        <TableCell className="text-right text-white">{tx.amount}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant="outline"
+                            className={
+                              tx.status === "Completed"
+                                ? "bg-green-500 hover:bg-green-600"
+                                : tx.status === "Pending"
+                                  ? "bg-yellow-500 hover:bg-yellow-600"
+                                  : "bg-red-500 hover:bg-red-600"
+                            }
+                          >
+                            {tx.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
     </Layout>
-  );
-};
+  )
+}
 
 // HomePage Component
 const HomePage: React.FC = () => {
-  const [balance, setBalance] = useState<number>(0);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [balance, setBalance] = useState<number>(0)
+  const [assets, setAssets] = useState<Asset[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
-  //fetch data from the fake API
+  // Fetch data from the fake API
   useEffect(() => {
-    const userId = 'personal';
+    const userId = "personal"
     fetch(`/api/${userId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
-          setError(data.error);
+          setError(data.error)
         } else {
-          setBalance(data.balance);
-          setAssets(data.assets);
-          setTransactions(data.transactions);
+          setBalance(data.balance)
+          setAssets(data.assets)
+          setTransactions(data.transactions)
         }
       })
-      .catch((err) => setError('Error fetching data'))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch((err) => setError("Error fetching data"))
+      .finally(() => setLoading(false))
+  }, [])
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <Layout>
+        <div className="container px-4 py-8 mx-auto">
+          <Card className="bg-[#1a2b4b] border-blue-500/30">
+            <CardHeader>
+              <Skeleton className="w-64 h-8 bg-gray-700" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[...Array(5)].map((_, index) => (
+                  <Skeleton key={index} className="w-full h-12 bg-gray-700" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    )
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <Layout>
+        <div className="container px-4 py-8 mx-auto">
+          <Card className="bg-[#1a2b4b] border-red-500/30">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold text-white">Error</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-400">{error}</p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    )
   }
 
-  return (
-    <div>
-      <DigitalAssets balance={balance} assets={assets} transactions={transactions} />
-    </div>
-  );
-};
+  return <DigitalAssets balance={balance} assets={assets} transactions={transactions} />
+}
 
-export default HomePage;
+export default HomePage

@@ -56,9 +56,9 @@ export default function LoginPage() {
     <Layout>
       <div className="max-w-md mx-auto mt-8 p-6 bg-[#1a2b4b] rounded-lg shadow-lg">
         <h1 className="mb-6 text-2xl font-bold text-center text-white">Login to TradePro</h1>
+        <p className="text-center font-bold">Example Account</p>
         <p className="text-center">alice@example.com</p>
         <p className="text-center">passwordAlice</p><br/>
-        <p className="text-center">Example Account</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="email" className="text-white">

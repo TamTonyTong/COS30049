@@ -44,30 +44,20 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">John Doe</p>
-            <p className="text-xs leading-none text-muted-foreground">john.doe@example.com</p>
+            <p className="text-sm font-medium leading-none">Alice</p>
+            <p className="text-xs leading-none text-muted-foreground">alice@example.com</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <DropdownMenuItem>Dashboard</DropdownMenuItem>
           <DropdownMenuItem>
-            <Link href="/dashboard">Dashboard</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/wallet">Wallet</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/orders">Orders</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/account">Account</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/reward-hub">History</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/settings">Settings</Link>
-          </DropdownMenuItem>
+            <Link href="personal-assets">Personal Assets</Link>
+            </DropdownMenuItem>
+          <DropdownMenuItem>Orders</DropdownMenuItem>
+          <DropdownMenuItem>Account</DropdownMenuItem>
+          <DropdownMenuItem>History</DropdownMenuItem>
+          <DropdownMenuItem>Settings</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

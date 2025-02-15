@@ -77,11 +77,6 @@ export default function Header() {
                             Transactions Graph
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/personal-assets" className="w-full">
-                            Personal Assets
-                          </Link>
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </li>

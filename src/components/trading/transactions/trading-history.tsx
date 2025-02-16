@@ -32,7 +32,7 @@ const TradeHistory = () => {
     <Card className="relative mt-6 w-full shadow-lg">
       <CardHeader>
         <CardTitle>Trade History</CardTitle>
-        {history.length > 0 && (
+        {/* {history.length > 0 && (
           <Button
             variant="destructive"
             size="sm"
@@ -40,11 +40,12 @@ const TradeHistory = () => {
             onClick={() => {
               setHistory([]);
               localStorage.removeItem("fake_trades");
+              window.location.reload(); // Force reload the page
             }}
           >
             ✕
           </Button>
-        )}
+        )} */}
       </CardHeader>
       <CardContent>
         {history.length === 0 ? (

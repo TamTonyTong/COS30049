@@ -160,7 +160,12 @@ export default function HomePage() {
                 placeholder="Deposit Amount"
                 type="text"
                 value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*\.?\d*$/.test(value)) {
+                    setDepositAmount(value);
+                  }
+                }}
               />
               <Button onClick={handleDepositUSD} className="ml-2">
                 Deposit

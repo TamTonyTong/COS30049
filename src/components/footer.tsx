@@ -1,9 +1,9 @@
-import Link from "next/link"
+import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="p-4 mt-8 bg-muted text-muted-foreground">
-      <div className="container flex flex-col items-center justify-between mx-auto md:flex-row">
+    <footer className="mt-8 bg-muted p-4 text-muted-foreground">
+      <div className="container mx-auto flex flex-col items-center justify-between md:flex-row">
         <div className="mb-4 md:mb-0">
           <p>&copy; COS30049 2025 TradePro. All rights reserved.</p>
         </div>
@@ -33,6 +33,5 @@ export default function Footer() {
         </nav>
       </div>
     </footer>
-  )
+  );
 }
-

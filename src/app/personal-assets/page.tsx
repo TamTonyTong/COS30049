@@ -189,12 +189,6 @@ export default function HomePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* {assets.map((asset, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="text-white">{asset.name}</TableCell>
-                      <TableCell className="text-right text-white">{asset.amount.toFixed(6)}</TableCell>
-                      <TableCell className="text-right text-white">${asset.price.toFixed(2)}</TableCell> */}
-                  {/* <TableRow key={index}> */}
                   <TableRow>
                     <TableCell className="text-white">BTC</TableCell>
                     <TableCell className="text-right text-white">

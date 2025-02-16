@@ -1,4 +1,4 @@
-"use client"; // Required for client-side rendering in Next.js
+"use client";
 
 import Link from "next/link";
 import Layout from "@/src/components/layout";

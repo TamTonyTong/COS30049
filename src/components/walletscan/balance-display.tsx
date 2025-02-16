@@ -1,4 +1,3 @@
-// src/components/BalanceDisplay.tsx
 type BalanceDisplayProps = {
   balance: string | null;
   usdValue: string | null;

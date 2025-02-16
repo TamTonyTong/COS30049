@@ -76,7 +76,6 @@ export default function LoginPage() {
               placeholder="Enter your email"
               className="mt-1"
               value={formData.email}
-              // value = "alice@example.com"
               onChange={handleChange}
             />
             {errors.email && (
@@ -94,7 +93,6 @@ export default function LoginPage() {
               placeholder="Enter your password"
               className="mt-1"
               value={formData.password}
-              // value = "passwordAlice"
               onChange={handleChange}
             />
             {errors.password && (

@@ -27,7 +27,7 @@ export default function TradingPage(this: any) {
   useEffect(() => {
     // Set the fixed price once when the component mounts
     setPrice(FIXED_BTC_PRICE);
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
   return (
     <Layout>
       <div className="mb-6 grid gap-8 lg:grid-cols-3">

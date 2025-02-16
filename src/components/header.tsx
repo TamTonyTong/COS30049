@@ -22,7 +22,7 @@ export default function Header() {
 
   return (
     <header className="py-4 px-6 bg-[#0d1829]/80 backdrop-blur-sm">
-      <nav className="flex items-center justify-between mx-auto max-w-7xl">
+      <nav className="relative flex items-center justify-between mx-auto max-w-7xl">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex items-center justify-center w-10 h-10 text-white rounded-lg bg-gradient-to-br from-blue-500 to-cyan-300">
             <TrendingUp size={24} />
@@ -30,7 +30,7 @@ export default function Header() {
           <span className="text-xl font-bold text-white">TradePro</span>
         </Link>
 
-        <div className="items-center hidden gap-6 md:flex">
+        <div className="absolute left-1/2 transform -translate-x-1/2">
           <div className="bg-[#1a2b4b] rounded-full px-6 py-2">
             <ul className="flex gap-6 text-gray-300">
               <li>
@@ -106,4 +106,3 @@ export default function Header() {
     </header>
   )
 }
-

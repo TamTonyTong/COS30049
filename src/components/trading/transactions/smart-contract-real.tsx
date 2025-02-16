@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 class FakeSmartContract {
-  
   private trades: any[] = [];
   private balances: { [key: string]: { USD: number; BTC: number } } = {
     UserA: { USD: 0, BTC: 0 },
@@ -30,14 +29,17 @@ class FakeSmartContract {
     }
   }
 
-
   private loadBalances() {
     if (typeof window !== "undefined") {
       const savedBalances = localStorage.getItem("fake_balances");
       try {
         const parsedBalances = savedBalances ? JSON.parse(savedBalances) : null;
 
-        if (parsedBalances && typeof parsedBalances === "object" && parsedBalances.UserA) {
+        if (
+          parsedBalances &&
+          typeof parsedBalances === "object" &&
+          parsedBalances.UserA
+        ) {
           this.balances = parsedBalances;
         } else {
           this.balances = {
@@ -80,18 +82,22 @@ class FakeSmartContract {
     this.saveBalances();
   }
 
-
   public getBalance(user: string) {
     return this.balances[user];
   }
 
-  public initiateTrade(buyer: string, seller: string, asset: string, amount: number, price: number) {
+  public initiateTrade(
+    buyer: string,
+    seller: string,
+    asset: string,
+    amount: number,
+    price: number,
+  ) {
     if (this.balances[buyer].USD < price * amount) {
       return { error: "Insufficient USD balance." };
     }
 
     const userABalanceAtTrade = this.getBalance("UserA");
-
 
     const fakeTxHash = "0x" + Math.random().toString(16).substr(2, 64);
 
@@ -105,7 +111,7 @@ class FakeSmartContract {
       sellerDeposit: 0,
       status: "Pending Seller Deposit",
       timestamp: new Date().toISOString(),
-      userABalanceAtTrade
+      userABalanceAtTrade,
     };
 
     this.trades.push(newTrade);
@@ -114,7 +120,7 @@ class FakeSmartContract {
     return newTrade;
   }
 
-    // New Function: Deduct USD Balance
+  // New Function: Deduct USD Balance
   public BuyerDepositUSD(user: string, amount: number) {
     if (!this.balances[user]) {
       throw new Error(`User ${user} does not exist.`);
@@ -126,7 +132,9 @@ class FakeSmartContract {
 
     this.balances[user].USD -= amount;
     this.saveBalances();
-    console.log(`Deducted ${amount} USD from ${user}. New balance: ${this.balances[user].USD}`);
+    console.log(
+      `Deducted ${amount} USD from ${user}. New balance: ${this.balances[user].USD}`,
+    );
   }
 
   public sellerDepositBTC(txHash: string) {

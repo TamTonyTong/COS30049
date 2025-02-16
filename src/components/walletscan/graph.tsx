@@ -8,7 +8,7 @@ interface GraphProps {
   onNodeClick: (nodeId: string) => void; // Callback for node clicks
 }
 
-const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
+const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick }) => {
   const graphRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
       // Graph options
       const options = {
         autoResize: true,
-        edges: { 
+        edges: {
           arrows: {
             to: {
               enabled: true,
@@ -48,9 +48,10 @@ const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
             size: 20,
             color: "#147565",
             bold: {
-              size: 20, 
+              size: 20,
               face: "arial",
-              mod: "bold"},
+              mod: "bold",
+            },
           },
         },
         physics: {
@@ -59,12 +60,12 @@ const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
         layout: {
           improvedLayout: true,
         },
-        
+
         interaction: {
           dragNodes: true, // Allow dragging of nodes
           dragView: true, // Allow dragging the view (panning)
           zoomView: true, // Allow zooming the view
-        }
+        },
       };
 
       // Initialize the network
@@ -76,14 +77,18 @@ const Graph: React.FC<GraphProps> = ({ nodes, edges, onNodeClick  }) => {
           onNodeClick(nodeId); // Call the callback function
         }
       });
-    
     }
   }, [nodes, edges, onNodeClick]);
 
   return (
     <div
       ref={graphRef}
-      style={{ width: "100%", height: "800px", border: "1px solid #ccc", backgroundColor: "#FFFFFF" }}
+      style={{
+        width: "100%",
+        height: "800px",
+        border: "1px solid #ccc",
+        backgroundColor: "#FFFFFF",
+      }}
     />
   );
 };

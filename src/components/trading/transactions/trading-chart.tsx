@@ -16,9 +16,7 @@ import {
 } from "@/src/components/ui/chart";
 
 import { Brush, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import 'boxicons/css/boxicons.min.css';
-
-
+import "boxicons/css/boxicons.min.css";
 
 interface PriceData {
   time: string;
@@ -31,17 +29,16 @@ interface TradingChartProps {
 
 export default function TradingChart({ tradingPair }: TradingChartProps) {
   const apiKey = process.env.GECKO_API_KEY;
-  console.log(apiKey)
+  console.log(apiKey);
   const Currency = tradingPair;
   const baseCurrency = Currency.charAt(0).toUpperCase() + Currency.slice(1);
-  console.log(baseCurrency)
+  console.log(baseCurrency);
   const [priceData, setPriceData] = useState<PriceData[]>([]);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="p-4 text-lg text-white bg-gray-800 border border-yellow-400 rounded-lg shadow-xl">
-          
+        <div className="rounded-lg border border-yellow-400 bg-gray-800 p-4 text-lg text-white shadow-xl">
           <p className="font-semibold">{`Price: $${payload[0].value.toFixed(0)}`}</p>
           <p className="opacity-75">{`Date: ${payload[0].payload.time}`}</p>
         </div>
@@ -49,19 +46,19 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
     }
     return null;
   };
-  
+
   useEffect(() => {
     const fetchPriceData = async () => {
       try {
         const options = {
-          method: 'GET',
-          headers: {accept: 'application/json', 'x-cg-api-key': ``}
+          method: "GET",
+          headers: { accept: "application/json", "x-cg-api-key": `` },
         };
         const response = await fetch(
           // `https://api.coingecko.com/api/v3/coins/${baseCurrency.toLowerCase()}/market_chart?vs_currency=usd&days=7`
-          `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=14`          
-          , options)
-        ;
+          `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=14`,
+          options,
+        );
         console.log("Response status:", response.status); // Logs HTTP status
         console.log("Response headers:", response.headers); // Logs headers
 
@@ -96,27 +93,31 @@ export default function TradingChart({ tradingPair }: TradingChartProps) {
       color: "hsl(var(--chart-2))",
     },
   } satisfies ChartConfig;
-const icon_btc = <i className="text-5xl align-middle bx bxl-bitcoin"></i>
+  const icon_btc = <i className="bx bxl-bitcoin align-middle text-5xl"></i>;
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{baseCurrency} Price Chart {icon_btc} </CardTitle>
-        
+        <CardTitle>
+          {baseCurrency} Price Chart {icon_btc}{" "}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="w-full h-full">
+        <div className="h-full w-full">
           <ChartContainer config={chartConfig}>
             <LineChart data={priceData}>
-              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#aab8c2" />
+              <CartesianGrid
+                strokeDasharray="4 4"
+                vertical={false}
+                stroke="#aab8c2"
+              />
               <XAxis dataKey="time" tickMargin={8} />
               <YAxis orientation="right" domain={["auto", "auto"]} />
-              <ChartTooltip 
-              cursor={true}
-              
-              // content={<ChartTooltipContent indicator="dot" active = {true}/>}
-              content={CustomTooltip}
+              <ChartTooltip
+                cursor={true}
+                // content={<ChartTooltipContent indicator="dot" active = {true}/>}
+                content={CustomTooltip}
               />
-              
+
               <Line
                 dataKey="price"
                 type="monotone"

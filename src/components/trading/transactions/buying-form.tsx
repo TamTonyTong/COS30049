@@ -60,14 +60,7 @@ function BuyingFormContent() {
         setPaymentStatus("Payment failed. Please try again.");
         return;
       }
-      try {
-        // Deduct USD from UserA's balance
-        fakeSmartContract.BuyerDepositUSD("UserA", totalCost);
-      } catch (error) {
-        setTradeStatus("Error: " + (error as Error).message);
-        return;
-      }
-      setPaymentStatus("Payment successful! Executing trade...");
+
       setTradeStatus("Initiating trade...");
 
       const trade = fakeSmartContract.initiateTrade(
@@ -77,7 +70,14 @@ function BuyingFormContent() {
         Number(amount),
         Number(price),
       );
-
+      try {
+        // Deduct USD from UserA's balance
+        fakeSmartContract.BuyerDepositUSD("UserA", totalCost);
+      } catch (error) {
+        setTradeStatus("Error: " + (error as Error).message);
+        return;
+      }
+      setPaymentStatus("Payment successful! Executing trade...");
       if ("error" in trade) {
         setTradeStatus(`Trade failed: ${trade.error}`);
         return;

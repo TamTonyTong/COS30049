@@ -186,10 +186,7 @@ export default function HomePage() {
               </Table>
             </div>
 
-            {/* Transaction History */}
-            <h2 className="flex items-center mb-4 text-2xl font-medium text-white">
-              <Clock className="mr-2" /> Transaction History
-            </h2>
+           
             <TradeHistory />
 
           </CardContent>

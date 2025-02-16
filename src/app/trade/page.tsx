@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import { useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import TradingChart from "@/src/components/trading/transactions/trading-chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import TradeHistory from "@/src/components/trading/transactions/trading-history";
 import Layout from "@/src/components/layout";
 import BalanceCard from "@/src/components/trading/transactions/balance-card";
@@ -15,18 +20,18 @@ export default function TradingPage(this: any) {
   const [amount, setAmount] = useState<string>("");
   const [tradingPair, setTradingPair] = useState<string>("bitcoin");
   const icon_order = <i className="bx bxs-cart"></i>;
-  
+
   // Set a fixed price for BTC
   const FIXED_BTC_PRICE = "100"; // Fixed BTC price in USD
 
   useEffect(() => {
     // Set the fixed price once when the component mounts
     setPrice(FIXED_BTC_PRICE);
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
   return (
     <Layout>
-      <div className="grid gap-8 lg:grid-cols-3 mb-6">
-        <BalanceCard/>
+      <div className="mb-6 grid gap-8 lg:grid-cols-3">
+        <BalanceCard />
       </div>
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -39,7 +44,10 @@ export default function TradingPage(this: any) {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Trading Pair Selector */}
-              <TradingPairSelector tradingPair={tradingPair} setTradingPair={setTradingPair}/>
+              <TradingPairSelector
+                tradingPair={tradingPair}
+                setTradingPair={setTradingPair}
+              />
               <OrderForm
                 orderType={orderType}
                 setOrderType={setOrderType}
@@ -53,7 +61,7 @@ export default function TradingPage(this: any) {
           </Card>
         </div>
       </div>
-      <TradeHistory/>
+      <TradeHistory />
     </Layout>
   );
 }

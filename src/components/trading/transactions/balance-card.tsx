@@ -1,6 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { fakeSmartContract } from "@/src/components/trading/transactions/smart-contract-real";
 
 export default function BalanceCard() {
@@ -33,7 +38,7 @@ export default function BalanceCard() {
   }, []);
 
   return (
-    <Card className="w-full max-w-md mt-2 lg:col-start-2">
+    <Card className="mt-2 w-full max-w-md lg:col-start-2">
       <CardHeader>
         <CardTitle>Your Balance</CardTitle>
       </CardHeader>

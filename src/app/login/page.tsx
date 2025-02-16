@@ -47,18 +47,23 @@ export default function LoginPage() {
           setErrors({ general: errorData.message });
         }
       } catch (error) {
-        setErrors({ general: "An unexpected error occurred. Please try again." });
+        setErrors({
+          general: "An unexpected error occurred. Please try again.",
+        });
       }
     }
   };
 
   return (
     <Layout>
-      <div className="max-w-md mx-auto mt-8 p-6 bg-[#1a2b4b] rounded-lg shadow-lg">
-        <h1 className="mb-6 text-2xl font-bold text-center text-white">Login to TradePro</h1>
+      <div className="mx-auto mt-8 max-w-md rounded-lg bg-[#1a2b4b] p-6 shadow-lg">
+        <h1 className="mb-6 text-center text-2xl font-bold text-white">
+          Login to TradePro
+        </h1>
         <p className="text-center font-bold">Example Account</p>
         <p className="text-center">alice@example.com</p>
-        <p className="text-center">passwordAlice</p><br/>
+        <p className="text-center">passwordAlice</p>
+        <br />
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="email" className="text-white">
@@ -71,10 +76,11 @@ export default function LoginPage() {
               placeholder="Enter your email"
               className="mt-1"
               value={formData.email}
-              // value = "alice@example.com"
               onChange={handleChange}
             />
-            {errors.email && <p className="mt-1 text-red-500 text-sm">{errors.email}</p>}
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="password" className="text-white">
@@ -87,18 +93,24 @@ export default function LoginPage() {
               placeholder="Enter your password"
               className="mt-1"
               value={formData.password}
-              // value = "passwordAlice"
               onChange={handleChange}
             />
-            {errors.password && <p className="mt-1 text-red-500 text-sm">{errors.password}</p>}
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+            )}
           </div>
-          {errors.general && <p className="mt-2 text-red-500 text-center">{errors.general}</p>}
-          <Button type="submit" className="w-full text-white bg-blue-500 hover:bg-blue-600">
+          {errors.general && (
+            <p className="mt-2 text-center text-red-500">{errors.general}</p>
+          )}
+          <Button
+            type="submit"
+            className="w-full bg-blue-500 text-white hover:bg-blue-600"
+          >
             Log In
           </Button>
         </form>
         <div className="mt-4 text-center text-sm text-blue-300 hover:text-blue-200">
-            Forgot password?
+          Forgot password?
         </div>
         <div className="mt-6 text-center">
           <p className="text-white">Don't have an account?</p>

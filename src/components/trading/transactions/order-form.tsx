@@ -1,5 +1,10 @@
 "use client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -25,7 +30,8 @@ export default function OrderForm({
   tradingPair,
 }: OrderFormProps) {
   const router = useRouter();
-  const baseCurrency = tradingPair.charAt(0).toUpperCase() + tradingPair.slice(1);
+  const baseCurrency =
+    tradingPair.charAt(0).toUpperCase() + tradingPair.slice(1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +39,9 @@ export default function OrderForm({
       alert("Please enter both price and amount.");
       return;
     }
-    router.push(`/trade/${orderType}?pair=${tradingPair}&price=${price}&amount=${amount}`);
+    router.push(
+      `/trade/${orderType}?pair=${tradingPair}&price=${price}&amount=${amount}`,
+    );
   };
 
   return (
@@ -75,7 +83,10 @@ export default function OrderForm({
             }}
             required
           />
-          <Button type="submit" className="w-full bg-green-500 hover:bg-green-600">
+          <Button
+            type="submit"
+            className="w-full bg-green-500 hover:bg-green-600"
+          >
             Buy {baseCurrency}
           </Button>
         </form>

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import Layout from "@/src/components/layout";
 import { SetStateAction, useEffect, useRef, useState } from "react";
 import { Network } from "vis-network/standalone";
@@ -11,7 +11,7 @@ export default function CryptoGraph() {
   useEffect(() => {
     const container = networkRef.current;
     const addresses = [
-      { id: 1, label: "Alice", title: "Address: 0xA1"},
+      { id: 1, label: "Alice", title: "Address: 0xA1" },
       { id: 2, label: "Bob", title: "Address: 0xB2" },
       { id: 3, label: "Charlie", title: "Address: 0xC3" },
       { id: 4, label: "David", title: "Address: 0xD4" },
@@ -41,43 +41,55 @@ export default function CryptoGraph() {
     };
 
     const getNodePositions = (centerId: number) => {
-        const radius = 200;
-        const otherNodes = addresses.filter((node) => node.id !== centerId).slice(0, 8);
-        return [
-          { id: centerId, label: addresses.find((node) => node.id === centerId).label, title: addresses.find((node) => node.id === centerId).title, x: 0, y: 0 },
-          ...otherNodes.map((node, index) => {
-            const angle = (index / 8) * 2 * Math.PI;
-            return { ...node, x: radius * Math.cos(angle), y: radius * Math.sin(angle) };
-          })
-        ];
-      };
+      const radius = 200;
+      const otherNodes = addresses
+        .filter((node) => node.id !== centerId)
+        .slice(0, 8);
+      return [
+        {
+          id: centerId,
+          label: addresses.find((node) => node.id === centerId).label,
+          title: addresses.find((node) => node.id === centerId).title,
+          x: 0,
+          y: 0,
+        },
+        ...otherNodes.map((node, index) => {
+          const angle = (index / 8) * 2 * Math.PI;
+          return {
+            ...node,
+            x: radius * Math.cos(angle),
+            y: radius * Math.sin(angle),
+          };
+        }),
+      ];
+    };
 
     const updateGraph = (centerId: SetStateAction<number>) => {
-        setCurrentNode(centerId);
-        if (network) {
-          const nodes = getNodePositions(centerId);
-          const edges = generateEdges(centerId);
-          network.setData({ nodes, edges });
-        }
-      };
+      setCurrentNode(centerId);
+      if (network) {
+        const nodes = getNodePositions(centerId);
+        const edges = generateEdges(centerId);
+        network.setData({ nodes, edges });
+      }
+    };
 
     const initialNodes = getNodePositions(currentNode);
     const initialEdges = generateEdges(currentNode);
 
     const options = {
       autoResize: true,
-      nodes: { 
-        shape: "circle", 
+      nodes: {
+        shape: "circle",
         font: {
-            size: 20,
-            color: "#147565",
-          }, 
-    },
-      edges: { 
+          size: 20,
+          color: "#147565",
+        },
+      },
+      edges: {
         arrows: "to",
         font: {
           size: 20,
-        }
+        },
       },
       layout: { improvedLayout: false },
       physics: false,
@@ -85,10 +97,14 @@ export default function CryptoGraph() {
         dragNodes: false,
         dragView: false,
         zoomView: false,
-      }
+      },
     };
 
-    const net = new Network(container, { nodes: initialNodes, edges: initialEdges }, options);
+    const net = new Network(
+      container,
+      { nodes: initialNodes, edges: initialEdges },
+      options,
+    );
     setNetwork(net);
 
     net.on("click", function (params) {
@@ -100,8 +116,18 @@ export default function CryptoGraph() {
 
   return (
     <Layout>
-      <h1 className=" text-center mb-6 text-5xl font-bold text-white md:text-6xl">Crypto Transactions Graph</h1>
-      <div ref={networkRef} style={{ height: "800px", width:"100%", border: "9px solid black", backgroundColor: "#FFFFFF" }} />
+      <h1 className="mb-6 text-center text-5xl font-bold text-white md:text-6xl">
+        Crypto Transactions Graph
+      </h1>
+      <div
+        ref={networkRef}
+        style={{
+          height: "800px",
+          width: "100%",
+          border: "9px solid black",
+          backgroundColor: "#FFFFFF",
+        }}
+      />
     </Layout>
   );
 }

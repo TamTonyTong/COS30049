@@ -2,8 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Layout from "@/src/components/layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -80,13 +92,13 @@ export default function HomePage() {
   if (loading) {
     return (
       <Layout>
-        <div className="container px-4 py-8 mx-auto">
-          <Card className="bg-[#1a2b4b] border-blue-500/30">
+        <div className="container mx-auto px-4 py-8">
+          <Card className="border-blue-500/30 bg-[#1a2b4b]">
             <CardHeader>
-              <Skeleton className="w-64 h-8 bg-gray-700" />
+              <Skeleton className="h-8 w-64 bg-gray-700" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="w-full h-12 bg-gray-700" />
+              <Skeleton className="h-12 w-full bg-gray-700" />
             </CardContent>
           </Card>
         </div>
@@ -97,10 +109,12 @@ export default function HomePage() {
   if (error) {
     return (
       <Layout>
-        <div className="container px-4 py-8 mx-auto">
-          <Card className="bg-[#1a2b4b] border-red-500/30">
+        <div className="container mx-auto px-4 py-8">
+          <Card className="border-red-500/30 bg-[#1a2b4b]">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-white">Error</CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">
+                Error
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-red-400">{error}</p>
@@ -113,15 +127,14 @@ export default function HomePage() {
 
   return (
     <Layout>
-      <div className="container px-4 py-8 mx-auto">
-        <Card className="bg-[#1a2b4b] border-blue-500/30 mb-8">
+      <div className="container mx-auto px-4 py-8">
+        <Card className="mb-8 border-blue-500/30 bg-[#1a2b4b]">
           <CardHeader>
             <CardTitle className="flex items-center text-3xl font-bold text-white">
               <DollarSign className="mr-2" /> Personal Assets
             </CardTitle>
           </CardHeader>
           <CardContent>
-
             {/* Address */}
             <div className="mb-6">
               <h2 className="text-xl text-white">Address: {address}</h2>
@@ -129,11 +142,13 @@ export default function HomePage() {
 
             {/* Balance */}
             <div className="mb-6">
-              <h2 className="flex items-center mb-4 text-2xl font-medium text-white">
+              <h2 className="mb-4 flex items-center text-2xl font-medium text-white">
                 <Activity className="mr-2" /> Balance (USD)
               </h2>
-              <div className="bg-[#0d1829] p-6 rounded-lg">
-                <span className="text-4xl font-bold text-green-400">${balances.USD.toLocaleString()}</span>
+              <div className="rounded-lg bg-[#0d1829] p-6">
+                <span className="text-4xl font-bold text-green-400">
+                  ${balances.USD.toLocaleString()}
+                </span>
               </div>
             </div>
 
@@ -141,13 +156,20 @@ export default function HomePage() {
             <div className="mb-6">
               <h2 className="text-xl font-medium text-white">Deposit USD</h2>
               <input
-                className="p-2 text-white bg-transparent border border-gray-400 rounded-lg"
+                className="rounded-lg border border-gray-400 bg-transparent p-2 text-white"
                 placeholder="Deposit Amount"
                 type="text"
                 value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*\.?\d*$/.test(value)) {
+                    setDepositAmount(value);
+                  }
+                }}
               />
-              <Button onClick={handleDepositUSD} className="ml-2">Deposit</Button>
+              <Button onClick={handleDepositUSD} className="ml-2">
+                Deposit
+              </Button>
             </div>
 
             {/* Assets Table */}
@@ -157,38 +179,46 @@ export default function HomePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-white">Cryptocurrency</TableHead>
-                    <TableHead className="text-right text-white">Amount</TableHead>
-                    <TableHead className="text-right text-white">Price (USD)</TableHead>
-                    <TableHead className="text-right text-white">Total</TableHead>
-                    <TableHead className="text-right text-white">Action</TableHead>
+                    <TableHead className="text-right text-white">
+                      Amount
+                    </TableHead>
+                    <TableHead className="text-right text-white">
+                      Price (USD)
+                    </TableHead>
+                    <TableHead className="text-right text-white">
+                      Total
+                    </TableHead>
+                    <TableHead className="text-right text-white">
+                      Action
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                {/* {assets.map((asset, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="text-white">{asset.name}</TableCell>
-                      <TableCell className="text-right text-white">{asset.amount.toFixed(6)}</TableCell>
-                      <TableCell className="text-right text-white">${asset.price.toFixed(2)}</TableCell> */}
-                    {/* <TableRow key={index}> */}
-                    <TableRow>
-                      <TableCell className="text-white">BTC</TableCell>
-                      <TableCell className="text-right text-white">{balances.BTC}</TableCell>
-                      <TableCell className="text-right text-white">100$</TableCell>
-                      <TableCell className="text-right text-white">{balances.BTC*100}$</TableCell>
-                      <TableCell className="text-right">
-                        <Link href="/trade">
-                          <Button className="text-white bg-blue-500 hover:bg-blue-600">Trade</Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
+                  <TableRow>
+                    <TableCell className="text-white">BTC</TableCell>
+                    <TableCell className="text-right text-white">
+                      {balances.BTC}
+                    </TableCell>
+                    <TableCell className="text-right text-white">
+                      100$
+                    </TableCell>
+                    <TableCell className="text-right text-white">
+                      {balances.BTC * 100}$
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href="/trade">
+                        <Button className="bg-blue-500 text-white hover:bg-blue-600">
+                          Trade
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
                   {/* ))} */}
                 </TableBody>
               </Table>
             </div>
 
-           
             <TradeHistory />
-
           </CardContent>
         </Card>
       </div>

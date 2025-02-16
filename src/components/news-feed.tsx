@@ -1,21 +1,41 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 
 interface NewsItem {
-  id: number
-  title: string
-  source: string
-  date: string
+  id: number;
+  title: string;
+  source: string;
+  date: string;
 }
 
 export default function NewsFeed() {
   const [news, setNews] = useState<NewsItem[]>([
-    { id: 1, title: "Tech Stocks Surge Amid Positive Earnings Reports", source: "Financial Times", date: "2023-05-15" },
-    { id: 2, title: "Federal Reserve Hints at Potential Rate Hike", source: "Wall Street Journal", date: "2023-05-14" },
-    { id: 3, title: "Oil Prices Stabilize Following OPEC+ Meeting", source: "Reuters", date: "2023-05-13" },
-  ])
+    {
+      id: 1,
+      title: "Tech Stocks Surge Amid Positive Earnings Reports",
+      source: "Financial Times",
+      date: "2023-05-15",
+    },
+    {
+      id: 2,
+      title: "Federal Reserve Hints at Potential Rate Hike",
+      source: "Wall Street Journal",
+      date: "2023-05-14",
+    },
+    {
+      id: 3,
+      title: "Oil Prices Stabilize Following OPEC+ Meeting",
+      source: "Reuters",
+      date: "2023-05-13",
+    },
+  ]);
 
   return (
     <Card>
@@ -35,6 +55,5 @@ export default function NewsFeed() {
         </ul>
       </CardContent>
     </Card>
-  )
+  );
 }
-

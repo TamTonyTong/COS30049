@@ -2,7 +2,12 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
@@ -55,6 +60,16 @@ function BuyingFormContent() {
         setPaymentStatus("Payment failed. Please try again.");
         return;
       }
+
+      setTradeStatus("Initiating trade...");
+
+      const trade = fakeSmartContract.initiateTrade(
+        "UserA",
+        "UserB",
+        "BTC",
+        Number(amount),
+        Number(price),
+      );
       try {
         // Deduct USD from UserA's balance
         fakeSmartContract.BuyerDepositUSD("UserA", totalCost);
@@ -63,28 +78,28 @@ function BuyingFormContent() {
         return;
       }
       setPaymentStatus("Payment successful! Executing trade...");
-      setTradeStatus("Initiating trade...");
-
-      const trade = fakeSmartContract.initiateTrade("UserA", "UserB", "BTC", Number(amount), Number(price));
-
       if ("error" in trade) {
         setTradeStatus(`Trade failed: ${trade.error}`);
         return;
       }
 
       setTradeStatus("Waiting for seller to deposit BTC...");
-      const updatedTrade = (await fakeSmartContract.sellerDepositBTC(trade.txHash)) as {
+      const updatedTrade = (await fakeSmartContract.sellerDepositBTC(
+        trade.txHash,
+      )) as {
         txHash: string;
         sellerDeposit: number;
       };
       setSellerDeposit(updatedTrade.sellerDeposit);
-      
+
       setTradeStatus("Seller deposited BTC. Completing trade...");
 
       await fakeSmartContract.completeTrade(trade.txHash);
       updateBalance();
 
-      setTradeStatus("Trade completed! Buyer received BTC, Seller received USD.");
+      setTradeStatus(
+        "Trade completed! Buyer received BTC, Seller received USD.",
+      );
       console.log("Final Trade Data:", updatedTrade);
       router.push("/trade");
     }, 2000);
@@ -92,9 +107,9 @@ function BuyingFormContent() {
 
   return (
     <div className="flex items-end justify-start">
-      <BalanceCard/>
-      
-      <div className="flex mt-8 ml-32">
+      <BalanceCard />
+
+      <div className="ml-32 mt-8 flex">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Confirm Buy Order</CardTitle>
@@ -108,11 +123,18 @@ function BuyingFormContent() {
               <Label htmlFor="buy-amount">Amount</Label>
               <Input id="buy-amount" type="number" value={amount} disabled />
             </div>
-            {paymentStatus && <div className="text-sm text-center">{paymentStatus}</div>}
-            <Button className="w-full bg-green-500 hover:bg-green-600" onClick={handleConfirmOrder}>
+            {paymentStatus && (
+              <div className="text-center text-sm">{paymentStatus}</div>
+            )}
+            <Button
+              className="w-full bg-green-500 hover:bg-green-600"
+              onClick={handleConfirmOrder}
+            >
               Pay Now
             </Button>
-            {tradeStatus && <p className="text-sm text-center">{tradeStatus}</p>}
+            {tradeStatus && (
+              <p className="text-center text-sm">{tradeStatus}</p>
+            )}
           </CardContent>
         </Card>
       </div>

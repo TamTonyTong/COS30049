@@ -1,4 +1,4 @@
-"use client"; // Required for client-side rendering in Next.js
+"use client";
 
 import Link from "next/link";
 import Layout from "@/src/components/layout";
@@ -40,7 +40,6 @@ export default function WalletScan() {
       status: string;
     }[]
   >([]);
-
 
   // Fetch ETH/USD price from CoinGecko
   const fetchEthPrice = async () => {
@@ -85,8 +84,6 @@ export default function WalletScan() {
         setUsdValue(balanceInUsd.toFixed(0)); // Keep 2 decimal places
         setBalance(balanceInEth_string);
       }
-
-      
 
       // Fetch transactions
       const transactions = await fetchTransactions(address);
@@ -153,7 +150,6 @@ export default function WalletScan() {
     }
   };
 
-  
   const handleNodeClick = async (nodeId: string) => {
     setLoading(true);
     try {
@@ -164,11 +160,13 @@ export default function WalletScan() {
       ]);
       const newEdges = [...graphData.edges];
 
-      transactions.forEach((tx: { from: any; to: any; label?: string | undefined; }) => {
-        newNodes.add(tx.from);
-        newNodes.add(tx.to);
-        newEdges.push(tx);
-      });
+      transactions.forEach(
+        (tx: { from: any; to: any; label?: string | undefined }) => {
+          newNodes.add(tx.from);
+          newNodes.add(tx.to);
+          newEdges.push(tx);
+        },
+      );
 
       setGraphData({
         nodes: Array.from(newNodes).map((id) => ({
@@ -191,10 +189,10 @@ export default function WalletScan() {
   console.log(usdValue);
   return (
     <Layout>
-      <h1 className="mb-6 text-5xl font-bold text-white md:text-6xl text-center">
-          Scanning Wallet
-        </h1>
-      <div className="flex flex-col mb-24 text-center items-left">
+      <h1 className="mb-6 text-center text-5xl font-bold text-white md:text-6xl">
+        Scanning Wallet
+      </h1>
+      <div className="items-left mb-24 flex flex-col text-center">
         <p className="text-xs">0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5</p>
         <Link
           href="https://etherscan.io/address/0x95222290dd7278aa3ddd389cc1e1d165cc4bafe5"
@@ -203,12 +201,12 @@ export default function WalletScan() {
           <p>Validation</p>
         </Link>
         <AddressInput
-        address={address}
-        setAddress={setAddress}
-        loading={loading}
-        fetchBalance={fetchBalance}
-      />
-      <BalanceDisplay balance={balance} usdValue={usdValue} />
+          address={address}
+          setAddress={setAddress}
+          loading={loading}
+          fetchBalance={fetchBalance}
+        />
+        <BalanceDisplay balance={balance} usdValue={usdValue} />
         {/* Render the Graph component */}
         <div className="mt-8">
           <h2 className="mb-4 text-xl font-semibold">Transaction Graph</h2>

@@ -19,7 +19,8 @@ export default function PrivacyPage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-[#1a2b4b] border-blue-500/30">
+          <Card className="bg-[rgba(10,15,30,0.8)] border-blue-500/30 shadow-lg shadow-blue-500/20 
+                        hover:shadow-blue-400/30 transition duration-300 flex flex-col">
             <CardHeader>
               <CardTitle>2. How We Use Your Information</CardTitle>
             </CardHeader>
@@ -41,7 +42,8 @@ export default function PrivacyPage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-[#1a2b4b] border-blue-500/30">
+          <Card className="bg-[rgba(10,15,30,0.8)] border-blue-500/30 shadow-lg shadow-blue-500/20 
+                        hover:shadow-blue-400/30 transition duration-300 flex flex-col">
             <CardHeader>
               <CardTitle>4. Cookies</CardTitle>
             </CardHeader>

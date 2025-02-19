@@ -1,0 +1,85 @@
+{
+    "assets": [
+        {
+            "AssetID": 1,
+            "name": "Bitcoin",
+            "shortname": "BTC",
+            "value": 50000,
+            "change": 2.5,
+            "volume": "10.5B",
+            "marketCap": "950B"
+        },
+        {
+            "AssetID": 2,
+            "name": "Ethereum",
+            "shortname": "ETH",
+            "value": 3500,
+            "change": -1.2,
+            "volume": "8.2B",
+            "marketCap": "420B"
+        },
+        {
+            "AssetID": 3,
+            "name": "Ripple",
+            "shortname": "XRP",
+            "value": 1.2,
+            "change": 0.8,
+            "volume": "3.1B",
+            "marketCap": "57B"
+        },
+        {
+            "AssetID": 4,
+            "name": "Litecoin",
+            "shortname": "LTC",
+            "value": 180,
+            "change": -0.5,
+            "volume": "1.8B",
+            "marketCap": "12B"
+        },
+        {
+            "AssetID": 5,
+            "name": "Cardano",
+            "shortname": "ADA",
+            "value": 2.1,
+            "change": 3.2,
+            "volume": "2.5B",
+            "marketCap": "68B"
+        },
+        {
+            "AssetID": 6,
+            "name": "Polkadot",
+            "shortname": "DOT",
+            "value": 35,
+            "change": 1.7,
+            "volume": "1.2B",
+            "marketCap": "35B"
+        },
+        {
+            "AssetID": 7,
+            "name": "Stellar",
+            "shortname": "XLM",
+            "value": 0.4,
+            "change": -0.3,
+            "volume": "0.8B",
+            "marketCap": "9B"
+        },
+        {
+            "AssetID": 8,
+            "name": "Chainlink",
+            "shortname": "LINK",
+            "value": 28,
+            "change": 4.1,
+            "volume": "1.5B",
+            "marketCap": "13B"
+        }
+    ],
+    "users": [
+        {
+            "UserID": 101,
+            "email": "alice@example.com",
+            "phone": "123-456-7890",
+            "password": "passwordAlice",
+            "balance": 5000
+        }
+    ]
+}

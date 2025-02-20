@@ -60,7 +60,7 @@ const TransactionExplorer: React.FC = () => {
         placeholder="Enter Address ID"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
-        className="mb-2 w-full rounded border p-2"
+        className="mb-2 w-full rounded border bg-transparent p-2"
       />
       <button
         onClick={handleSearch}

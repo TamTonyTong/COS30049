@@ -36,7 +36,7 @@ app.get("/transactions/:addressId", async (req, res) => {
               block_timestamp: t.block_timestamp,  
               receiver: b.addressId
           }) AS transactions
-      LIMIT 50;
+      LIMIT 8;
       `,
       { addressId },
     );

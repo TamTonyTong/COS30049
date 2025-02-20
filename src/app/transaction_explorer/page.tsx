@@ -54,6 +54,7 @@ const TransactionExplorer: React.FC = () => {
   return (
     <div className="p-4">
       <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
+      <p>0xb0606f433496bf66338b8ad6b6d51fc4d84a44cd</p>
       <input
         type="text"
         placeholder="Enter Address ID"
@@ -82,8 +83,9 @@ const TransactionExplorer: React.FC = () => {
               <strong>Value:</strong> {t.value} <br />
               <strong>Fee:</strong> {t.transaction_fee} <br />
               <strong>Gas Used:</strong> {t.gas_used} <br />
-              {/* <strong>Block Timestamp:</strong> {t.block_timestamp} <br /> */}
-              {/* {new Date(t.block_timestamp).toLocaleString()} <br /> */}
+              <strong>Block Timestamp:</strong>
+              {new Date(t.block_timestamp * 1000).toLocaleString()} <br />
+              {/* {new Date(1667639579).toLocaleString()} <br /> */}
             </li>
           ))
         )}

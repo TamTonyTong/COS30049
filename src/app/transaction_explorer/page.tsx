@@ -85,7 +85,6 @@ const TransactionExplorer: React.FC = () => {
               <strong>Gas Used:</strong> {t.gas_used} <br />
               <strong>Block Timestamp:</strong>
               {new Date(t.block_timestamp * 1000).toLocaleString()} <br />
-              {/* {new Date(1667639579).toLocaleString()} <br /> */}
             </li>
           ))
         )}

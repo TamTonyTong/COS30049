@@ -7,17 +7,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connect to Neo4j Database
-const driver = neo4j.driver(
-  //   process.env.NEO4J_URI, // Neo4j connection string
-  "bolt://127.0.0.1:7687", // Force IPv4
-  //   neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD),
+(async () => {
+  let driver;
 
-  neo4j.auth.basic("neo4j", "12345678"),
-);
+  try {
+    driver = neo4j.driver(
+      process.env.NEO4J_URI,
+      neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD),
+    );
+    const serverInfo = await driver.getServerInfo();
+    console.log("Connection established");
+    console.log(serverInfo);
+  } catch (err) {
+    console.log(`Connection error\n${err}\nCause: ${err.cause}`);
+  }
+})();
 
 // Get One-Hop Transactions for an Address
 app.get("/transactions/:addressId", async (req, res) => {
+  driver = neo4j.driver(
+    process.env.NEO4J_URI,
+    neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD),
+  );
   const { addressId } = req.params;
   const session = driver.session();
   try {

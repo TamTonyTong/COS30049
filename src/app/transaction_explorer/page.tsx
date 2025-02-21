@@ -3,11 +3,16 @@ import React, { useState } from "react";
 import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
 
 interface Transaction {
-  transaction_id: string;
-  transaction_fee: number;
-  gas_price: number;
-  gas_used: number;
+  hash: string;
   value: number;
+  input: number;
+  gas: number;
+  gas_used: number;
+  gas_price: number;
+  transaction_fee: number;
+  block_number: number;
+  transaction_index: string;
+  block_hash: string;
   block_timestamp: number;
   receiver: string;
 }
@@ -79,11 +84,18 @@ const TransactionExplorer: React.FC = () => {
           transactions.map((t, index) => (
             <li key={index} className="mb-2">
               <strong>Receiver:</strong> {t.receiver} <br />
-              <strong>Transaction ID:</strong> {t.transaction_id} <br />
+              <strong>Hash:</strong> {t.hash} <br />
+              <strong>Transaction ID:</strong> {t.transaction_index} <br />
               <strong>Value:</strong> {t.value} <br />
               <strong>Fee:</strong> {t.transaction_fee} <br />
               <strong>Gas Used:</strong> {t.gas_used} <br />
-              <strong>Block Timestamp:</strong>
+              <strong>Gas Price:</strong> {t.gas_price} <br />
+              <strong>Gas:</strong> {t.gas} <br />
+              {/* <strong>Input:</strong> {t.input} <br /> */}
+              <strong>Input:</strong> Hiding, display if fixed <br />
+              <strong>Block Number:</strong> {t.block_number} <br />
+              <strong>Block Hash:</strong> {t.block_hash} <br />
+              <strong>Block Timestamp:</strong>{" "}
               {new Date(t.block_timestamp * 1000).toLocaleString()} <br />
             </li>
           ))

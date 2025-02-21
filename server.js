@@ -36,18 +36,25 @@ app.get("/transactions/:addressId", async (req, res) => {
       `
       MATCH (a:Address {addressId: $addressId})  
       OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)  
-      RETURN 
-          a.addressId AS searched_address,
-          COLLECT(DISTINCT {
-              transaction_id: t.block_hash,  
-              transaction_fee: t.transaction_fee,  
-              gas_price: t.gas_price,  
-              gas_used: t.gas_used,  
-              value: t.value,  
-              block_timestamp: t.block_timestamp,  
-              receiver: b.addressId
-          }) AS transactions
-      LIMIT 8;
+      WITH a, t, b  
+      ORDER BY t.transaction_index DESC  // Sort transactions by latest timestamp  
+      LIMIT 4  
+      RETURN  
+    a.addressId AS searched_address,  
+    COLLECT(DISTINCT {
+        receiver: b.addressId,
+        hash: t.hash,  
+        value: t.value,
+        input: t.input,
+        transaction_index: t.transaction_index,
+        gas: t.gas,
+        gas_used: t.gas_used,
+        gas_price: t.gas_price,
+        transaction_fee: t.transaction_fee,
+        block_number: t.block_number,
+        block_hash: t.block_hash,
+        block_timestamp: t.block_timestamp
+    }) AS transactions;
       `,
       { addressId },
     );

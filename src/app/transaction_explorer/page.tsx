@@ -20,11 +20,10 @@ interface Transaction {
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [hop, setHop] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastTimestamp, setLastTimestamp] = useState<number | null>(null);
-  const [firstTimestamp, setFirstTimestamp] = useState<number | null>(null);
+  const [lastIndex, setLastIndex] = useState<number | null>(null);
+  const [firstIndex, setFirstIndex] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [hasPrevious, setHasPrevious] = useState<boolean>(false);
 
@@ -43,16 +42,16 @@ const TransactionExplorer: React.FC = () => {
 
       // Set first and last timestamps for pagination
       if (extractedTransactions.length > 0) {
-        setLastTimestamp(
+        setLastIndex(
           extractedTransactions[extractedTransactions.length - 1]
-            .block_timestamp,
+            .transaction_index,
         );
-        setFirstTimestamp(extractedTransactions[0].block_timestamp);
+        setFirstIndex(extractedTransactions[0].transaction_index);
         setHasMore(extractedTransactions.length >= 4); // If we got 4 transactions, assume there are more
         setHasPrevious(false); // Initial load doesn't have previous
       } else {
-        setLastTimestamp(null);
-        setFirstTimestamp(null);
+        setLastIndex(null);
+        setFirstIndex(null);
         setHasMore(false);
         setHasPrevious(false);
       }
@@ -63,20 +62,20 @@ const TransactionExplorer: React.FC = () => {
   };
 
   const loadMore = async () => {
-    if (!lastTimestamp) return;
-
+    if (!lastIndex) return;
+    console.log(lastIndex);
     setLoading(true);
     setError(null);
     try {
-      const newData = await fetchTransactions(address, "older", lastTimestamp);
+      const newData = await fetchTransactions(address, "older", lastIndex);
       const extractedTransactions =
         newData.length > 0 ? newData[0].transactions : [];
 
       if (extractedTransactions.length > 0) {
         setTransactions([...transactions, ...extractedTransactions]);
-        setLastTimestamp(
+        setLastIndex(
           extractedTransactions[extractedTransactions.length - 1]
-            .block_timestamp,
+            .transaction_index,
         );
         setHasMore(extractedTransactions.length >= 4);
         setHasPrevious(true);
@@ -90,19 +89,19 @@ const TransactionExplorer: React.FC = () => {
   };
 
   const loadPrevious = async () => {
-    if (!firstTimestamp) return;
+    if (!firstIndex) return;
 
     setLoading(true);
     setError(null);
     try {
-      const newData = await fetchTransactions(address, "newer", firstTimestamp);
+      const newData = await fetchTransactions(address, "newer", firstIndex);
       const extractedTransactions =
         newData.length > 0 ? newData[0].transactions : [];
 
       if (extractedTransactions.length > 0) {
         // Add new transactions to the beginning
         setTransactions([...extractedTransactions, ...transactions]);
-        setFirstTimestamp(extractedTransactions[0].block_timestamp);
+        setFirstIndex(extractedTransactions[0].transaction_index);
         setHasPrevious(extractedTransactions.length >= 4);
       } else {
         setHasPrevious(false);
@@ -176,7 +175,7 @@ const TransactionExplorer: React.FC = () => {
           className="mt-4 rounded bg-green-500 px-4 py-2 text-white"
           disabled={loading}
         >
-          {loading ? "Loading..." : `Load More (Hop ${hop + 1})`}
+          {loading ? "Loading..." : `Load More`}
         </button>
       )}
     </div>

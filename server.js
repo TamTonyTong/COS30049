@@ -31,8 +31,10 @@ app.get("/transactions/:addressId", async (req, res) => {
   );
   const { addressId } = req.params;
   const direction = req.query.direction || "initial"; // "initial", "older", or "newer"
-  const timestamp = parseInt(req.query.timestamp) || null;
-
+  const transaction_index = req.query.index || null;
+  console.log(
+    `API Request: ${direction} for address ${addressId}, index: ${transaction_index}`,
+  );
   const session = driver.session();
   try {
     let query;
@@ -43,7 +45,7 @@ app.get("/transactions/:addressId", async (req, res) => {
         MATCH (a:Address {addressId: $addressId})  
         OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)  
         WITH a, t, b  
-        ORDER BY t.block_timestamp DESC
+        ORDER BY t.transaction_index DESC
         LIMIT 4  
         RETURN  
         a.addressId AS searched_address,  
@@ -63,13 +65,14 @@ app.get("/transactions/:addressId", async (req, res) => {
         }) AS transactions;
       `;
     } else if (direction === "older") {
+      console.log(`Processing older request with index: ${transaction_index}`);
       // Load older transactions (lower timestamp)
       query = `
         MATCH (a:Address {addressId: $addressId})  
         OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)
-        WHERE t.block_timestamp < $timestamp
+        WHERE t.transaction_index < $transaction_index
         WITH a, t, b  
-        ORDER BY t.block_timestamp DESC
+        ORDER BY t.transaction_index DESC
         LIMIT 4  
         RETURN  
         a.addressId AS searched_address,  
@@ -88,13 +91,13 @@ app.get("/transactions/:addressId", async (req, res) => {
             block_timestamp: t.block_timestamp
         }) AS transactions;
       `;
-      params.timestamp = timestamp;
+      params.transaction_index = parseInt(transaction_index, 10);
     } else if (direction === "newer") {
       // Load newer transactions (higher timestamp)
       query = `
         MATCH (a:Address {addressId: $addressId})  
         OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)
-        WHERE t.block_timestamp > $timestamp
+        WHERE t.transaction_index > $transaction_index
         WITH a, t, b  
         ORDER BY t.block_timestamp ASC
         LIMIT 4
@@ -115,7 +118,7 @@ app.get("/transactions/:addressId", async (req, res) => {
             block_timestamp: t.block_timestamp
         }) AS transactions;
       `;
-      params.timestamp = timestamp;
+      params.transaction_index = parseInt(transaction_index, 10);
     }
     const result = await session.run(query, params);
 
@@ -126,7 +129,7 @@ app.get("/transactions/:addressId", async (req, res) => {
         transactions.reverse();
       });
     }
-
+    console.log(transaction_index);
     console.log(result);
 
     res.json(result.records.map((record) => record.toObject()));

@@ -1,14 +1,14 @@
 export async function fetchTransactions(
   addressId: string,
   direction: "initial" | "older" | "newer" = "initial",
-  timestamp?: number,
+  transaction_index?: number,
 ) {
   try {
     let url = `http://localhost:5001/transactions/${addressId}`;
 
     // Add query parameters for pagination
-    if (direction !== "initial" && timestamp) {
-      url += `?direction=${direction}&timestamp=${timestamp}`;
+    if (direction !== "initial" && transaction_index) {
+      url += `?direction=${direction}&index=${transaction_index}`;
     } else if (direction !== "initial") {
       url += `?direction=${direction}`;
     }

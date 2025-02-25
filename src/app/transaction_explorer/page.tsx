@@ -31,6 +31,8 @@ const TransactionExplorer: React.FC = () => {
     if (!address) return;
     const formattedAddress = address.trim().toLowerCase(); // Ensure consistent format
     console.log(formattedAddress);
+    console.log("First Index,", firstIndex);
+    console.log("Last Index,", lastIndex);
     setLoading(true);
     setError(null);
     try {
@@ -73,6 +75,7 @@ const TransactionExplorer: React.FC = () => {
 
       if (extractedTransactions.length > 0) {
         setTransactions([...transactions, ...extractedTransactions]);
+        setFirstIndex(extractedTransactions[0].transaction_index);
         setLastIndex(
           extractedTransactions[extractedTransactions.length - 1]
             .transaction_index,
@@ -82,6 +85,8 @@ const TransactionExplorer: React.FC = () => {
       } else {
         setHasMore(false);
       }
+      console.log("Load More First Index,", firstIndex);
+      console.log("Load More Last Index,", lastIndex);
     } catch (err) {
       setError("Failed to load more transactions.");
     }
@@ -109,6 +114,8 @@ const TransactionExplorer: React.FC = () => {
     } catch (err) {
       setError("Failed to load previous transactions.");
     }
+    console.log("Load Previous First Index,", firstIndex);
+    console.log("Load Previous Last Index,", lastIndex);
     setLoading(false);
   };
 

@@ -93,13 +93,14 @@ app.get("/transactions/:addressId", async (req, res) => {
       `;
       params.transaction_index = parseInt(transaction_index, 10);
     } else if (direction === "newer") {
+      console.log(`Processing newer request with index: ${transaction_index}`);
       // Load newer transactions (higher timestamp)
       query = `
         MATCH (a:Address {addressId: $addressId})  
         OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)
         WHERE t.transaction_index > $transaction_index
         WITH a, t, b  
-        ORDER BY t.block_timestamp ASC
+        ORDER BY t.transaction_index ASC
         LIMIT 4
         RETURN  
         a.addressId AS searched_address,  

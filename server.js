@@ -30,35 +30,105 @@ app.get("/transactions/:addressId", async (req, res) => {
     neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD),
   );
   const { addressId } = req.params;
+  const direction = req.query.direction || "initial"; // "initial", "older", or "newer"
+  const timestamp = parseInt(req.query.timestamp) || null;
+
   const session = driver.session();
   try {
-    const result = await session.run(
-      `
-      MATCH (a:Address {addressId: $addressId})  
-      OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)  
-      WITH a, t, b  
-      ORDER BY t.transaction_index DESC  // Sort transactions by latest timestamp  
-      LIMIT 4  
-      RETURN  
-    a.addressId AS searched_address,  
-    COLLECT(DISTINCT {
-        receiver: b.addressId,
-        hash: t.hash,  
-        value: t.value,
-        input: t.input,
-        transaction_index: t.transaction_index,
-        gas: t.gas,
-        gas_used: t.gas_used,
-        gas_price: t.gas_price,
-        transaction_fee: t.transaction_fee,
-        block_number: t.block_number,
-        block_hash: t.block_hash,
-        block_timestamp: t.block_timestamp
-    }) AS transactions;
-      `,
-      { addressId },
-    );
+    let query;
+    let params = { addressId };
+    if (direction === "initial") {
+      // Initial load - get the most recent transactions
+      query = `
+        MATCH (a:Address {addressId: $addressId})  
+        OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)  
+        WITH a, t, b  
+        ORDER BY t.block_timestamp DESC
+        LIMIT 4  
+        RETURN  
+        a.addressId AS searched_address,  
+        COLLECT(DISTINCT {
+            receiver: b.addressId,
+            hash: t.hash,  
+            value: t.value,
+            input: t.input,
+            transaction_index: t.transaction_index,
+            gas: t.gas,
+            gas_used: t.gas_used,
+            gas_price: t.gas_price,
+            transaction_fee: t.transaction_fee,
+            block_number: t.block_number,
+            block_hash: t.block_hash,
+            block_timestamp: t.block_timestamp
+        }) AS transactions;
+      `;
+    } else if (direction === "older") {
+      // Load older transactions (lower timestamp)
+      query = `
+        MATCH (a:Address {addressId: $addressId})  
+        OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)
+        WHERE t.block_timestamp < $timestamp
+        WITH a, t, b  
+        ORDER BY t.block_timestamp DESC
+        LIMIT 4  
+        RETURN  
+        a.addressId AS searched_address,  
+        COLLECT(DISTINCT {
+            receiver: b.addressId,
+            hash: t.hash,  
+            value: t.value,
+            input: t.input,
+            transaction_index: t.transaction_index,
+            gas: t.gas,
+            gas_used: t.gas_used,
+            gas_price: t.gas_price,
+            transaction_fee: t.transaction_fee,
+            block_number: t.block_number,
+            block_hash: t.block_hash,
+            block_timestamp: t.block_timestamp
+        }) AS transactions;
+      `;
+      params.timestamp = timestamp;
+    } else if (direction === "newer") {
+      // Load newer transactions (higher timestamp)
+      query = `
+        MATCH (a:Address {addressId: $addressId})  
+        OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)
+        WHERE t.block_timestamp > $timestamp
+        WITH a, t, b  
+        ORDER BY t.block_timestamp ASC
+        LIMIT 4
+        RETURN  
+        a.addressId AS searched_address,  
+        COLLECT(DISTINCT {
+            receiver: b.addressId,
+            hash: t.hash,  
+            value: t.value,
+            input: t.input,
+            transaction_index: t.transaction_index,
+            gas: t.gas,
+            gas_used: t.gas_used,
+            gas_price: t.gas_price,
+            transaction_fee: t.transaction_fee,
+            block_number: t.block_number,
+            block_hash: t.block_hash,
+            block_timestamp: t.block_timestamp
+        }) AS transactions;
+      `;
+      params.timestamp = timestamp;
+    }
+    const result = await session.run(query, params);
+
+    // For "newer" direction, reverse the order to maintain chronological display
+    if (direction === "newer") {
+      result.records.forEach((record) => {
+        const transactions = record.get("transactions");
+        transactions.reverse();
+      });
+    }
+
     console.log(result);
+
     res.json(result.records.map((record) => record.toObject()));
   } catch (error) {
     console.error("Error fetching transactions:", error);

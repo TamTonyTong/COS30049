@@ -23,6 +23,10 @@ const TransactionExplorer: React.FC = () => {
   const [hop, setHop] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastTimestamp, setLastTimestamp] = useState<number | null>(null);
+  const [firstTimestamp, setFirstTimestamp] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
 
   const handleSearch = async () => {
     if (!address) return;
@@ -31,11 +35,27 @@ const TransactionExplorer: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchTransactions(formattedAddress, hop);
+      const data = await fetchTransactions(formattedAddress, "initial");
       console.log("Fetched Transactions:", data); // ✅ Debugging
       // If data is an array with nested transactions, extract them
       const extractedTransactions = data.length > 0 ? data[0].transactions : [];
       setTransactions(extractedTransactions);
+
+      // Set first and last timestamps for pagination
+      if (extractedTransactions.length > 0) {
+        setLastTimestamp(
+          extractedTransactions[extractedTransactions.length - 1]
+            .block_timestamp,
+        );
+        setFirstTimestamp(extractedTransactions[0].block_timestamp);
+        setHasMore(extractedTransactions.length >= 4); // If we got 4 transactions, assume there are more
+        setHasPrevious(false); // Initial load doesn't have previous
+      } else {
+        setLastTimestamp(null);
+        setFirstTimestamp(null);
+        setHasMore(false);
+        setHasPrevious(false);
+      }
     } catch (err) {
       setError("Failed to fetch transactions.");
     }
@@ -43,15 +63,52 @@ const TransactionExplorer: React.FC = () => {
   };
 
   const loadMore = async () => {
+    if (!lastTimestamp) return;
+
     setLoading(true);
     setError(null);
     try {
-      const nextHop = hop + 1;
-      const newData = await fetchTransactions(address, nextHop);
-      setHop(nextHop);
-      setTransactions(newData);
+      const newData = await fetchTransactions(address, "older", lastTimestamp);
+      const extractedTransactions =
+        newData.length > 0 ? newData[0].transactions : [];
+
+      if (extractedTransactions.length > 0) {
+        setTransactions([...transactions, ...extractedTransactions]);
+        setLastTimestamp(
+          extractedTransactions[extractedTransactions.length - 1]
+            .block_timestamp,
+        );
+        setHasMore(extractedTransactions.length >= 4);
+        setHasPrevious(true);
+      } else {
+        setHasMore(false);
+      }
     } catch (err) {
       setError("Failed to load more transactions.");
+    }
+    setLoading(false);
+  };
+
+  const loadPrevious = async () => {
+    if (!firstTimestamp) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const newData = await fetchTransactions(address, "newer", firstTimestamp);
+      const extractedTransactions =
+        newData.length > 0 ? newData[0].transactions : [];
+
+      if (extractedTransactions.length > 0) {
+        // Add new transactions to the beginning
+        setTransactions([...extractedTransactions, ...transactions]);
+        setFirstTimestamp(extractedTransactions[0].block_timestamp);
+        setHasPrevious(extractedTransactions.length >= 4);
+      } else {
+        setHasPrevious(false);
+      }
+    } catch (err) {
+      setError("Failed to load previous transactions.");
     }
     setLoading(false);
   };
@@ -76,6 +133,18 @@ const TransactionExplorer: React.FC = () => {
       </button>
       {error && <p className="mt-2 text-red-500">{error}</p>}
       <h3 className="mt-4 text-lg font-semibold">Transactions</h3>
+      <div className="mb-2 flex justify-between">
+        {hasPrevious && (
+          <button
+            onClick={loadPrevious}
+            className="rounded bg-indigo-500 px-4 py-2 text-white"
+            disabled={loading || !hasPrevious}
+          >
+            {loading ? "Loading..." : "Load Previous"}
+          </button>
+        )}
+        <div className="flex-grow"></div>
+      </div>
 
       <ul className="list-disc pl-5">
         {transactions.length === 0 ? (
@@ -83,18 +152,18 @@ const TransactionExplorer: React.FC = () => {
         ) : (
           transactions.map((t, index) => (
             <li key={index} className="mb-2">
-              <strong>Receiver:</strong> {t.receiver} <br />
-              <strong>Hash:</strong> {t.hash} <br />
+              {/* <strong>Receiver:</strong> {t.receiver} <br />
+              <strong>Hash:</strong> {t.hash} <br /> */}
               <strong>Transaction ID:</strong> {t.transaction_index} <br />
-              <strong>Value:</strong> {t.value} <br />
+              {/* <strong>Value:</strong> {t.value} <br />
               <strong>Fee:</strong> {t.transaction_fee} <br />
               <strong>Gas Used:</strong> {t.gas_used} <br />
               <strong>Gas Price:</strong> {t.gas_price} <br />
-              <strong>Gas:</strong> {t.gas} <br />
+              <strong>Gas:</strong> {t.gas} <br /> */}
               {/* <strong>Input:</strong> {t.input} <br /> */}
-              <strong>Input:</strong> Hiding, display if fixed <br />
+              {/* <strong>Input:</strong> Hiding, display if fixed <br />
               <strong>Block Number:</strong> {t.block_number} <br />
-              <strong>Block Hash:</strong> {t.block_hash} <br />
+              <strong>Block Hash:</strong> {t.block_hash} <br /> */}
               <strong>Block Timestamp:</strong>{" "}
               {new Date(t.block_timestamp * 1000).toLocaleString()} <br />
             </li>

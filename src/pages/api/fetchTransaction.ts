@@ -1,9 +1,19 @@
-export async function fetchTransactions(addressId: string, hop: number = 1) {
+export async function fetchTransactions(
+  addressId: string,
+  direction: "initial" | "older" | "newer" = "initial",
+  timestamp?: number,
+) {
   try {
-    const response = await fetch(
-      // `http://localhost:5000/transactions/${addressId}?hop=${hop}`,
-      `http://localhost:5001/transactions/${addressId}`,
-    );
+    let url = `http://localhost:5001/transactions/${addressId}`;
+
+    // Add query parameters for pagination
+    if (direction !== "initial" && timestamp) {
+      url += `?direction=${direction}&timestamp=${timestamp}`;
+    } else if (direction !== "initial") {
+      url += `?direction=${direction}`;
+    }
+
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch transactions");
     console.log(response);
     return await response.json();

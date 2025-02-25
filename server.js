@@ -32,6 +32,7 @@ app.get("/transactions/:addressId", async (req, res) => {
   const { addressId } = req.params;
   const direction = req.query.direction || "initial"; // "initial", "older", or "newer"
   const transaction_index = req.query.index || null;
+
   console.log(
     `API Request: ${direction} for address ${addressId}, index: ${transaction_index}`,
   );

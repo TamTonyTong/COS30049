@@ -25,8 +25,9 @@ const TransactionExplorer: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [lastIndex, setLastIndex] = useState<number | null>(null);
+  const [lastIndex, setLastIndex] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadedPages, setLoadedPages] = useState<number[]>([]);
 
   const handleSearch = async () => {
     if (!address) return;
@@ -43,9 +44,11 @@ const TransactionExplorer: React.FC = () => {
             .transaction_index,
         );
         setCurrentPage(1);
+        setLoadedPages([1]);
         setHasMore(extractedTransactions.length >= 4);
       } else {
         setTransactionsByPage({});
+        setLoadedPages([]);
         setHasMore(false);
       }
     } catch (err) {
@@ -64,15 +67,17 @@ const TransactionExplorer: React.FC = () => {
         newData.length > 0 ? newData[0].transactions : [];
 
       if (extractedTransactions.length > 0) {
+        const nextPage = currentPage + 1;
         setTransactionsByPage((prev) => ({
           ...prev,
-          [currentPage + 1]: extractedTransactions,
+          [nextPage]: extractedTransactions,
         }));
         setLastIndex(
           extractedTransactions[extractedTransactions.length - 1]
             .transaction_index,
         );
-        setCurrentPage((prev) => prev + 1);
+        setCurrentPage(nextPage);
+        setLoadedPages((prev) => [...prev, nextPage]);
         setHasMore(extractedTransactions.length >= 4);
       } else {
         setHasMore(false);
@@ -82,6 +87,14 @@ const TransactionExplorer: React.FC = () => {
     }
     setLoading(false);
   };
+
+  const navigateToPage = (page: number) => {
+    if (page >= 1 && page <= Math.max(...loadedPages, 0)) {
+      setCurrentPage(page);
+    }
+  };
+
+  const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
 
   return (
     <div className="p-4">
@@ -103,7 +116,7 @@ const TransactionExplorer: React.FC = () => {
       </button>
       {error && <p className="mt-2 text-red-500">{error}</p>}
 
-      {Object.keys(transactionsByPage).length > 0 && (
+      {hasLoadedTransactions && (
         <>
           <h3 className="mt-4 text-lg font-semibold">
             Transactions (Page {currentPage})
@@ -111,7 +124,18 @@ const TransactionExplorer: React.FC = () => {
           <ul className="list-disc pl-5">
             {transactionsByPage[currentPage]?.map((t, index) => (
               <li key={index} className="mb-2">
+                {/* <strong>Receiver:</strong> {t.receiver} <br />
+                <strong>Hash:</strong> {t.hash} <br /> */}
                 <strong>Transaction ID:</strong> {t.transaction_index} <br />
+                {/* <strong>Value:</strong> {t.value} <br />
+              <strong>Fee:</strong> {t.transaction_fee} <br />
+              <strong>Gas Used:</strong> {t.gas_used} <br />
+              <strong>Gas Price:</strong> {t.gas_price} <br />
+              <strong>Gas:</strong> {t.gas} <br /> */}
+                {/* <strong>Input:</strong> {t.input} <br /> */}
+                {/* <strong>Input:</strong> Hiding, display if fixed <br />
+              <strong>Block Number:</strong> {t.block_number} <br />
+              <strong>Block Hash:</strong> {t.block_hash} <br /> */}
                 <strong>Block Timestamp:</strong>{" "}
                 {new Date(t.block_timestamp * 1000).toLocaleString()} <br />
               </li>
@@ -119,18 +143,47 @@ const TransactionExplorer: React.FC = () => {
           </ul>
 
           <div className="mt-4 flex justify-between">
-            {currentPage > 1 && (
+            {/* Navigation Controls */}
+            <div className="flex gap-2">
               <button
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-                className="rounded bg-gray-500 px-4 py-2 text-white"
+                onClick={() => navigateToPage(currentPage - 1)}
+                className={`rounded px-4 py-2 text-white ${
+                  currentPage > 1
+                    ? "bg-gray-500"
+                    : "cursor-not-allowed bg-gray-300"
+                }`}
+                disabled={currentPage <= 1}
               >
                 Previous Page
               </button>
-            )}
-            {hasMore && (
+
+              {loadedPages.length > 0 && (
+                <div className="flex items-center gap-2 px-2">
+                  {/* Show page numbers */}
+                  <span className="text-sm">
+                    Page {currentPage} of {Math.max(...loadedPages)}
+                  </span>
+                </div>
+              )}
+
+              <button
+                onClick={() => navigateToPage(currentPage + 1)}
+                className={`rounded px-4 py-2 text-white ${
+                  currentPage < Math.max(...loadedPages)
+                    ? "bg-gray-500"
+                    : "cursor-not-allowed bg-gray-300"
+                }`}
+                disabled={currentPage >= Math.max(...loadedPages)}
+              >
+                Next Page
+              </button>
+            </div>
+
+            {/* Load More Button */}
+            {(hasMore || loading) && (
               <button
                 onClick={loadMore}
-                className="rounded bg-green-500 px-4 py-2 text-white"
+                className="rounded bg-green-500 px-4 py-2 text-white disabled:bg-green-300"
                 disabled={loading}
               >
                 {loading ? "Loading..." : "Load More"}

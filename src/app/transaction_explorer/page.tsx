@@ -25,7 +25,7 @@ const TransactionExplorer: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [lastIndex, setLastIndex] = useState<string | null>(null);
+  const [lastIndex, setLastIndex] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
 

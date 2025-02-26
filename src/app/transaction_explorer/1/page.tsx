@@ -1,12 +1,24 @@
 "use client";
 import React, { useState } from "react";
 import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
-import SearchBar from "@/src/components/transactionexplorer/searchbar";
-import TransactionList from "@/src/components/transactionexplorer/transactionlist";
-import Pagination from "@/src/components/transactionexplorer/pagnition";
-import { Transaction } from "@/src/components/transactionexplorer/type";
+import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork";
 
-const TransactionExplorer: React.FC = () => {
+interface Transaction {
+  hash: string;
+  value: number;
+  input: number;
+  gas: number;
+  gas_used: number;
+  gas_price: number;
+  transaction_fee: number;
+  block_number: number;
+  transaction_index: string;
+  block_hash: string;
+  block_timestamp: number;
+  receiver: string;
+}
+
+const IntegratedTransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
   const [transactionsByPage, setTransactionsByPage] = useState<{
     [page: number]: Transaction[];
@@ -17,6 +29,7 @@ const TransactionExplorer: React.FC = () => {
   const [lastIndex, setLastIndex] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
+  const [viewMode, setViewMode] = useState<"list" | "network">("list");
 
   const handleSearch = async () => {
     if (!address) return;
@@ -25,7 +38,7 @@ const TransactionExplorer: React.FC = () => {
     try {
       const data = await fetchTransactions(address, "initial");
       const extractedTransactions = data.length > 0 ? data[0].transactions : [];
-
+      console.log("Extracted Data,", extractedTransactions);
       if (extractedTransactions.length > 0) {
         setTransactionsByPage({ 1: extractedTransactions });
         setLastIndex(
@@ -83,40 +96,167 @@ const TransactionExplorer: React.FC = () => {
     }
   };
 
+  const allTransactions = Object.values(transactionsByPage).flat();
   const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
-  const maxPage = Math.max(...loadedPages, 0);
 
   return (
-    <div className="mx-auto max-w-4xl p-4">
+    <div className="p-4">
       <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
+      <div className="mb-4">
+        <p className="mb-2 text-sm text-gray-500">
+          Example: 0xb0606f433496bf66338b8ad6b6d51fc4d84a44cd
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Enter Address ID"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="flex-grow rounded border bg-transparent p-2"
+          />
+          <button
+            onClick={handleSearch}
+            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Search"}
+          </button>
+        </div>
+      </div>
 
-      <SearchBar
-        address={address}
-        setAddress={setAddress}
-        handleSearch={handleSearch}
-        loading={loading}
-        error={error}
-      />
+      {error && <p className="mt-2 text-red-500">{error}</p>}
 
       {hasLoadedTransactions && (
-        <>
-          <TransactionList
-            transactions={transactionsByPage[currentPage] || []}
-            currentPage={currentPage}
-          />
+        <div className="mt-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold">
+              Transactions for {address.substring(0, 6)}...
+              {address.substring(address.length - 4)}
+            </h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`rounded px-3 py-1 text-sm ${
+                  viewMode === "list"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                List View
+              </button>
+              <button
+                onClick={() => setViewMode("network")}
+                className={`rounded px-3 py-1 text-sm ${
+                  viewMode === "network"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Network View
+              </button>
+            </div>
+          </div>
 
-          <Pagination
-            currentPage={currentPage}
-            maxPage={maxPage}
-            navigateToPage={navigateToPage}
-            loadMore={loadMore}
-            hasMore={hasMore}
-            loading={loading}
-          />
-        </>
+          {viewMode === "list" ? (
+            <>
+              <div className="overflow-hidden rounded-lg border">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Receiver
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Value
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Time
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {transactionsByPage[currentPage]?.map((t, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                          {t.transaction_index}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                          {t.receiver.substring(0, 6)}...
+                          {t.receiver.substring(t.receiver.length - 4)}
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                          {(t.value / 1e18).toFixed(4)} ETH
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                          {new Date(t.block_timestamp * 1000).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 flex justify-between">
+                {/* Navigation Controls */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigateToPage(currentPage - 1)}
+                    className={`rounded px-4 py-2 text-white ${
+                      currentPage > 1
+                        ? "bg-gray-500 hover:bg-gray-600"
+                        : "cursor-not-allowed bg-gray-300"
+                    }`}
+                    disabled={currentPage <= 1}
+                  >
+                    Previous Page
+                  </button>
+
+                  {loadedPages.length > 0 && (
+                    <div className="flex items-center gap-2 px-2">
+                      <span className="text-sm">
+                        Page {currentPage} of {Math.max(...loadedPages)}
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => navigateToPage(currentPage + 1)}
+                    className={`rounded px-4 py-2 text-white ${
+                      currentPage < Math.max(...loadedPages)
+                        ? "bg-gray-500 hover:bg-gray-600"
+                        : "cursor-not-allowed bg-gray-300"
+                    }`}
+                    disabled={currentPage >= Math.max(...loadedPages)}
+                  >
+                    Next Page
+                  </button>
+                </div>
+
+                {/* Load More Button */}
+                {(hasMore || loading) && (
+                  <button
+                    onClick={loadMore}
+                    className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:bg-green-300"
+                    disabled={loading}
+                  >
+                    {loading ? "Loading..." : "Load More"}
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <TransactionNetwork
+              transactions={allTransactions}
+              address={address}
+            />
+          )}
+        </div>
       )}
     </div>
   );
 };
 
-export default TransactionExplorer;
+export default IntegratedTransactionExplorer;

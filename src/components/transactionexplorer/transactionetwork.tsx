@@ -201,7 +201,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       })
       .attr("dy", (d) => (d.main ? 45 : 35))
       .style("text-anchor", "middle")
-      .style("fill", "#1f2937")
+      .style("fill", "#FFFFFF")
       .style("font-size", "12px")
       .style("pointer-events", "none");
 

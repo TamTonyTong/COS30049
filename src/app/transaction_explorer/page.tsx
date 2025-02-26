@@ -31,8 +31,7 @@ const TransactionExplorer: React.FC = () => {
     if (!address) return;
     const formattedAddress = address.trim().toLowerCase(); // Ensure consistent format
     console.log(formattedAddress);
-    console.log("First Index,", firstIndex);
-    console.log("Last Index,", lastIndex);
+
     setLoading(true);
     setError(null);
     try {
@@ -40,10 +39,10 @@ const TransactionExplorer: React.FC = () => {
       console.log("Fetched Transactions:", data); // ✅ Debugging
       // If data is an array with nested transactions, extract them
       const extractedTransactions = data.length > 0 ? data[0].transactions : [];
-      setTransactions(extractedTransactions);
 
       // Set first and last timestamps for pagination
       if (extractedTransactions.length > 0) {
+        setTransactions([...transactions, ...extractedTransactions]);
         setLastIndex(
           extractedTransactions[extractedTransactions.length - 1]
             .transaction_index,
@@ -62,10 +61,8 @@ const TransactionExplorer: React.FC = () => {
     }
     setLoading(false);
   };
-
   const loadMore = async () => {
     if (!lastIndex) return;
-    console.log(lastIndex);
     setLoading(true);
     setError(null);
     try {

@@ -18,17 +18,13 @@ interface Transaction {
 }
 
 interface NetworkNode {
-  id: string;
-  main: boolean;
+  id: string; // Unique id (hash for transaction nodes, address for center node)
+  address: string; // The actual address
+  main: boolean; // Whether this is the center node
+  isTransactionNode: boolean; // Whether this is a transaction node
+  transaction?: Transaction; // Reference to the transaction (for transaction nodes)
   x?: number;
   y?: number;
-}
-
-interface NetworkLink {
-  source: string;
-  target: string;
-  amount: string;
-  timestamp: number;
 }
 
 interface TransactionNetworkProps {
@@ -56,34 +52,76 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Clear previous content
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Prepare data for visualization
-    const uniqueAddresses = new Set<string>();
-    uniqueAddresses.add(centerNode);
-
-    transactions.forEach((tx) => {
-      uniqueAddresses.add(tx.receiver);
-    });
-
-    // Create nodes data
+    // Create nodes data - one center node and one node per transaction
     const nodes: NetworkNode[] = [
-      { id: centerNode, main: true },
-      ...Array.from(uniqueAddresses)
-        .filter((addr) => addr !== centerNode)
-        .map((addr) => ({ id: addr, main: false })),
+      {
+        id: centerNode,
+        address: centerNode,
+        main: true,
+        isTransactionNode: false,
+      },
+      ...transactions.map((tx) => ({
+        id: tx.hash, // Use transaction hash as node ID
+        address: tx.receiver, // Store the actual address
+        main: false,
+        isTransactionNode: true,
+        transaction: tx,
+      })),
     ];
 
-    // Create links data
-    const links: NetworkLink[] = transactions.map((tx) => ({
-      source: centerNode,
-      target: tx.receiver,
-      amount: `${(tx.value / 1e18).toFixed(4)} ETH`,
-      timestamp: tx.block_timestamp,
-    }));
+    // Group transactions by receiver for layout calculations
+    const addressGroups = new Map<string, NetworkNode[]>();
 
-    // Set up dimensions
+    nodes.forEach((node) => {
+      if (!node.main) {
+        if (!addressGroups.has(node.address)) {
+          addressGroups.set(node.address, []);
+        }
+        addressGroups.get(node.address)?.push(node);
+      }
+    });
+
+    // Position nodes in organized groups around the center
     const width = svgRef.current.clientWidth || 600;
     const height = 500;
-    const radius = Math.min(width, height) / 3;
+    const baseRadius = Math.min(width, height) / 3;
+
+    // Calculate positions for unique addresses
+    const uniqueAddresses = Array.from(addressGroups.keys());
+    const addressAngleStep = (2 * Math.PI) / uniqueAddresses.length;
+
+    uniqueAddresses.forEach((addr, addrIndex) => {
+      const addressNodes = addressGroups.get(addr) || [];
+      const addressAngle = addrIndex * addressAngleStep;
+
+      // Calculate base position for this address group
+      const groupX = baseRadius * Math.cos(addressAngle);
+      const groupY = baseRadius * Math.sin(addressAngle);
+
+      // Position all transaction nodes for this address in a small cluster
+      addressNodes.forEach((node, i) => {
+        // If there's only one transaction to this address, put it at the base position
+        if (addressNodes.length === 1) {
+          node.x = groupX;
+          node.y = groupY;
+          return;
+        }
+
+        // Otherwise, arrange in a small cluster around the base position
+        const clusterRadius = 30; // Radius of the cluster
+        const nodeAngle = (2 * Math.PI * i) / addressNodes.length;
+
+        node.x = groupX + clusterRadius * Math.cos(nodeAngle);
+        node.y = groupY + clusterRadius * Math.sin(nodeAngle);
+      });
+    });
+
+    // Set position for center node
+    const centerNodeObj = nodes.find((n) => n.main);
+    if (centerNodeObj) {
+      centerNodeObj.x = 0;
+      centerNodeObj.y = 0;
+    }
 
     // Create SVG
     const svg = d3
@@ -92,18 +130,6 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .attr("height", height)
       .append("g")
       .attr("transform", `translate(${width / 2},${height / 2})`);
-
-    // Position nodes in a circle
-    const angleStep = (2 * Math.PI) / (nodes.length - 1 || 1);
-    nodes.forEach((node, i) => {
-      if (!node.main) {
-        node.x = radius * Math.cos((i - 1) * angleStep);
-        node.y = radius * Math.sin((i - 1) * angleStep);
-      } else {
-        node.x = 0;
-        node.y = 0;
-      }
-    });
 
     // Create gradient
     const gradient = svg
@@ -118,28 +144,30 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .attr("offset", "100%")
       .attr("stop-color", "#9ca3af");
 
-    // Draw links with transition
-    const link = svg
+    // Draw links - one per transaction
+    const links = svg
       .selectAll(".link")
-      .data(links)
+      .data(nodes.filter((n) => !n.main))
       .enter()
       .append("line")
       .attr("class", "link")
-      .attr("x1", (d) => nodes.find((n) => n.id === d.source)?.x || 0)
-      .attr("y1", (d) => nodes.find((n) => n.id === d.source)?.y || 0)
-      .attr("x2", (d) => nodes.find((n) => n.id === d.target)?.x || 0)
-      .attr("y2", (d) => nodes.find((n) => n.id === d.target)?.y || 0)
+      .attr("data-hash", (d) => d.transaction?.hash)
+      .attr("x1", centerNodeObj?.x || 0)
+      .attr("y1", centerNodeObj?.y || 0)
+      .attr("x2", (d) => d.x || 0)
+      .attr("y2", (d) => d.y || 0)
       .style("stroke", "url(#link-gradient)")
       .style("stroke-width", (d) => {
-        const tx = transactions.find((t) => t.receiver === d.target);
+        const tx = d.transaction;
         return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
       })
       .style("opacity", 0)
+      .style("cursor", "pointer")
       .transition()
       .duration(500)
       .style("opacity", 0.7);
 
-    // Draw nodes with transition
+    // Create groups for nodes
     const nodeGroups = svg
       .selectAll(".node")
       .data(nodes)
@@ -147,120 +175,183 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .append("g")
       .attr("class", "node")
       .style("opacity", 0)
-      .attr("transform", (d) => `translate(${d.x},${d.y})`)
+      .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
       .transition()
       .duration(500)
       .style("opacity", 1);
 
-    // Add circles for nodes
+    // Draw nodes
     svg
       .selectAll(".node")
       .append("circle")
-      .attr("r", (d) => (d.main ? 30 : 20))
-      .style("fill", (d) => (d.main ? "#3b82f6" : "#9ca3af"))
+      .attr("r", (d) => (d.main ? 30 : 15))
+      .style("fill", (d) => {
+        if (d.main) return "#3b82f6";
+
+        // For transaction nodes, color by address to visually group them
+        const addrIndex = uniqueAddresses.indexOf(d.address);
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+        return colorScale(addrIndex.toString());
+      })
       .style("cursor", "pointer")
       .style("transition", "all 0.2s ease");
 
-    // Add click handlers and hover effects
+    // Add transaction amount labels (only for transaction nodes)
     svg
       .selectAll(".node")
-      .on("click", function (event, d) {
-        if (!d.main) {
-          // Handle click on non-main node
-          // For demonstration, just show transaction details
-          const tx = transactions.find((t) => t.receiver === d.id);
-          if (tx) {
-            setSelectedTransaction(tx);
-          }
-        }
-      })
-      .on("mouseover", function (event, d) {
-        d3.select(this)
-          .select("circle")
-          .transition()
-          .duration(200)
-          .attr("r", d.main ? 35 : 25)
-          .style("fill", d.main ? "#2563eb" : "#4b5563");
-      })
-      .on("mouseout", function (event, d) {
-        d3.select(this)
-          .select("circle")
-          .transition()
-          .duration(200)
-          .attr("r", d.main ? 30 : 20)
-          .style("fill", d.main ? "#3b82f6" : "#9ca3af");
-      });
+      .filter((d) => d.transaction)
+      .append("text")
+      .text((d) => `${(d.transaction?.value! / 1e18).toFixed(2)} ETH`)
+      .attr("dy", -20)
+      .style("text-anchor", "middle")
+      .style("fill", "#6b7280")
+      .style("font-size", "10px")
+      .style("pointer-events", "none");
 
     // Add address labels
     svg
       .selectAll(".node")
       .append("text")
       .text((d) => {
-        // Truncate address for display
-        return d.id.substring(0, 6) + "..." + d.id.substring(d.id.length - 4);
+        // For transaction nodes, show abbreviated address
+        // For main node, show "Your Address"
+        if (d.main) {
+          return "Your Address";
+        }
+        return (
+          d.address.substring(0, 6) +
+          "..." +
+          d.address.substring(d.address.length - 4)
+        );
       })
-      .attr("dy", (d) => (d.main ? 45 : 35))
+      .attr("dy", (d) => (d.main ? 45 : 25))
       .style("text-anchor", "middle")
       .style("fill", "#FFFFFF")
-      .style("font-size", "12px")
+      .style("font-size", "10px")
       .style("pointer-events", "none");
 
-    // Add transaction amounts
-    svg
-      .selectAll(".amount")
-      .data(links)
-      .enter()
-      .append("text")
-      .attr("class", "amount")
-      .attr("x", (d) => {
-        const source = nodes.find((n) => n.id === d.source);
-        const target = nodes.find((n) => n.id === d.target);
-        return source && target ? (source.x + target.x) / 2 : 0;
-      })
-      .attr("y", (d) => {
-        const source = nodes.find((n) => n.id === d.source);
-        const target = nodes.find((n) => n.id === d.target);
-        return source && target ? (source.y + target.y) / 2 - 8 : 0;
-      })
-      .text((d) => d.amount)
-      .style("text-anchor", "middle")
-      .style("fill", "#6b7280")
-      .style("font-size", "10px")
-      .style("pointer-events", "none")
-      .style("opacity", 0)
-      .transition()
-      .duration(500)
-      .style("opacity", 1);
+    // Add event handlers after transitions complete
+    setTimeout(() => {
+      // Add event handlers to links
+      svg
+        .selectAll(".link")
+        .on("mousedown", function (event, d) {
+          if (d.transaction) {
+            setSelectedTransaction(d.transaction);
+          }
+        })
+        .on("mouseover", function (event, d) {
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .style("opacity", 1)
+            .style("stroke-width", (d) => {
+              const tx = d.transaction;
+              return tx ? Math.max(2, Math.min(7, (tx.value / 1e18) * 0.5)) : 3;
+            });
+        })
+        .on("mouseout", function (event, d) {
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .style("opacity", 0.7)
+            .style("stroke-width", (d) => {
+              const tx = d.transaction;
+              return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
+            });
+        });
 
-    // Add timestamps below amounts
-    svg
-      .selectAll(".timestamp")
-      .data(links)
-      .enter()
-      .append("text")
-      .attr("class", "timestamp")
-      .attr("x", (d) => {
-        const source = nodes.find((n) => n.id === d.source);
-        const target = nodes.find((n) => n.id === d.target);
-        return source && target ? (source.x + target.x) / 2 : 0;
-      })
-      .attr("y", (d) => {
-        const source = nodes.find((n) => n.id === d.source);
-        const target = nodes.find((n) => n.id === d.target);
-        return source && target ? (source.y + target.y) / 2 + 8 : 0;
-      })
-      .text((d) => {
-        const date = new Date(d.timestamp * 1000);
-        return date.toLocaleDateString();
-      })
-      .style("text-anchor", "middle")
-      .style("fill", "#9ca3af")
-      .style("font-size", "8px")
-      .style("pointer-events", "none")
-      .style("opacity", 0)
-      .transition()
-      .duration(500)
-      .style("opacity", 1);
+      // Add event handlers to nodes
+      svg
+        .selectAll(".node")
+        .on("mousedown", function (event, d) {
+          if (d.transaction) {
+            setSelectedTransaction(d.transaction);
+          }
+        })
+        .on("mouseover", function (event, d) {
+          d3.select(this)
+            .select("circle")
+            .transition()
+            .duration(200)
+            .attr("r", (d) => (d.main ? 35 : 20))
+            .style("opacity", 0.9);
+        })
+        .on("mouseout", function (event, d) {
+          d3.select(this)
+            .select("circle")
+            .transition()
+            .duration(200)
+            .attr("r", (d) => (d.main ? 30 : 15))
+            .style("opacity", 1);
+        });
+    }, 500);
+
+    // Add legend for address groups if there are multiple addresses
+    if (uniqueAddresses.length > 1) {
+      const legend = svg
+        .append("g")
+        .attr("class", "legend")
+        .attr(
+          "transform",
+          `translate(${-width / 2 + 20}, ${-height / 2 + 20})`,
+        );
+
+      // Add legend title
+      legend
+        .append("text")
+        .text("Address Groups")
+        .attr("x", 0)
+        .attr("y", 0)
+        .style("font-size", "12px")
+        .style("font-weight", "bold");
+
+      // Add legend items - limit to 5 to avoid cluttering
+      const visibleAddresses = uniqueAddresses.slice(0, 5);
+
+      visibleAddresses.forEach((addr, i) => {
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+        const y = 20 + i * 20;
+
+        // Add color circle
+        legend
+          .append("circle")
+          .attr("cx", 10)
+          .attr("cy", y)
+          .attr("r", 6)
+          .style("fill", colorScale(i.toString()));
+
+        // Add address text
+        legend
+          .append("text")
+          .text(addr.substring(0, 6) + "..." + addr.substring(addr.length - 4))
+          .attr("x", 25)
+          .attr("y", y + 4)
+          .style("font-size", "10px");
+
+        // Add transaction count
+        const count = addressGroups.get(addr)?.length || 0;
+        legend
+          .append("text")
+          .text(`(${count} txs)`)
+          .attr("x", 120)
+          .attr("y", y + 4)
+          .style("font-size", "10px")
+          .style("fill", "#6b7280");
+      });
+
+      // Add "more" indicator if we have more addresses than shown
+      if (uniqueAddresses.length > 5) {
+        legend
+          .append("text")
+          .text(`+ ${uniqueAddresses.length - 5} more addresses`)
+          .attr("x", 25)
+          .attr("y", 20 + 5 * 20 + 4)
+          .style("font-size", "10px")
+          .style("font-style", "italic")
+          .style("fill", "#6b7280");
+      }
+    }
   }, [transactions, centerNode, address]);
 
   return (

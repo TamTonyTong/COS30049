@@ -97,6 +97,7 @@ const IntegratedTransactionExplorer: React.FC = () => {
   };
 
   const allTransactions = Object.values(transactionsByPage).flat();
+  // console.log("Fetched Transactions Relationships,", allTransactions);
   const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
 
   return (

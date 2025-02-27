@@ -135,66 +135,110 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .duration(500)
       .style("opacity", 0.7);
 
-    // Create groups for nodes
-    const nodeGroups = svg
-      .selectAll(".node")
-      .data(nodes)
+    // Create groups for transaction nodes
+    const transactionNodeGroups = svg
+      .selectAll(".transaction-node")
+      .data(nodes.filter((n) => !n.main))
       .enter()
       .append("g")
-      .attr("class", "node")
+      .attr("class", "transaction-node")
       .style("opacity", 0)
       .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
       .transition()
       .duration(500)
       .style("opacity", 1);
 
-    // Draw nodes
-    svg
-      .selectAll(".node")
-      .append("circle")
-      .attr("r", (d) => (d.main ? 30 : 15))
-      .style("fill", (d) => {
-        if (d.main) return "#3b82f6";
+    // Create group for center node
+    const centerNodeGroup = svg
+      .selectAll(".center-node")
+      .data([centerNodeObj].filter(Boolean))
+      .enter()
+      .append("g")
+      .attr("class", "center-node")
+      .style("opacity", 0)
+      .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
+      .transition()
+      .duration(500)
+      .style("opacity", 1);
 
-        // For transaction nodes, color by address to still provide visual grouping
+    // Draw center node
+    svg
+      .selectAll(".center-node")
+      .append("circle")
+      .attr("r", 30)
+      .style("fill", "#3b82f6")
+      .style("cursor", "pointer")
+      .style("transition", "all 0.2s ease");
+
+    // Add label for center node
+    svg
+      .selectAll(".center-node")
+      .append("text")
+      .text("Your Address")
+      .attr("dy", 45)
+      .style("text-anchor", "middle")
+      .style("fill", "#FFFFFF")
+      .style("font-size", "10px")
+      .style("pointer-events", "none");
+
+    // Draw transaction nodes
+    svg
+      .selectAll(".transaction-node")
+      .append("circle")
+      .attr("r", 15)
+      .style("fill", (d) => {
+        // Color by address to provide visual grouping
         const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
         return colorScale(d.address);
       })
       .style("cursor", "pointer")
       .style("transition", "all 0.2s ease");
 
-    // Add address labels first
-    svg
-      .selectAll(".node")
+    // Add transaction node labels in a dark background box
+    const labelGroups = svg
+      .selectAll(".transaction-node")
+      .append("g")
+      .attr("class", "label-group")
+      .attr("transform", "translate(0, -35)"); // Position above the node
+
+    // Add dark background rectangle for labels
+    labelGroups
+      .append("rect")
+      .attr("rx", 4)
+      .attr("ry", 4)
+      .attr("x", -60)
+      .attr("y", -25)
+      .attr("width", 120)
+      .attr("height", 40)
+      .style("fill", "#0d1829")
+      .style("opacity", 0.9);
+
+    // Add address label inside the box
+    labelGroups
       .append("text")
-      .text((d) => {
-        // For transaction nodes, show abbreviated address
-        // For main node, show "Your Address"
-        if (d.main) {
-          return "Your Address";
-        }
-        return (
+      .attr("class", "address-label")
+      .text(
+        (d) =>
           d.address.substring(0, 6) +
           "..." +
-          d.address.substring(d.address.length - 4)
-        );
-      })
-      .attr("dy", (d) => (d.main ? 45 : 25))
+          d.address.substring(d.address.length - 4),
+      )
+      .attr("y", -10)
       .style("text-anchor", "middle")
       .style("fill", "#FFFFFF")
       .style("font-size", "10px")
       .style("pointer-events", "none");
 
-    // Add transaction amount labels below address labels (only for transaction nodes)
-    svg
-      .selectAll(".node")
-      .filter((d) => d.transaction)
+    // Add ETH amount label inside the box
+    labelGroups
       .append("text")
+      .attr("class", "amount-label")
       .text((d) => `${(d.transaction?.value! / 1e18).toFixed(2)} ETH`)
-      .attr("dy", 40) // Position it below the address label
+      .attr("y", 5)
       .style("text-anchor", "middle")
-      .style("fill", "#6b7280")
+      .style("fill", "#FFFFFF")
       .style("font-size", "10px")
+      .style("font-weight", "bold")
       .style("pointer-events", "none");
 
     // Add event handlers after transitions complete
@@ -228,9 +272,9 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             });
         });
 
-      // Add event handlers to nodes
+      // Add event handlers to transaction nodes
       svg
-        .selectAll(".node")
+        .selectAll(".transaction-node")
         .on("mousedown", function (event, d) {
           if (d.transaction) {
             setSelectedTransaction(d.transaction);
@@ -241,7 +285,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             .select("circle")
             .transition()
             .duration(200)
-            .attr("r", (d) => (d.main ? 35 : 20))
+            .attr("r", 20)
             .style("opacity", 0.9);
         })
         .on("mouseout", function (event, d) {
@@ -249,7 +293,27 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             .select("circle")
             .transition()
             .duration(200)
-            .attr("r", (d) => (d.main ? 30 : 15))
+            .attr("r", 15)
+            .style("opacity", 1);
+        });
+
+      // Add event handlers to center node
+      svg
+        .selectAll(".center-node")
+        .on("mouseover", function () {
+          d3.select(this)
+            .select("circle")
+            .transition()
+            .duration(200)
+            .attr("r", 35)
+            .style("opacity", 0.9);
+        })
+        .on("mouseout", function () {
+          d3.select(this)
+            .select("circle")
+            .transition()
+            .duration(200)
+            .attr("r", 30)
             .style("opacity", 1);
         });
     }, 500);

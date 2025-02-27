@@ -254,7 +254,7 @@ export default function TransactionGraph({
     <>
       <div ref={containerRef} className={className}>
         <svg
-          width="100%"
+          width="50%"
           height="100%"
           viewBox={`0 0 ${SIDE_LENGTH} ${SIDE_LENGTH}`}
         >

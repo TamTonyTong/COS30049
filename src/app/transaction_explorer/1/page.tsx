@@ -136,7 +136,7 @@ const IntegratedTransactionExplorer: React.FC = () => {
               Transactions for {address.substring(0, 6)}...
               {address.substring(address.length - 4)}
             </h3>
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <button
                 onClick={() => setViewMode("list")}
                 className={`rounded px-3 py-1 text-sm ${
@@ -157,105 +157,102 @@ const IntegratedTransactionExplorer: React.FC = () => {
               >
                 Network View
               </button>
-            </div>
+            </div> */}
           </div>
 
-          {viewMode === "list" ? (
-            <>
-              <div className="overflow-hidden rounded-lg border">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        Receiver
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        Value
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                        Time
-                      </th>
+          <>
+            <div className="flex rounded-lg border bg-black dark:bg-gray-800">
+              <TransactionNetwork
+                transactions={currentPageTransactions}
+                address={address}
+              />
+              <table className="w-full rounded-lg bg-black">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      ID
+                    </th>
+                    <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Receiver
+                    </th>
+                    <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Value
+                    </th>
+                    <th className="text-middle px-2 py-3 text-xs font-medium uppercase text-gray-500">
+                      Time
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-gray-200">
+                  {transactionsByPage[currentPage]?.map((t, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="whitespace-nowrap px-2 py-4 text-sm text-gray-900">
+                        {t.transaction_index}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-4 text-sm text-gray-500">
+                        {t.receiver.substring(0, 6)}...
+                        {t.receiver.substring(t.receiver.length - 4)}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-4 text-sm text-gray-500">
+                        {(t.value / 1e18).toFixed(4)} ETH
+                      </td>
+                      <td className="py-4 text-sm text-gray-500">
+                        {new Date(t.block_timestamp * 1000).toLocaleString()}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {transactionsByPage[currentPage]?.map((t, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                          {t.transaction_index}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {t.receiver.substring(0, 6)}...
-                          {t.receiver.substring(t.receiver.length - 4)}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {(t.value / 1e18).toFixed(4)} ETH
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                          {new Date(t.block_timestamp * 1000).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-              <div className="mt-4 flex justify-between">
-                {/* Navigation Controls */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => navigateToPage(currentPage - 1)}
-                    className={`rounded px-4 py-2 text-white ${
-                      currentPage > 1
-                        ? "bg-gray-500 hover:bg-gray-600"
-                        : "cursor-not-allowed bg-gray-300"
-                    }`}
-                    disabled={currentPage <= 1}
-                  >
-                    Previous Page
-                  </button>
+            <div className="mt-4 flex justify-between">
+              {/* Navigation Controls */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigateToPage(currentPage - 1)}
+                  className={`rounded px-4 py-2 text-white ${
+                    currentPage > 1
+                      ? "bg-gray-500 hover:bg-gray-600"
+                      : "cursor-not-allowed bg-gray-300"
+                  }`}
+                  disabled={currentPage <= 1}
+                >
+                  Previous Page
+                </button>
 
-                  {loadedPages.length > 0 && (
-                    <div className="flex items-center gap-2 px-2">
-                      <span className="text-sm">
-                        Page {currentPage} of {Math.max(...loadedPages)}
-                      </span>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => navigateToPage(currentPage + 1)}
-                    className={`rounded px-4 py-2 text-white ${
-                      currentPage < Math.max(...loadedPages)
-                        ? "bg-gray-500 hover:bg-gray-600"
-                        : "cursor-not-allowed bg-gray-300"
-                    }`}
-                    disabled={currentPage >= Math.max(...loadedPages)}
-                  >
-                    Next Page
-                  </button>
-                </div>
-
-                {/* Load More Button */}
-                {(hasMore || loading) && (
-                  <button
-                    onClick={loadMore}
-                    className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:bg-green-300"
-                    disabled={loading}
-                  >
-                    {loading ? "Loading..." : "Load More"}
-                  </button>
+                {loadedPages.length > 0 && (
+                  <div className="flex items-center gap-2 px-2">
+                    <span className="text-sm">
+                      Page {currentPage} of {Math.max(...loadedPages)}
+                    </span>
+                  </div>
                 )}
+
+                <button
+                  onClick={() => navigateToPage(currentPage + 1)}
+                  className={`rounded px-4 py-2 text-white ${
+                    currentPage < Math.max(...loadedPages)
+                      ? "bg-gray-500 hover:bg-gray-600"
+                      : "cursor-not-allowed bg-gray-300"
+                  }`}
+                  disabled={currentPage >= Math.max(...loadedPages)}
+                >
+                  Next Page
+                </button>
               </div>
-            </>
-          ) : (
-            <TransactionNetwork
-              transactions={currentPageTransactions}
-              address={address}
-            />
-          )}
+
+              {/* Load More Button */}
+              {(hasMore || loading) && (
+                <button
+                  onClick={loadMore}
+                  className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:bg-green-300"
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : "Load More"}
+                </button>
+              )}
+            </div>
+          </>
         </div>
       )}
     </div>

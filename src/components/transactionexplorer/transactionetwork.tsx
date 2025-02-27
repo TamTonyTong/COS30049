@@ -333,49 +333,49 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         );
 
       // Add legend title
-      legend
-        .append("text")
-        .text("Receivers")
-        .attr("x", 0)
-        .attr("y", 0)
-        .style("font-size", "12px")
-        .style("font-weight", "bold");
+      // legend
+      //   .append("text")
+      //   .text("Receivers")
+      //   .attr("x", 0)
+      //   .attr("y", 0)
+      //   .style("font-size", "12px")
+      //   .style("font-weight", "bold");
 
       // Add legend items - limit to 5 to avoid cluttering
-      const visibleAddresses = uniqueAddresses.slice(0, 5);
+      // const visibleAddresses = uniqueAddresses.slice(0, 5);
 
-      visibleAddresses.forEach((addr, i) => {
-        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-        const y = 20 + i * 20;
+      // visibleAddresses.forEach((addr, i) => {
+      //   const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+      //   const y = 20 + i * 20;
 
-        // Add color circle
-        legend
-          .append("circle")
-          .attr("cx", 10)
-          .attr("cy", y)
-          .attr("r", 6)
-          .style("fill", colorScale(addr));
+      // Add color circle
+      // legend
+      //   .append("circle")
+      //   .attr("cx", 10)
+      //   .attr("cy", y)
+      //   .attr("r", 6)
+      //   .style("fill", colorScale(addr));
 
-        // Add address text
-        legend
-          .append("text")
-          .text(addr.substring(0, 6) + "..." + addr.substring(addr.length - 4))
-          .attr("x", 25)
-          .attr("y", y + 4)
-          .style("font-size", "10px");
+      // Add address text
+      // legend
+      //   .append("text")
+      //   .text(addr.substring(0, 6) + "..." + addr.substring(addr.length - 4))
+      //   .attr("x", 25)
+      //   .attr("y", y + 4)
+      //   .style("font-size", "10px");
 
-        // Add transaction count
-        const count = transactionNodes.filter(
-          (node) => node.address === addr,
-        ).length;
-        legend
-          .append("text")
-          .text(`(${count} txs)`)
-          .attr("x", 120)
-          .attr("y", y + 4)
-          .style("font-size", "10px")
-          .style("fill", "#6b7280");
-      });
+      // Add transaction count
+      //   const count = transactionNodes.filter(
+      //     (node) => node.address === addr,
+      //   ).length;
+      //   legend
+      //     .append("text")
+      //     .text(`(${count} txs)`)
+      //     .attr("x", 120)
+      //     .attr("y", y + 4)
+      //     .style("font-size", "10px")
+      //     .style("fill", "#6b7280");
+      // });
 
       // Add "more" indicator if we have more addresses than shown
       if (uniqueAddresses.length > 5) {
@@ -392,10 +392,11 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
   }, [transactions, centerNode, address]);
 
   return (
-    <div className="transaction-network mt-6 w-full">
-      <h3 className="mb-4 text-lg font-bold">Transaction Network</h3>
+    // <div className="transaction-network mt-6 w-full">
+    <>
+      {/* <h3 className="mb-4 text-lg font-bold">Transaction Network</h3> */}
 
-      <div className="relative rounded-lg border bg-white p-4 dark:bg-gray-800">
+      <div className="w-1/2 min-w-64 rounded-lg border border-r bg-white p-4 dark:bg-gray-800">
         {transactions.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
             <p className="text-gray-500">No transaction data to visualize</p>
@@ -442,7 +443,8 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
           </>
         )}
       </div>
-    </div>
+      {/* </div> */}
+    </>
   );
 };
 

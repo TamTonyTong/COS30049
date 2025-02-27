@@ -47,7 +47,7 @@ app.get("/transactions/:addressId", async (req, res) => {
         OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)  
         WITH a, t, b  
         ORDER BY t.transaction_index DESC
-        LIMIT 4  
+        LIMIT 8  
         RETURN  
         a.addressId AS searched_address,  
         COLLECT(DISTINCT {

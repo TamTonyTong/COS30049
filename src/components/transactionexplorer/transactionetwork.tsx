@@ -69,51 +69,19 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       })),
     ];
 
-    // Group transactions by receiver for layout calculations
-    const addressGroups = new Map<string, NetworkNode[]>();
-
-    nodes.forEach((node) => {
-      if (!node.main) {
-        if (!addressGroups.has(node.address)) {
-          addressGroups.set(node.address, []);
-        }
-        addressGroups.get(node.address)?.push(node);
-      }
-    });
-
-    // Position nodes in organized groups around the center
+    // Position nodes in an even circle around the center
     const width = svgRef.current.clientWidth || 600;
     const height = 500;
     const baseRadius = Math.min(width, height) / 3;
 
-    // Calculate positions for unique addresses
-    const uniqueAddresses = Array.from(addressGroups.keys());
-    const addressAngleStep = (2 * Math.PI) / uniqueAddresses.length;
+    // Calculate positions for all transaction nodes evenly around the circle
+    const transactionNodes = nodes.filter((node) => !node.main);
+    const angleStep = (2 * Math.PI) / transactionNodes.length;
 
-    uniqueAddresses.forEach((addr, addrIndex) => {
-      const addressNodes = addressGroups.get(addr) || [];
-      const addressAngle = addrIndex * addressAngleStep;
-
-      // Calculate base position for this address group
-      const groupX = baseRadius * Math.cos(addressAngle);
-      const groupY = baseRadius * Math.sin(addressAngle);
-
-      // Position all transaction nodes for this address in a small cluster
-      addressNodes.forEach((node, i) => {
-        // If there's only one transaction to this address, put it at the base position
-        if (addressNodes.length === 1) {
-          node.x = groupX;
-          node.y = groupY;
-          return;
-        }
-
-        // Otherwise, arrange in a small cluster around the base position
-        const clusterRadius = 30; // Radius of the cluster
-        const nodeAngle = (2 * Math.PI * i) / addressNodes.length;
-
-        node.x = groupX + clusterRadius * Math.cos(nodeAngle);
-        node.y = groupY + clusterRadius * Math.sin(nodeAngle);
-      });
+    transactionNodes.forEach((node, index) => {
+      const angle = index * angleStep;
+      node.x = baseRadius * Math.cos(angle);
+      node.y = baseRadius * Math.sin(angle);
     });
 
     // Set position for center node
@@ -188,27 +156,14 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .style("fill", (d) => {
         if (d.main) return "#3b82f6";
 
-        // For transaction nodes, color by address to visually group them
-        const addrIndex = uniqueAddresses.indexOf(d.address);
+        // For transaction nodes, color by address to still provide visual grouping
         const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-        return colorScale(addrIndex.toString());
+        return colorScale(d.address);
       })
       .style("cursor", "pointer")
       .style("transition", "all 0.2s ease");
 
-    // Add transaction amount labels (only for transaction nodes)
-    svg
-      .selectAll(".node")
-      .filter((d) => d.transaction)
-      .append("text")
-      .text((d) => `${(d.transaction?.value! / 1e18).toFixed(2)} ETH`)
-      .attr("dy", -20)
-      .style("text-anchor", "middle")
-      .style("fill", "#6b7280")
-      .style("font-size", "10px")
-      .style("pointer-events", "none");
-
-    // Add address labels
+    // Add address labels first
     svg
       .selectAll(".node")
       .append("text")
@@ -227,6 +182,18 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .attr("dy", (d) => (d.main ? 45 : 25))
       .style("text-anchor", "middle")
       .style("fill", "#FFFFFF")
+      .style("font-size", "10px")
+      .style("pointer-events", "none");
+
+    // Add transaction amount labels below address labels (only for transaction nodes)
+    svg
+      .selectAll(".node")
+      .filter((d) => d.transaction)
+      .append("text")
+      .text((d) => `${(d.transaction?.value! / 1e18).toFixed(2)} ETH`)
+      .attr("dy", 40) // Position it below the address label
+      .style("text-anchor", "middle")
+      .style("fill", "#6b7280")
       .style("font-size", "10px")
       .style("pointer-events", "none");
 
@@ -287,7 +254,11 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         });
     }, 500);
 
-    // Add legend for address groups if there are multiple addresses
+    // Add legend for transaction colors by receiver
+    const uniqueAddresses = Array.from(
+      new Set(transactionNodes.map((node) => node.address)),
+    );
+
     if (uniqueAddresses.length > 1) {
       const legend = svg
         .append("g")
@@ -300,7 +271,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       // Add legend title
       legend
         .append("text")
-        .text("Address Groups")
+        .text("Receivers")
         .attr("x", 0)
         .attr("y", 0)
         .style("font-size", "12px")
@@ -319,7 +290,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
           .attr("cx", 10)
           .attr("cy", y)
           .attr("r", 6)
-          .style("fill", colorScale(i.toString()));
+          .style("fill", colorScale(addr));
 
         // Add address text
         legend
@@ -330,7 +301,9 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
           .style("font-size", "10px");
 
         // Add transaction count
-        const count = addressGroups.get(addr)?.length || 0;
+        const count = transactionNodes.filter(
+          (node) => node.address === addr,
+        ).length;
         legend
           .append("text")
           .text(`(${count} txs)`)

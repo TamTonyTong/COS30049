@@ -96,8 +96,10 @@ const IntegratedTransactionExplorer: React.FC = () => {
     }
   };
 
-  const allTransactions = Object.values(transactionsByPage).flat();
-  // console.log("Fetched Transactions Relationships,", allTransactions);
+  // Get only the transactions for the current page instead of all transactions
+  const currentPageTransactions = transactionsByPage[currentPage] || [];
+  console.log("Current Page Transactions", currentPageTransactions);
+
   const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
 
   return (
@@ -250,7 +252,7 @@ const IntegratedTransactionExplorer: React.FC = () => {
             </>
           ) : (
             <TransactionNetwork
-              transactions={allTransactions}
+              transactions={currentPageTransactions}
               address={address}
             />
           )}

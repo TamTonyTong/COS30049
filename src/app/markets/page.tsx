@@ -34,6 +34,7 @@ export default function MarketsPage() {
   const [digitalAssets, setDigitalAssets] = useState<DigitalAsset[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Fetch data from the API route
@@ -50,6 +51,7 @@ export default function MarketsPage() {
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
+        setError("Error fetching data")
         setIsLoading(false);
       });
   }, []);
@@ -62,6 +64,25 @@ export default function MarketsPage() {
 
   if (isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <Card className="border-red-500/30 bg-[#1a2b4b]">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold text-white">
+                Error
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-400">{error}</p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
   }
 
   return (

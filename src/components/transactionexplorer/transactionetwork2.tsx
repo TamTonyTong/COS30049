@@ -14,15 +14,17 @@ interface Transaction {
   transaction_index: string;
   block_hash: string;
   block_timestamp: number;
-  receiver: string;
+  receiver?: string;
+  sender?: string;
+  direction: "incoming" | "outgoing";
 }
 
 interface NetworkNode {
-  id: string; // Unique id (hash for transaction nodes, address for center node)
-  address: string; // The actual address
-  main: boolean; // Whether this is the center node
-  isTransactionNode: boolean; // Whether this is a transaction node
-  transaction?: Transaction; // Reference to the transaction (for transaction nodes)
+  id: string;
+  address: string;
+  main: boolean;
+  isTransactionNode: boolean;
+  transaction?: Transaction;
   x?: number;
   y?: number;
 }
@@ -62,7 +64,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       },
       ...transactions.map((tx) => ({
         id: tx.hash, // Use transaction hash as node ID
-        address: tx.receiver, // Store the actual address
+        address: tx.direction === "outgoing" ? tx.receiver! : tx.sender!, // Use the counterparty address based on direction
         main: false,
         isTransactionNode: true,
         transaction: tx,
@@ -99,15 +101,35 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .append("g")
       .attr("transform", `translate(${width / 2},${height / 2})`);
 
-    // Create gradient
-    const gradient = svg
-      .append("defs")
+    // Create gradients for incoming and outgoing transactions
+    const defs = svg.append("defs");
+
+    // Outgoing gradient (blue to gray)
+    const outgoingGradient = defs
       .append("linearGradient")
-      .attr("id", "link-gradient")
+      .attr("id", "outgoing-gradient")
       .attr("gradientUnits", "userSpaceOnUse");
 
-    gradient.append("stop").attr("offset", "0%").attr("stop-color", "#3b82f6");
-    gradient
+    outgoingGradient
+      .append("stop")
+      .attr("offset", "0%")
+      .attr("stop-color", "#3b82f6");
+    outgoingGradient
+      .append("stop")
+      .attr("offset", "100%")
+      .attr("stop-color", "#9ca3af");
+
+    // Incoming gradient (green to gray)
+    const incomingGradient = defs
+      .append("linearGradient")
+      .attr("id", "incoming-gradient")
+      .attr("gradientUnits", "userSpaceOnUse");
+
+    incomingGradient
+      .append("stop")
+      .attr("offset", "0%")
+      .attr("stop-color", "#10b981");
+    incomingGradient
       .append("stop")
       .attr("offset", "100%")
       .attr("stop-color", "#9ca3af");
@@ -124,7 +146,12 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .attr("y1", centerNodeObj?.y || 0)
       .attr("x2", (d) => d.x || 0)
       .attr("y2", (d) => d.y || 0)
-      .style("stroke", "url(#link-gradient)")
+      .style("stroke", (d) => {
+        // Use different gradient based on transaction direction
+        return d.transaction?.direction === "outgoing"
+          ? "url(#outgoing-gradient)"
+          : "url(#incoming-gradient)";
+      })
       .style("stroke-width", (d) => {
         const tx = d.transaction;
         return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
@@ -181,15 +208,23 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .style("font-size", "10px")
       .style("pointer-events", "none");
 
-    // Draw transaction nodes
+    // Draw transaction nodes with different colors based on direction
     svg
       .selectAll(".transaction-node")
       .append("circle")
       .attr("r", 15)
       .style("fill", (d) => {
-        // Color by address to provide visual grouping
-        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-        return colorScale(d.address);
+        // Color by direction first, then by address for visual grouping
+        const direction = d.transaction?.direction;
+        if (direction === "outgoing") {
+          return "#3b82f6"; // Blue for outgoing
+        } else if (direction === "incoming") {
+          return "#10b981"; // Green for incoming
+        } else {
+          // If direction is undefined, use address-based coloring as fallback
+          const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+          return colorScale(d.address);
+        }
       })
       .style("cursor", "pointer")
       .style("transition", "all 0.2s ease");
@@ -213,16 +248,20 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .style("fill", "#0d1829")
       .style("opacity", 0.9);
 
-    // Add address label inside the box
+    // Add address label inside the box with direction indicator
     labelGroups
       .append("text")
       .attr("class", "address-label")
-      .text(
-        (d) =>
+      .text((d) => {
+        const direction = d.transaction?.direction;
+        const dirIndicator = direction === "outgoing" ? "→ " : "← ";
+        return (
+          dirIndicator +
           d.address.substring(0, 6) +
           "..." +
-          d.address.substring(d.address.length - 4),
-      )
+          d.address.substring(d.address.length - 4)
+        );
+      })
       .attr("y", -10)
       .style("text-anchor", "middle")
       .style("fill", "#FFFFFF")
@@ -318,85 +357,55 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         });
     }, 500);
 
-    // Add legend for transaction colors by receiver
-    const uniqueAddresses = Array.from(
-      new Set(transactionNodes.map((node) => node.address)),
-    );
+    // Add legend for transaction directions
+    const legend = svg
+      .append("g")
+      .attr("class", "legend")
+      .attr("transform", `translate(${-width / 2 + 20}, ${-height / 2 + 20})`);
 
-    if (uniqueAddresses.length > 1) {
-      const legend = svg
-        .append("g")
-        .attr("class", "legend")
-        .attr(
-          "transform",
-          `translate(${-width / 2 + 20}, ${-height / 2 + 20})`,
-        );
+    // Add legend title
+    legend
+      .append("text")
+      .text("Transaction Types")
+      .attr("x", 0)
+      .attr("y", 0)
+      .style("font-size", "12px")
+      .style("font-weight", "bold");
 
-      // Add legend title
-      // legend
-      //   .append("text")
-      //   .text("Receivers")
-      //   .attr("x", 0)
-      //   .attr("y", 0)
-      //   .style("font-size", "12px")
-      //   .style("font-weight", "bold");
+    // Outgoing indicator
+    legend
+      .append("circle")
+      .attr("cx", 10)
+      .attr("cy", 20)
+      .attr("r", 6)
+      .style("fill", "#3b82f6");
 
-      // Add legend items - limit to 5 to avoid cluttering
-      // const visibleAddresses = uniqueAddresses.slice(0, 5);
+    legend
+      .append("text")
+      .text("Outgoing")
+      .attr("x", 25)
+      .attr("y", 24)
+      .style("font-size", "10px");
 
-      // visibleAddresses.forEach((addr, i) => {
-      //   const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-      //   const y = 20 + i * 20;
+    // Incoming indicator
+    legend
+      .append("circle")
+      .attr("cx", 10)
+      .attr("cy", 40)
+      .attr("r", 6)
+      .style("fill", "#10b981");
 
-      // Add color circle
-      // legend
-      //   .append("circle")
-      //   .attr("cx", 10)
-      //   .attr("cy", y)
-      //   .attr("r", 6)
-      //   .style("fill", colorScale(addr));
-
-      // Add address text
-      // legend
-      //   .append("text")
-      //   .text(addr.substring(0, 6) + "..." + addr.substring(addr.length - 4))
-      //   .attr("x", 25)
-      //   .attr("y", y + 4)
-      //   .style("font-size", "10px");
-
-      // Add transaction count
-      //   const count = transactionNodes.filter(
-      //     (node) => node.address === addr,
-      //   ).length;
-      //   legend
-      //     .append("text")
-      //     .text(`(${count} txs)`)
-      //     .attr("x", 120)
-      //     .attr("y", y + 4)
-      //     .style("font-size", "10px")
-      //     .style("fill", "#6b7280");
-      // });
-
-      // Add "more" indicator if we have more addresses than shown
-      if (uniqueAddresses.length > 5) {
-        legend
-          .append("text")
-          .text(`+ ${uniqueAddresses.length - 5} more addresses`)
-          .attr("x", 25)
-          .attr("y", 20 + 5 * 20 + 4)
-          .style("font-size", "10px")
-          .style("font-style", "italic")
-          .style("fill", "#6b7280");
-      }
-    }
+    legend
+      .append("text")
+      .text("Incoming")
+      .attr("x", 25)
+      .attr("y", 44)
+      .style("font-size", "10px");
   }, [transactions, centerNode, address]);
 
   return (
-    // <div className="transaction-network mt-6 w-full">
     <>
-      {/* <h3 className="mb-4 text-lg font-bold">Transaction Network</h3> */}
-
-      <div className="w-1/2 min-w-64 rounded-lg border border-r bg-white p-4 dark:bg-gray-800">
+      <div className="w-full min-w-64 rounded-lg border border-r bg-white p-4 dark:bg-gray-800">
         {transactions.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
             <p className="text-gray-500">No transaction data to visualize</p>
@@ -416,6 +425,30 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
                   <div>
                     <span className="font-medium">Hash:</span>{" "}
                     {selectedTransaction.hash.substring(0, 10)}...
+                  </div>
+                  <div>
+                    <span className="font-medium">Direction:</span>{" "}
+                    {selectedTransaction.direction === "outgoing"
+                      ? "Outgoing"
+                      : "Incoming"}
+                  </div>
+                  <div>
+                    <span className="font-medium">
+                      {selectedTransaction.direction === "outgoing"
+                        ? "Receiver:"
+                        : "Sender:"}
+                    </span>{" "}
+                    {selectedTransaction.direction === "outgoing"
+                      ? selectedTransaction.receiver?.substring(0, 6) +
+                        "..." +
+                        selectedTransaction.receiver?.substring(
+                          selectedTransaction.receiver.length - 4,
+                        )
+                      : selectedTransaction.sender?.substring(0, 6) +
+                        "..." +
+                        selectedTransaction.sender?.substring(
+                          selectedTransaction.sender.length - 4,
+                        )}
                   </div>
                   <div>
                     <span className="font-medium">Value:</span>{" "}
@@ -443,7 +476,6 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
           </>
         )}
       </div>
-      {/* </div> */}
     </>
   );
 };

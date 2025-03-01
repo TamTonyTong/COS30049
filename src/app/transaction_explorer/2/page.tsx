@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { fetchTransactions } from "@/src/pages/api/fetchTransaction2";
-import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork";
+import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork2";
 
 interface Transaction {
   hash: string;
@@ -181,15 +181,15 @@ const IntegratedTransactionExplorer: React.FC = () => {
           </div>
 
           {viewMode === "network" ? (
-            <div className="rounded-lg border bg-black dark:bg-gray-800">
-              {/* <TransactionNetwork
+            <div className="rounded-lg border bg-white dark:bg-gray-800">
+              <TransactionNetwork
                 transactions={currentPageTransactions}
                 address={address}
-              /> */}
+              />
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full rounded-lg bg-black">
+              <table className="w-full rounded-lg bg-white">
                 <thead className="bg-gray-200">
                   <tr>
                     <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -209,7 +209,7 @@ const IntegratedTransactionExplorer: React.FC = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-gray-200">
+                <tbody className="divide-y divide-gray-200 bg-white">
                   {transactionsByPage[currentPage]?.map((t, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-2 py-4 text-sm text-gray-900">

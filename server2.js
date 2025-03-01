@@ -73,7 +73,7 @@ WITH a,
      outgoing, receiver, 
      incoming, sender
 WITH a, 
-     COLLECT({
+     COLLECT(CASE WHEN outgoing IS NOT NULL THEN {
          direction: "outgoing",
          receiver: receiver.addressId,
          hash: outgoing.hash,  
@@ -87,8 +87,8 @@ WITH a,
          block_number: outgoing.block_number,
          block_hash: outgoing.block_hash,
          block_timestamp: outgoing.block_timestamp
-     }) AS outTransactions,
-     COLLECT({
+     } END) AS outTransactions,
+     COLLECT(CASE WHEN incoming IS NOT NULL THEN {
          direction: "incoming",
          sender: sender.addressId,
          hash: incoming.hash,  
@@ -102,15 +102,19 @@ WITH a,
          block_number: incoming.block_number,
          block_hash: incoming.block_hash,
          block_timestamp: incoming.block_timestamp
-     }) AS inTransactions
+     } END) AS inTransactions
 WITH a, 
-     outTransactions + inTransactions AS allTransactions
-UNWIND allTransactions AS tx
+     [tx IN outTransactions WHERE tx IS NOT NULL] + [tx IN inTransactions WHERE tx IS NOT NULL] AS allTransactions
+WITH a, allTransactions
+UNWIND CASE 
+    WHEN size(allTransactions) > 0 THEN allTransactions 
+    ELSE [null] 
+END AS tx
 WITH a, tx
-ORDER BY tx.block_timestamp DESC, tx.transaction_index DESC
-// Use DISTINCT to remove duplicates based on hash
+WHERE tx IS NOT NULL
+ORDER BY tx.transaction_index DESC, tx.transaction_index DESC
 WITH DISTINCT tx.hash AS hash, a, tx
-LIMIT 8
+LIMIT 4
 WITH a, COLLECT(tx) AS orderedTransactions
 RETURN  
     a.addressId AS searched_address,  
@@ -121,27 +125,60 @@ RETURN
       // Load older transactions (lower timestamp)
       query = `
         MATCH (a:Address {addressId: $addressId})  
-        OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)
-        WHERE t.transaction_index < $transaction_index
-        WITH a, t, b  
-        ORDER BY t.transaction_index DESC
-        LIMIT 4  
-        RETURN  
-        a.addressId AS searched_address,  
-        COLLECT(DISTINCT {
-            receiver: b.addressId,
-            hash: t.hash,  
-            value: t.value,
-            input: t.input,
-            transaction_index: t.transaction_index,
-            gas: t.gas,
-            gas_used: t.gas_used,
-            gas_price: t.gas_price,
-            transaction_fee: t.transaction_fee,
-            block_number: t.block_number,
-            block_hash: t.block_hash,
-            block_timestamp: t.block_timestamp
-        }) AS transactions;
+OPTIONAL MATCH (a)-[outgoing:Transaction]->(receiver:Address)
+WHERE outgoing.transaction_index < $transaction_index
+OPTIONAL MATCH (sender:Address)-[incoming:Transaction]->(a)
+WHERE incoming.transaction_index < $transaction_index
+WITH a, 
+     outgoing, receiver, 
+     incoming, sender
+WITH a, 
+     COLLECT(CASE WHEN outgoing IS NOT NULL THEN {
+         direction: "outgoing",
+         receiver: receiver.addressId,
+         hash: outgoing.hash,  
+         value: outgoing.value,
+         input: outgoing.input,
+         transaction_index: outgoing.transaction_index,
+         gas: outgoing.gas,
+         gas_used: outgoing.gas_used,
+         gas_price: outgoing.gas_price,
+         transaction_fee: outgoing.transaction_fee,
+         block_number: outgoing.block_number,
+         block_hash: outgoing.block_hash,
+         block_timestamp: outgoing.block_timestamp
+     } END) AS outTransactions,
+     COLLECT(CASE WHEN incoming IS NOT NULL THEN {
+         direction: "incoming",
+         sender: sender.addressId,
+         hash: incoming.hash,  
+         value: incoming.value,
+         input: incoming.input,
+         transaction_index: incoming.transaction_index,
+         gas: incoming.gas,
+         gas_used: incoming.gas_used,
+         gas_price: incoming.gas_price,
+         transaction_fee: incoming.transaction_fee,
+         block_number: incoming.block_number,
+         block_hash: incoming.block_hash,
+         block_timestamp: incoming.block_timestamp
+     } END) AS inTransactions
+WITH a, 
+     [tx IN outTransactions WHERE tx IS NOT NULL] + [tx IN inTransactions WHERE tx IS NOT NULL] AS allTransactions
+WITH a, allTransactions
+UNWIND CASE 
+    WHEN size(allTransactions) > 0 THEN allTransactions 
+    ELSE [null] 
+END AS tx
+WITH a, tx
+WHERE tx IS NOT NULL
+ORDER BY tx.transaction_index DESC, tx.transaction_index DESC
+WITH DISTINCT tx.hash AS hash, a, tx
+LIMIT 8
+WITH a, COLLECT(tx) AS orderedTransactions
+RETURN  
+    a.addressId AS searched_address,  
+    orderedTransactions AS transactions;
       `;
       params.transaction_index = parseInt(transaction_index, 10);
     } else if (direction === "newer") {

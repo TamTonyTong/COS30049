@@ -1,26 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { fetchTransactions } from "@/src/pages/api/fetchTransaction2";
+import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
+import SearchBar from "@/src/components/transactionexplorer/searchbar";
+import TransactionList from "@/src/components/transactionexplorer/transactionlist";
+import Pagination from "@/src/components/transactionexplorer/pagnition";
 import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork2";
+import { Transaction } from "@/src/components/transactionexplorer/type";
 
-interface Transaction {
-  hash: string;
-  value: number;
-  input: number;
-  gas: number;
-  gas_used: number;
-  gas_price: number;
-  transaction_fee: number;
-  block_number: number;
-  transaction_index: string;
-  block_hash: string;
-  block_timestamp: number;
-  receiver?: string;
-  sender?: string;
-  direction: "incoming" | "outgoing";
-}
-
-const IntegratedTransactionExplorer: React.FC = () => {
+const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
   const [transactionsByPage, setTransactionsByPage] = useState<{
     [page: number]: Transaction[];
@@ -31,34 +18,24 @@ const IntegratedTransactionExplorer: React.FC = () => {
   const [lastIndex, setLastIndex] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
-  const [viewMode, setViewMode] = useState<"list" | "network">("list");
 
-  const handleSearch = async () => {
-    if (!address) return;
+  const handleSearch = async (addressToSearch: string = address) => {
+    if (!addressToSearch) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchTransactions(address, "initial");
-      // Note the change here to accommodate the bidirectional data structure
+      const data = await fetchTransactions(addressToSearch, "initial");
       const extractedTransactions = data.length > 0 ? data[0].transactions : [];
-      console.log("Extracted Data:", extractedTransactions);
 
       if (extractedTransactions.length > 0) {
         setTransactionsByPage({ 1: extractedTransactions });
-
-        // Sort transactions by timestamp to ensure proper ordering
-        const sortedTransactions = [...extractedTransactions].sort(
-          (a, b) =>
-            b.block_timestamp - a.block_timestamp ||
-            Number(b.transaction_index) - Number(a.transaction_index),
-        );
-
         setLastIndex(
-          sortedTransactions[sortedTransactions.length - 1].transaction_index,
+          extractedTransactions[extractedTransactions.length - 1]
+            .transaction_index,
         );
         setCurrentPage(1);
         setLoadedPages([1]);
-        setHasMore(extractedTransactions.length >= 8);
+        setHasMore(extractedTransactions.length >= 4);
       } else {
         setTransactionsByPage({});
         setLoadedPages([]);
@@ -66,7 +43,6 @@ const IntegratedTransactionExplorer: React.FC = () => {
       }
     } catch (err) {
       setError("Failed to fetch transactions.");
-      console.error(err);
     }
     setLoading(false);
   };
@@ -86,26 +62,18 @@ const IntegratedTransactionExplorer: React.FC = () => {
           ...prev,
           [nextPage]: extractedTransactions,
         }));
-
-        // Sort the new transactions
-        const sortedTransactions = [...extractedTransactions].sort(
-          (a, b) =>
-            b.block_timestamp - a.block_timestamp ||
-            Number(b.transaction_index) - Number(a.transaction_index),
-        );
-
         setLastIndex(
-          sortedTransactions[sortedTransactions.length - 1].transaction_index,
+          extractedTransactions[extractedTransactions.length - 1]
+            .transaction_index,
         );
         setCurrentPage(nextPage);
         setLoadedPages((prev) => [...prev, nextPage]);
-        setHasMore(extractedTransactions.length >= 8);
+        setHasMore(extractedTransactions.length >= 4);
       } else {
         setHasMore(false);
       }
     } catch (err) {
       setError("Failed to load more transactions.");
-      console.error(err);
     }
     setLoading(false);
   };
@@ -116,183 +84,66 @@ const IntegratedTransactionExplorer: React.FC = () => {
     }
   };
 
-  // Get only the transactions for the current page instead of all transactions
-  const currentPageTransactions = transactionsByPage[currentPage] || [];
-  console.log("Current Page Transactions", currentPageTransactions);
-  console.log("Has More or not", hasMore);
+  const handleAddressChange = (newAddress: string) => {
+    setAddress(newAddress);
+    // Reset pagination and search with the new address
+    setTransactionsByPage({});
+    setLastIndex(null);
+    setCurrentPage(1);
+    setLoadedPages([]);
+    handleSearch(newAddress);
+  };
+
   const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
+  const maxPage = Math.max(...loadedPages, 0);
+  const currentTransactions = transactionsByPage[currentPage] || [];
 
   return (
-    <div className="p-4">
+    <div className="mx-auto max-w-4xl p-4">
       <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
-      <div className="mb-4">
-        <p className="mb-2 text-sm text-gray-500">
-          Example: 0xb0606f433496bf66338b8ad6b6d51fc4d84a44cd
-        </p>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Enter Address ID"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="flex-grow rounded border bg-transparent p-2"
-          />
-          <button
-            onClick={handleSearch}
-            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-            disabled={loading}
-          >
-            {loading ? "Loading..." : "Search"}
-          </button>
-        </div>
-      </div>
 
-      {error && <p className="mt-2 text-red-500">{error}</p>}
+      <SearchBar
+        address={address}
+        setAddress={setAddress}
+        handleSearch={() => handleSearch()}
+        loading={loading}
+        error={error}
+      />
 
       {hasLoadedTransactions && (
-        <div className="mt-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">
-              Transactions for {address.substring(0, 6)}...
-              {address.substring(address.length - 4)}
-            </h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`rounded px-3 py-1 text-sm ${
-                  viewMode === "list"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                List View
-              </button>
-              <button
-                onClick={() => setViewMode("network")}
-                className={`rounded px-3 py-1 text-sm ${
-                  viewMode === "network"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                Network View
-              </button>
-            </div>
+        <>
+          {/* Add the TransactionNetwork component */}
+          <div className="mb-6">
+            <h3 className="mb-2 text-lg font-semibold">Transaction Network</h3>
+            <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
+              Click on "Explore" under any node to make it the center of the
+              network.
+            </p>
+            <TransactionNetwork
+              transactions={currentTransactions}
+              address={address}
+              onAddressChange={handleAddressChange}
+            />
           </div>
 
-          {viewMode === "network" ? (
-            <div className="rounded-lg border bg-white dark:bg-gray-800">
-              <TransactionNetwork
-                transactions={currentPageTransactions}
-                address={address}
-              />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full rounded-lg bg-white">
-                <thead className="bg-gray-200">
-                  <tr>
-                    <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Direction
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      ID
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Address
-                    </th>
-                    <th className="px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Value
-                    </th>
-                    <th className="text-middle px-2 py-3 text-xs font-medium uppercase text-gray-500">
-                      Time
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {transactionsByPage[currentPage]?.map((t, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-2 py-4 text-sm text-gray-900">
-                        <span
-                          className={`rounded px-2 py-1 text-white ${t.direction === "outgoing" ? "bg-red-500" : "bg-green-500"}`}
-                        >
-                          {t.direction === "outgoing" ? "OUT" : "IN"}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-4 text-sm text-gray-900">
-                        {t.transaction_index}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-4 text-sm text-gray-500">
-                        {t.direction === "outgoing"
-                          ? t.receiver &&
-                            `${t.receiver.substring(0, 6)}...${t.receiver.substring(t.receiver.length - 4)}`
-                          : t.sender &&
-                            `${t.sender.substring(0, 6)}...${t.sender.substring(t.sender.length - 4)}`}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-4 text-sm text-gray-500">
-                        {(t.value / 1e18).toFixed(4)} ETH
-                      </td>
-                      <td className="py-4 text-sm text-gray-500">
-                        {new Date(t.block_timestamp * 1000).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <h3 className="mb-2 text-lg font-semibold">Transaction List</h3>
+          <TransactionList
+            transactions={currentTransactions}
+            currentPage={currentPage}
+          />
 
-          <div className="mt-4 flex justify-between">
-            {/* Navigation Controls */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => navigateToPage(currentPage - 1)}
-                className={`rounded px-4 py-2 text-white ${
-                  currentPage > 1
-                    ? "bg-gray-500 hover:bg-gray-600"
-                    : "cursor-not-allowed bg-gray-300"
-                }`}
-                disabled={currentPage <= 1}
-              >
-                Previous Page
-              </button>
-
-              {loadedPages.length > 0 && (
-                <div className="flex items-center gap-2 px-2">
-                  <span className="text-sm">
-                    Page {currentPage} of {Math.max(...loadedPages)}
-                  </span>
-                </div>
-              )}
-
-              <button
-                onClick={() => navigateToPage(currentPage + 1)}
-                className={`rounded px-4 py-2 text-white ${
-                  currentPage < Math.max(...loadedPages)
-                    ? "bg-gray-500 hover:bg-gray-600"
-                    : "cursor-not-allowed bg-gray-300"
-                }`}
-                disabled={currentPage >= Math.max(...loadedPages)}
-              >
-                Next Page
-              </button>
-            </div>
-
-            {/* Load More Button */}
-            {(hasMore || loading) && (
-              <button
-                onClick={loadMore}
-                className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:bg-green-300"
-                disabled={loading}
-              >
-                {loading ? "Loading..." : "Load More"}
-              </button>
-            )}
-          </div>
-        </div>
+          <Pagination
+            currentPage={currentPage}
+            maxPage={maxPage}
+            navigateToPage={navigateToPage}
+            loadMore={loadMore}
+            hasMore={hasMore}
+            loading={loading}
+          />
+        </>
       )}
     </div>
   );
 };
 
-export default IntegratedTransactionExplorer;
+export default TransactionExplorer;

@@ -32,11 +32,13 @@ interface NetworkNode {
 interface TransactionNetworkProps {
   transactions: Transaction[];
   address: string;
+  onAddressChange: (newAddress: string) => void;
 }
 
 const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
   transactions,
   address,
+  onAddressChange,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [centerNode, setCenterNode] = useState<string>(address);
@@ -280,6 +282,38 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .style("font-weight", "bold")
       .style("pointer-events", "none");
 
+    // Add "Explore Address" badge
+    const exploreGroups = svg
+      .selectAll(".transaction-node")
+      .append("g")
+      .attr("class", "explore-group")
+      .attr("transform", "translate(0, 25)"); // Position below the node
+
+    // Add background for explore badge
+    exploreGroups
+      .append("rect")
+      .attr("rx", 4)
+      .attr("ry", 4)
+      .attr("x", -40)
+      .attr("y", 0)
+      .attr("width", 80)
+      .attr("height", 20)
+      .style("fill", "#2563eb")
+      .style("opacity", 0.8)
+      .style("cursor", "pointer");
+
+    // Add explore text
+    exploreGroups
+      .append("text")
+      .text("Explore")
+      .attr("y", 14)
+      .style("text-anchor", "middle")
+      .style("fill", "#FFFFFF")
+      .style("font-size", "10px")
+      .style("font-weight", "bold")
+      .style("cursor", "pointer")
+      .style("pointer-events", "none");
+
     // Add event handlers after transitions complete
     setTimeout(() => {
       // Add event handlers to links
@@ -355,6 +389,13 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             .attr("r", 30)
             .style("opacity", 1);
         });
+
+      // Add event handlers to explore badges
+      svg.selectAll(".explore-group").on("click", function (event, d) {
+        event.stopPropagation(); // Prevent triggering the node click
+        const newCenterAddress = d.address;
+        onAddressChange(newCenterAddress);
+      });
     }, 500);
 
     // Add legend for transaction directions
@@ -401,7 +442,16 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .attr("x", 25)
       .attr("y", 44)
       .style("font-size", "10px");
-  }, [transactions, centerNode, address]);
+
+    // Add info about clicking nodes
+    legend
+      .append("text")
+      .text("Click 'Explore' to view transactions for that address")
+      .attr("x", 0)
+      .attr("y", 70)
+      .style("font-size", "10px")
+      .style("font-style", "italic");
+  }, [transactions, centerNode, address, onAddressChange]);
 
   return (
     <>
@@ -465,12 +515,33 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
                     ).toLocaleString()}
                   </div>
                 </div>
-                <button
-                  className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                  onClick={() => setSelectedTransaction(null)}
-                >
-                  Close
-                </button>
+                <div className="mt-2 flex justify-between">
+                  <button
+                    className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                    onClick={() => setSelectedTransaction(null)}
+                  >
+                    Close
+                  </button>
+
+                  {/* Add explore button to view this address's transactions */}
+                  <button
+                    className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+                    onClick={() => {
+                      const addressToExplore =
+                        selectedTransaction.direction === "outgoing"
+                          ? selectedTransaction.receiver
+                          : selectedTransaction.sender;
+                      if (addressToExplore) {
+                        onAddressChange(addressToExplore);
+                      }
+                    }}
+                  >
+                    Explore{" "}
+                    {selectedTransaction.direction === "outgoing"
+                      ? "Receiver"
+                      : "Sender"}
+                  </button>
+                </div>
               </div>
             )}
           </>

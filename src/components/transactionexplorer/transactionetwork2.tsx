@@ -480,17 +480,17 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             {selectedTransaction && (
               <div className="mt-4 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
                 <h4 className="mb-2 font-medium">Transaction Details</h4>
-                <div className="grid grid-cols-1 gap-2 text-sm">
+                <div className="grid grid-cols-1 gap-2 break-words text-sm">
                   <div>
                     <span className="font-medium">Hash:</span>{" "}
-                    {selectedTransaction.hash.substring(0, 10)}...
+                    {selectedTransaction.hash}
                   </div>
                   <div>
                     <span className="font-medium">Value:</span>{" "}
                     {selectedTransaction.value}
                   </div>
                   <div>
-                    <span className="font-medium">Input: Remember to fix</span>{" "}
+                    <span className="font-medium">Input:</span>{" "}
                     {selectedTransaction.input}
                   </div>
                   <div>
@@ -534,16 +534,8 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
                         : "Sender:"}
                     </span>{" "}
                     {selectedTransaction.direction === "outgoing"
-                      ? selectedTransaction.receiver?.substring(0, 6) +
-                        "..." +
-                        selectedTransaction.receiver?.substring(
-                          selectedTransaction.receiver.length - 4,
-                        )
-                      : selectedTransaction.sender?.substring(0, 6) +
-                        "..." +
-                        selectedTransaction.sender?.substring(
-                          selectedTransaction.sender.length - 4,
-                        )}
+                      ? selectedTransaction.receiver
+                      : selectedTransaction.sender}
                   </div>
                   <div>
                     <span className="font-medium">Time:</span>{" "}

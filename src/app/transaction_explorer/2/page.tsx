@@ -26,7 +26,7 @@ const TransactionExplorer: React.FC = () => {
     try {
       const data = await fetchTransactions(addressToSearch, "initial");
       const extractedTransactions = data.length > 0 ? data[0].transactions : [];
-
+      console.log(extractedTransactions);
       if (extractedTransactions.length > 0) {
         setTransactionsByPage({ 1: extractedTransactions });
         setLastIndex(

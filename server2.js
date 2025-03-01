@@ -12,8 +12,8 @@ app.use(express.json());
 
   try {
     driver = neo4j.driver(
-      process.env.NEO4J_URI,
-      neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD),
+      process.env.NEO4J_URI2,
+      neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD2),
     );
     const serverInfo = await driver.getServerInfo();
     console.log("Connection established");
@@ -26,8 +26,8 @@ app.use(express.json());
 // Get One-Hop Transactions for an Address
 app.get("/transactions/:addressId", async (req, res) => {
   driver = neo4j.driver(
-    process.env.NEO4J_URI,
-    neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD),
+    process.env.NEO4J_URI2,
+    neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD2),
   );
   const { addressId } = req.params;
   const direction = req.query.direction || "initial"; // "initial", "older", or "newer"
@@ -42,28 +42,79 @@ app.get("/transactions/:addressId", async (req, res) => {
     let params = { addressId };
     if (direction === "initial") {
       // Initial load - get the most recent transactions
+      // query = `
+      //   MATCH (a:Address {addressId: $addressId})
+      //   OPTIONAL MATCH (a)-[t]->(b:Address)
+      //   WITH a, t, b
+      //   ORDER BY t.transaction_index DESC
+      //   LIMIT 8
+      //   RETURN
+      //   a.addressId AS searched_address,
+      //   COLLECT(DISTINCT {
+      //       receiver: b.addressId,
+      //       hash: t.hash,
+      //       value: t.value,
+      //       input: t.input,
+      //       transaction_index: t.transaction_index,
+      //       gas: t.gas,
+      //       gas_used: t.gas_used,
+      //       gas_price: t.gas_price,
+      //       transaction_fee: t.transaction_fee,
+      //       block_number: t.block_number,
+      //       block_hash: t.block_hash,
+      //       block_timestamp: t.block_timestamp
+      //   }) AS transactions;
+      // `;
       query = `
         MATCH (a:Address {addressId: $addressId})  
-        OPTIONAL MATCH (a)-[r1]->(t:Transaction)-[r2]->(b:Address)  
-        WITH a, t, b  
-        ORDER BY t.transaction_index DESC
-        LIMIT 8  
-        RETURN  
-        a.addressId AS searched_address,  
-        COLLECT(DISTINCT {
-            receiver: b.addressId,
-            hash: t.hash,  
-            value: t.value,
-            input: t.input,
-            transaction_index: t.transaction_index,
-            gas: t.gas,
-            gas_used: t.gas_used,
-            gas_price: t.gas_price,
-            transaction_fee: t.transaction_fee,
-            block_number: t.block_number,
-            block_hash: t.block_hash,
-            block_timestamp: t.block_timestamp
-        }) AS transactions;
+OPTIONAL MATCH (a)-[outgoing:Transaction]->(receiver:Address)
+OPTIONAL MATCH (sender:Address)-[incoming:Transaction]->(a)
+WITH a, 
+     outgoing, receiver, 
+     incoming, sender
+WITH a, 
+     COLLECT({
+         direction: "outgoing",
+         receiver: receiver.addressId,
+         hash: outgoing.hash,  
+         value: outgoing.value,
+         input: outgoing.input,
+         transaction_index: outgoing.transaction_index,
+         gas: outgoing.gas,
+         gas_used: outgoing.gas_used,
+         gas_price: outgoing.gas_price,
+         transaction_fee: outgoing.transaction_fee,
+         block_number: outgoing.block_number,
+         block_hash: outgoing.block_hash,
+         block_timestamp: outgoing.block_timestamp
+     }) AS outTransactions,
+     COLLECT({
+         direction: "incoming",
+         sender: sender.addressId,
+         hash: incoming.hash,  
+         value: incoming.value,
+         input: incoming.input,
+         transaction_index: incoming.transaction_index,
+         gas: incoming.gas,
+         gas_used: incoming.gas_used,
+         gas_price: incoming.gas_price,
+         transaction_fee: incoming.transaction_fee,
+         block_number: incoming.block_number,
+         block_hash: incoming.block_hash,
+         block_timestamp: incoming.block_timestamp
+     }) AS inTransactions
+WITH a, 
+     outTransactions + inTransactions AS allTransactions
+UNWIND allTransactions AS tx
+WITH a, tx
+ORDER BY tx.block_timestamp DESC, tx.transaction_index DESC
+// Use DISTINCT to remove duplicates based on hash
+WITH DISTINCT tx.hash AS hash, a, tx
+LIMIT 8
+WITH a, COLLECT(tx) AS orderedTransactions
+RETURN  
+    a.addressId AS searched_address,  
+    orderedTransactions AS transactions;
       `;
     } else if (direction === "older") {
       console.log(`Processing older request with index: ${transaction_index}`);

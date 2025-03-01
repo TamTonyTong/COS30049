@@ -16,6 +16,8 @@ interface Transaction {
   block_hash: string;
   block_timestamp: number;
   receiver: string;
+  sender?: string; // For incoming transactions
+  direction: "incoming" | "outgoing"; // Add direction property
 }
 
 const IntegratedTransactionExplorer: React.FC = () => {
@@ -47,7 +49,7 @@ const IntegratedTransactionExplorer: React.FC = () => {
         );
         setCurrentPage(1);
         setLoadedPages([1]);
-        setHasMore(extractedTransactions.length >= 4);
+        setHasMore(extractedTransactions.length >= 8);
       } else {
         setTransactionsByPage({});
         setLoadedPages([]);
@@ -80,7 +82,7 @@ const IntegratedTransactionExplorer: React.FC = () => {
         );
         setCurrentPage(nextPage);
         setLoadedPages((prev) => [...prev, nextPage]);
-        setHasMore(extractedTransactions.length >= 4);
+        setHasMore(extractedTransactions.length >= 8);
       } else {
         setHasMore(false);
       }
@@ -99,7 +101,7 @@ const IntegratedTransactionExplorer: React.FC = () => {
   // Get only the transactions for the current page instead of all transactions
   const currentPageTransactions = transactionsByPage[currentPage] || [];
   console.log("Current Page Transactions", currentPageTransactions);
-
+  console.log("Has More or not", hasMore);
   const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
 
   return (
@@ -107,7 +109,7 @@ const IntegratedTransactionExplorer: React.FC = () => {
       <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
       <div className="mb-4">
         <p className="mb-2 text-sm text-gray-500">
-          Example: 0xb0606f433496bf66338b8ad6b6d51fc4d84a44cd
+          Example: 0x3089df0e2349faea1c8ec4a08593c137da10fe2d
         </p>
         <div className="flex items-center gap-2">
           <input

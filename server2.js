@@ -67,13 +67,13 @@ app.get("/transactions/:addressId", async (req, res) => {
       // `;
       query = `
         MATCH (a:Address {addressId: $addressId})  
-OPTIONAL MATCH (a)-[outgoing:Transaction]->(receiver:Address)
-OPTIONAL MATCH (sender:Address)-[incoming:Transaction]->(a)
-WITH a, 
-     outgoing, receiver, 
-     incoming, sender
-WITH a, 
-     COLLECT(CASE WHEN outgoing IS NOT NULL THEN {
+        OPTIONAL MATCH (a)-[outgoing:Transaction]->(receiver:Address)
+        OPTIONAL MATCH (sender:Address)-[incoming:Transaction]->(a)
+        WITH a, 
+          outgoing, receiver, 
+          incoming, sender
+        WITH a, 
+      COLLECT(CASE WHEN outgoing IS NOT NULL THEN {
          direction: "outgoing",
          receiver: receiver.addressId,
          hash: outgoing.hash,  
@@ -103,20 +103,20 @@ WITH a,
          block_hash: incoming.block_hash,
          block_timestamp: incoming.block_timestamp
      } END) AS inTransactions
-WITH a, 
+    WITH a, 
      [tx IN outTransactions WHERE tx IS NOT NULL] + [tx IN inTransactions WHERE tx IS NOT NULL] AS allTransactions
-WITH a, allTransactions
-UNWIND CASE 
+    WITH a, allTransactions
+    UNWIND CASE 
     WHEN size(allTransactions) > 0 THEN allTransactions 
     ELSE [null] 
-END AS tx
-WITH a, tx
-WHERE tx IS NOT NULL
-ORDER BY tx.transaction_index DESC, tx.transaction_index DESC
-WITH DISTINCT tx.hash AS hash, a, tx
-LIMIT 4
-WITH a, COLLECT(tx) AS orderedTransactions
-RETURN  
+    END AS tx
+    WITH a, tx
+    WHERE tx IS NOT NULL
+    ORDER BY tx.transaction_index DESC, tx.transaction_index DESC
+    WITH DISTINCT tx.hash AS hash, a, tx
+    LIMIT 8
+    WITH a, COLLECT(tx) AS orderedTransactions
+    RETURN  
     a.addressId AS searched_address,  
     orderedTransactions AS transactions;
       `;

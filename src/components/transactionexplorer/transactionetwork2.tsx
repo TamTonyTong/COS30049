@@ -115,7 +115,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     outgoingGradient
       .append("stop")
       .attr("offset", "0%")
-      .attr("stop-color", "#3b82f6");
+      .attr("stop-color", "#ff001e");
     outgoingGradient
       .append("stop")
       .attr("offset", "100%")
@@ -154,10 +154,12 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
           ? "url(#outgoing-gradient)"
           : "url(#incoming-gradient)";
       })
-      .style("stroke-width", (d) => {
-        const tx = d.transaction;
-        return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
-      })
+      // .style("stroke-width", (d) => {
+      //   const tx = d.transaction;
+      //   return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
+      //   // return tx ? Math.max(tx.value) : 2;
+      // })
+      .style("stroke-width", "5")
       .style("opacity", 0)
       .style("cursor", "pointer")
       .transition()
@@ -214,12 +216,16 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     svg
       .selectAll(".transaction-node")
       .append("circle")
-      .attr("r", 15)
+      .attr("r", (d) => {
+        const tx = d.transaction;
+        // Base size between 40 and 70 based on transaction value
+        return tx ? Math.max(10, Math.min(20, (tx.value / 1e18) * 10)) : 20;
+      })
       .style("fill", (d) => {
         // Color by direction first, then by address for visual grouping
         const direction = d.transaction?.direction;
         if (direction === "outgoing") {
-          return "#3b82f6"; // Blue for outgoing
+          return "#ff001e"; // Red for outgoing
         } else if (direction === "incoming") {
           return "#10b981"; // Green for incoming
         } else {
@@ -270,11 +276,11 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .style("font-size", "10px")
       .style("pointer-events", "none");
 
-    // Add ETH amount label inside the box
+    // Add SCM amount label inside the box
     labelGroups
       .append("text")
       .attr("class", "amount-label")
-      .text((d) => `${(d.transaction?.value! / 1e18).toFixed(2)} ETH`)
+      .text((d) => `${(d.transaction?.value! / 1e12).toFixed(2)} SCM`)
       .attr("y", 5)
       .style("text-anchor", "middle")
       .style("fill", "#FFFFFF")
@@ -358,7 +364,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             .select("circle")
             .transition()
             .duration(200)
-            .attr("r", 20)
+            // .attr("r", 20)
             .style("opacity", 0.9);
         })
         .on("mouseout", function (event, d) {
@@ -366,7 +372,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             .select("circle")
             .transition()
             .duration(200)
-            .attr("r", 15)
+            // .attr("r", 15)
             .style("opacity", 1);
         });
 
@@ -410,47 +416,50 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .text("Transaction Types")
       .attr("x", 0)
       .attr("y", 0)
-      .style("font-size", "12px")
+      .style("fill", "#ffffff")
+      .style("font-size", "20px")
       .style("font-weight", "bold");
 
     // Outgoing indicator
     legend
       .append("circle")
       .attr("cx", 10)
-      .attr("cy", 20)
+      .attr("cy", 18)
       .attr("r", 6)
-      .style("fill", "#3b82f6");
+      .style("fill", "#ff0000");
 
     legend
       .append("text")
-      .text("Outgoing")
+      .text("Selling")
       .attr("x", 25)
       .attr("y", 24)
-      .style("font-size", "10px");
+      .style("fill", "#ffffff")
+      .style("font-size", "15px");
 
     // Incoming indicator
     legend
       .append("circle")
       .attr("cx", 10)
-      .attr("cy", 40)
+      .attr("cy", 39)
       .attr("r", 6)
       .style("fill", "#10b981");
 
     legend
       .append("text")
-      .text("Incoming")
+      .text("Buying")
       .attr("x", 25)
       .attr("y", 44)
-      .style("font-size", "10px");
+      .style("fill", "#ffffff")
+      .style("font-size", "15px");
 
-    // Add info about clicking nodes
-    legend
-      .append("text")
-      .text("Click 'Explore' to view transactions for that address")
-      .attr("x", 0)
-      .attr("y", 70)
-      .style("font-size", "10px")
-      .style("font-style", "italic");
+    // // Add info about clicking nodes
+    // legend
+    //   .append("text")
+    //   .text("Click 'Explore' to view transactions for that address")
+    //   .attr("x", 0)
+    //   .attr("y", 70)
+    //   .style("font-size", "10px")
+    //   .style("font-style", "italic");
   }, [transactions, centerNode, address, onAddressChange]);
 
   return (
@@ -471,16 +480,52 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             {selectedTransaction && (
               <div className="mt-4 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
                 <h4 className="mb-2 font-medium">Transaction Details</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-1 gap-2 text-sm">
                   <div>
                     <span className="font-medium">Hash:</span>{" "}
                     {selectedTransaction.hash.substring(0, 10)}...
                   </div>
                   <div>
-                    <span className="font-medium">Direction:</span>{" "}
+                    <span className="font-medium">Value:</span>{" "}
+                    {selectedTransaction.value}
+                  </div>
+                  <div>
+                    <span className="font-medium">Input: Remember to fix</span>{" "}
+                    {selectedTransaction.input}
+                  </div>
+                  <div>
+                    <span className="font-medium">Gas:</span>{" "}
+                    {selectedTransaction.gas}
+                  </div>
+                  <div>
+                    <span className="font-medium">Gas Used:</span>{" "}
+                    {selectedTransaction.gas_used}
+                  </div>
+                  <div>
+                    <span className="font-medium">Gas Price:</span>{" "}
+                    {selectedTransaction.gas_price}
+                  </div>
+                  <div>
+                    <span className="font-medium">Transaction Fee:</span>{" "}
+                    {selectedTransaction.transaction_fee}
+                  </div>
+                  <div>
+                    <span className="font-medium">Block Number:</span>{" "}
+                    {selectedTransaction.block_number}
+                  </div>
+                  <div>
+                    <span className="font-medium">Transaction Index:</span>{" "}
+                    {selectedTransaction.transaction_index}
+                  </div>
+                  <div>
+                    <span className="font-medium">Block Hash:</span>{" "}
+                    {selectedTransaction.block_hash}
+                  </div>
+                  <div>
+                    <span className="font-medium">Action:</span>{" "}
                     {selectedTransaction.direction === "outgoing"
-                      ? "Outgoing"
-                      : "Incoming"}
+                      ? "Selling"
+                      : "Buying"}
                   </div>
                   <div>
                     <span className="font-medium">
@@ -499,14 +544,6 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
                         selectedTransaction.sender?.substring(
                           selectedTransaction.sender.length - 4,
                         )}
-                  </div>
-                  <div>
-                    <span className="font-medium">Value:</span>{" "}
-                    {(selectedTransaction.value / 1e18).toFixed(4)} ETH
-                  </div>
-                  <div>
-                    <span className="font-medium">Gas Used:</span>{" "}
-                    {selectedTransaction.gas_used}
                   </div>
                   <div>
                     <span className="font-medium">Time:</span>{" "}

@@ -1,6 +1,6 @@
 export interface Transaction {
   hash: string;
-  value: number;
+  value: number | string;
   input: number;
   gas: number;
   gas_used: number;

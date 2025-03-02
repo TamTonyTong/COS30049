@@ -99,7 +99,7 @@ const TransactionExplorer: React.FC = () => {
   const currentTransactions = transactionsByPage[currentPage] || [];
 
   return (
-    <div className="mx-auto max-w-4xl p-4">
+    <div className="mx-auto max-w-6xl p-4">
       <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
 
       <SearchBar
@@ -113,24 +113,57 @@ const TransactionExplorer: React.FC = () => {
       {hasLoadedTransactions && (
         <>
           {/* Add the TransactionNetwork component */}
-          <div className="mb-6">
-            <h3 className="mb-2 text-lg font-semibold">Transaction Network</h3>
-            <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
+          <div className="mb-6 flex rounded-lg border bg-black">
+            {/* <h3 className="mb-2 text-lg font-semibold">Transaction Network</h3> */}
+            {/* <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
               Click on "Explore" under any node to make it the center of the
               network.
-            </p>
+            </p> */}
             <TransactionNetwork
               transactions={currentTransactions}
               address={address}
               onAddressChange={handleAddressChange}
             />
+            <table className="w-1/2 rounded-lg bg-black">
+              <thead className="bg-gray-200">
+                <tr>
+                  <th className="text-middle px-2 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                    ID
+                  </th>
+                  <th className="text-middle px-2 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Receiver/Sender
+                  </th>
+                  <th className="text-middle px-2 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Value
+                  </th>
+                  <th className="text-middle px-2 py-3 text-xs font-medium uppercase text-gray-500">
+                    Time
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-gray-200">
+                {currentTransactions.map((t, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="whitespace-nowrap px-2 py-4 text-xs text-gray-900">
+                      {t.transaction_index}
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-4 text-xs text-gray-500">
+                      {t.receiver}
+                      {t.sender}
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-4 text-xs text-gray-500">
+                      {(t.value / 1e18).toFixed(4)} ETH
+                    </td>
+                    <td className="whitespace-nowrap py-4 text-xs text-gray-500">
+                      {new Date(t.block_timestamp * 1000).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           <h3 className="mb-2 text-lg font-semibold">Transaction List</h3>
-          <TransactionList
-            transactions={currentTransactions}
-            currentPage={currentPage}
-          />
 
           <Pagination
             currentPage={currentPage}

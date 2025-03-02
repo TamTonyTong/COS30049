@@ -11,10 +11,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
   currentPage,
 }) => {
   return (
-    <div className="mb-4">
-      <h3 className="mb-2 text-lg font-semibold">
+    <>
+      {/* <div className="mb-4"> */}
+      {/* <h3 className="mb-2 text-lg font-semibold">
         Transactions (Page {currentPage})
-      </h3>
+      </h3> */}
       {transactions.length > 0 ? (
         <ul className="divide-y divide-gray-200">
           {transactions.map((t, index) => (
@@ -37,7 +38,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
       ) : (
         <p className="text-gray-500">No transactions found for this page.</p>
       )}
-    </div>
+      {/* </div> */}
+    </>
   );
 };
 

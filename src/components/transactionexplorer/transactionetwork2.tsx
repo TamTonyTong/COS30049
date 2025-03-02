@@ -464,7 +464,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
 
   return (
     <>
-      <div className="w-full min-w-64 rounded-lg border border-r bg-white p-4 dark:bg-gray-800">
+      <div className="w-full rounded-lg border border-r bg-white p-4 dark:bg-gray-800">
         {transactions.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
             <p className="text-gray-500">No transaction data to visualize</p>

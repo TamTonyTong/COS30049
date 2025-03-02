@@ -11,4 +11,5 @@ export interface Transaction {
   block_hash: string;
   block_timestamp: number;
   receiver: string;
+  sender: string;
 }

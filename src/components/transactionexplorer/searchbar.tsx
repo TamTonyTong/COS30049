@@ -18,7 +18,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <div className="mb-4">
       <p className="mb-2 text-sm text-gray-500">
-        Example: 0xb0606f433496bf66338b8ad6b6d51fc4d84a44cd
+        Example: 0xb0606f433496bf66338b8ad6b6d51fc4d84a44cd<br></br> External:
+        0x95222290dd7278aa3ddd389cc1e1d165cc4bafe5
       </p>
       <div className="flex gap-2">
         <input

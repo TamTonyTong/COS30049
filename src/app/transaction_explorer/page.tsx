@@ -6,6 +6,7 @@ import SearchBar from "@/src/components/transactionexplorer/searchbar";
 import TransactionList from "@/src/components/transactionexplorer/transactionlist";
 import Pagination from "@/src/components/transactionexplorer/pagnition";
 import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork2";
+import TransactionNetwork2 from "@/src/components/transactionexplorer/transactionetwork2";
 import { Transaction } from "@/src/components/transactionexplorer/type";
 
 const TransactionExplorer: React.FC = () => {
@@ -16,7 +17,7 @@ const TransactionExplorer: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [lastIndex, setLastIndex] = useState<number | null>(null);
+  const [lastIndex, setLastIndex] = useState<number | undefined>(undefined);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
   // Add new state for data source selection
@@ -47,8 +48,10 @@ const TransactionExplorer: React.FC = () => {
       if (extractedTransactions.length > 0) {
         setTransactionsByPage({ 1: extractedTransactions });
         setLastIndex(
-          extractedTransactions[extractedTransactions.length - 1]
-            .transaction_index,
+          extractedTransactions.length > 0
+            ? Number(extractedTransactions.at(-1)?.transaction_index) ||
+                undefined
+            : undefined,
         );
         setCurrentPage(1);
         setLoadedPages([1]);
@@ -97,11 +100,12 @@ const TransactionExplorer: React.FC = () => {
 
         if (dataSource === "internal") {
           setLastIndex(
-            extractedTransactions[extractedTransactions.length - 1]
-              .transaction_index,
+            extractedTransactions.length > 0
+              ? Number(extractedTransactions.at(-1)?.transaction_index) ||
+                  undefined
+              : undefined,
           );
         }
-
         setCurrentPage(nextPage);
         setLoadedPages((prev) => [...prev, nextPage]);
         setHasMore(extractedTransactions.length >= 4);
@@ -126,7 +130,7 @@ const TransactionExplorer: React.FC = () => {
     setAddress(newAddress);
     // Reset pagination and search with the new address
     setTransactionsByPage({});
-    setLastIndex(null);
+    setLastIndex(undefined);
     setCurrentPage(1);
     setLoadedPages([]);
     handleSearch(newAddress);
@@ -136,7 +140,7 @@ const TransactionExplorer: React.FC = () => {
     setDataSource((prev) => (prev === "internal" ? "etherscan" : "internal"));
     // Reset data when switching sources
     setTransactionsByPage({});
-    setLastIndex(null);
+    setLastIndex(undefined);
     setCurrentPage(1);
     setLoadedPages([]);
   };
@@ -214,11 +218,10 @@ const TransactionExplorer: React.FC = () => {
                       {t.transaction_index}
                     </td>
                     <td className="whitespace-nowrap px-2 py-4 text-xs text-gray-500">
-                      {t.receiver}
-                      {/* {t.sender} */}
+                      {t.receiver ? t.receiver : address}
                     </td>
                     <td className="whitespace-nowrap px-2 py-4 text-xs text-gray-500">
-                      {(t.value / 1e18).toFixed(4)} ETH
+                      {(Number(t.value) / 1e18).toFixed(4)} ETH
                     </td>
                     <td className="whitespace-nowrap py-4 text-xs text-gray-500">
                       {new Date(t.block_timestamp * 1000).toLocaleString()}

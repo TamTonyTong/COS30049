@@ -15,6 +15,7 @@ interface Transaction {
   block_timestamp: number;
   receiver: string;
   sender: string;
+  direction: "incoming" | "outgoing";
 }
 
 // You'll need to get an API key from https://etherscan.io/apis

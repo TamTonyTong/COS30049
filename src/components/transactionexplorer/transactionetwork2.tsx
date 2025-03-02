@@ -280,7 +280,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     labelGroups
       .append("text")
       .attr("class", "amount-label")
-      .text((d) => `${(d.transaction?.value! / 1e12).toFixed(2)} SCM`)
+      .text((d) => `${(d.transaction?.value! / 1e18).toFixed(4)} ETH`)
       .attr("y", 5)
       .style("text-anchor", "middle")
       .style("fill", "#FFFFFF")

@@ -1,9 +1,8 @@
 "use client";
 
-
+import { Suspense } from "react";
 import CryptoList from "@/src/app/Crypto/crypto/crypto-list";
-import Layout from "@/src/components/layout"
-
+import Layout from "@/src/components/layout";
 
 export default function CryptoMarketPage() {
   return (
@@ -14,9 +13,12 @@ export default function CryptoMarketPage() {
           Explore the latest cryptocurrency prices, market caps, and trading volumes. Use the search and filter options
           to find specific cryptocurrencies.
         </p>
-        <CryptoList />
+
+        {/* ✅ Wrap CryptoList inside Suspense */}
+        <Suspense fallback={<p className="text-gray-400">Loading Cryptos...</p>}>
+          <CryptoList />
+        </Suspense>
       </div>
     </Layout>
-  )
+  );
 }
-

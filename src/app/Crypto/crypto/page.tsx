@@ -1,5 +1,9 @@
+"use client";
+
+
+import CryptoList from "@/src/app/Crypto/crypto/crypto-list";
 import Layout from "@/src/components/layout"
-import CryptoList from "@/src/components/crypto-list"
+
 
 export default function CryptoMarketPage() {
   return (

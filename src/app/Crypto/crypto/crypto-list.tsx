@@ -15,19 +15,18 @@ interface Crypto {
   name: string
   price: number
   change: number
-  volume: string
   marketCap: string
 }
 
 export default function CryptoList() {
-  const searchParams = useSearchParams()
+  const searchParams = useSearchParams() ?? new URLSearchParams()
 
-  // Get initial values from URL parameters with null safety
-  const initialSearchTerm = searchParams?.get("search") ?? ""
-  const initialSortBy = searchParams?.get("sortBy") ?? "name"
-  const initialSortOrder = searchParams?.get("sortOrder") ?? "asc"
-  const initialMinPrice = Number(searchParams?.get("minPrice") ?? "0")
-  const initialMaxPrice = Number(searchParams?.get("maxPrice") ?? "50000")
+  // Get initial values from URL parameters
+  const initialSearchTerm = searchParams.get("search") ?? ""
+  const initialSortBy = searchParams.get("sortBy") ?? "name"
+  const initialSortOrder = searchParams.get("sortOrder") ?? "asc"
+  const initialMinPrice = Number(searchParams.get("minPrice") ?? "0")
+  const initialMaxPrice = Number(searchParams.get("maxPrice") ?? "50000")
 
   const [cryptos, setCryptos] = useState<Crypto[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -36,49 +35,27 @@ export default function CryptoList() {
   const [sortBy, setSortBy] = useState(initialSortBy)
   const [sortOrder, setSortOrder] = useState(initialSortOrder)
   const [priceRange, setPriceRange] = useState([initialMinPrice, initialMaxPrice])
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(initialSearchTerm)
-  const [debouncedPriceRange, setDebouncedPriceRange] = useState([initialMinPrice, initialMaxPrice])
-
-  // Debounce search term
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchTerm])
-
-  // Debounce price range
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedPriceRange(priceRange)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [priceRange])
 
   // Fetch data
   useEffect(() => {
     const fetchCryptos = async () => {
       setLoading(true)
       setError(null)
+
       try {
         const queryParams = new URLSearchParams({
-          search: debouncedSearchTerm,
+          search: searchTerm,
           sortBy,
           sortOrder,
-          minPrice: debouncedPriceRange[0].toString(),
-          maxPrice: debouncedPriceRange[1].toString(),
+          minPrice: priceRange[0].toString(),
+          maxPrice: priceRange[1].toString(),
         })
 
         const response = await fetch(`/api/crypto?${queryParams.toString()}`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch data")
-        }
-        const data = await response.json()
+        if (!response.ok) throw new Error("Failed to fetch data")
 
-        // Ensure data is an array
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid data format received")
-        }
+        const data = await response.json()
+        if (!Array.isArray(data)) throw new Error("Invalid data format received")
 
         setCryptos(data)
       } catch (error) {
@@ -91,8 +68,9 @@ export default function CryptoList() {
     }
 
     fetchCryptos()
-  }, [debouncedSearchTerm, sortBy, sortOrder, debouncedPriceRange])
+  }, [searchTerm, sortBy, sortOrder, priceRange])
 
+  // Handle sorting
   const handleSort = (column: string) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc")
@@ -107,7 +85,6 @@ export default function CryptoList() {
     return sortOrder === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
   }
 
-  // Handle error state
   if (error) {
     return (
       <Card className="bg-[#1a2b4b] border-gray-700">
@@ -134,13 +111,7 @@ export default function CryptoList() {
             </div>
           </div>
           <div className="w-full md:w-48">
-            <Select
-              value={sortBy}
-              onValueChange={(value) => {
-                setSortBy(value)
-                setSortOrder("asc")
-              }}
-            >
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value)}>
               <SelectTrigger className="bg-[#243860] text-white border-gray-700">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -153,7 +124,7 @@ export default function CryptoList() {
             </Select>
           </div>
           <div className="w-full md:w-48">
-            <Select value={sortOrder} onValueChange={(value) => setSortOrder(value)}>
+            <Select value={sortOrder} onValueChange={setSortOrder}>
               <SelectTrigger className="bg-[#243860] text-white border-gray-700">
                 <SelectValue placeholder="Order" />
               </SelectTrigger>
@@ -183,53 +154,45 @@ export default function CryptoList() {
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-        ) : Array.isArray(cryptos) && cryptos.length > 0 ? (
+        ) : cryptos.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-700 hover:bg-[#243860]">
-                  <TableHead className="text-white" onClick={() => handleSort("name")}>
+                  <TableHead onClick={() => handleSort("name")}>
                     <div className="flex items-center cursor-pointer">Name {getSortIcon("name")}</div>
                   </TableHead>
-                  <TableHead className="text-white" onClick={() => handleSort("symbol")}>
+                  <TableHead onClick={() => handleSort("symbol")}>
                     <div className="flex items-center cursor-pointer">Symbol {getSortIcon("symbol")}</div>
                   </TableHead>
-                  <TableHead className="text-white text-right" onClick={() => handleSort("price")}>
+                  <TableHead className="text-right" onClick={() => handleSort("price")}>
                     <div className="flex items-center justify-end cursor-pointer">Price {getSortIcon("price")}</div>
                   </TableHead>
-                  <TableHead className="text-white text-right" onClick={() => handleSort("change")}>
+                  <TableHead className="text-right" onClick={() => handleSort("change")}>
                     <div className="flex items-center justify-end cursor-pointer">
                       24h Change {getSortIcon("change")}
                     </div>
                   </TableHead>
-                  <TableHead className="text-white text-right">Volume</TableHead>
-                  <TableHead className="text-white text-right">Market Cap</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cryptos.map((crypto: Crypto) => (
+                {cryptos.map((crypto) => (
                   <TableRow key={crypto.id} className="border-gray-700 hover:bg-[#243860]">
-                    <TableCell className="font-medium text-white">{crypto.name}</TableCell>
-                    <TableCell className="text-gray-300">{crypto.symbol}</TableCell>
-                    <TableCell className="text-right text-white">
-                      ${crypto.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </TableCell>
+                    <TableCell>{crypto.name}</TableCell>
+                    <TableCell>{crypto.symbol}</TableCell>
+                    <TableCell className="text-right">${crypto.price}</TableCell>
                     <TableCell className={`text-right ${crypto.change >= 0 ? "text-green-500" : "text-red-500"}`}>
-                      {crypto.change >= 0 ? "+" : ""}
                       {crypto.change}%
                     </TableCell>
-                    <TableCell className="text-right text-gray-300">${crypto.volume}</TableCell>
-                    <TableCell className="text-right text-gray-300">${crypto.marketCap}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
         ) : (
-          <div className="text-center py-12 text-gray-400">No cryptocurrencies found matching your criteria.</div>
+          <div className="text-center py-12 text-gray-400">No cryptocurrencies found.</div>
         )}
       </CardContent>
     </Card>
   )
 }
-

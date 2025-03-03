@@ -2,6 +2,10 @@
 import React, { useState } from "react";
 import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
 import { fetchEtherscanTransactions } from "@/src/pages/api/etherscanapi";
+import {
+  syncEtherscanData,
+  getEtherscanPageFromDb,
+} from "@/src/pages/api/etherscan-sync";
 import SearchBar from "@/src/components/transactionexplorer/searchbar";
 import TransactionList from "@/src/components/transactionexplorer/transactionlist";
 import Pagination from "@/src/components/transactionexplorer/pagnition";
@@ -19,10 +23,10 @@ const TransactionExplorer: React.FC = () => {
   const [lastIndex, setLastIndex] = useState<number | undefined>(undefined);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
-  // Add new state for data source selection
-  const [dataSource, setDataSource] = useState<"internal" | "etherscan">(
-    "internal",
-  );
+  // Update data source options to include synced
+  const [dataSource, setDataSource] = useState<
+    "internal" | "etherscan" | "synced"
+  >("internal");
 
   const handleSearch = async (addressToSearch: string = address) => {
     if (!addressToSearch) return;
@@ -33,13 +37,16 @@ const TransactionExplorer: React.FC = () => {
       let extractedTransactions: Transaction[] = [];
 
       if (dataSource === "internal") {
-        // Existing logic for your internal data source
+        // Existing logic for internal data source
         const data = await fetchTransactions(addressToSearch, "initial");
         extractedTransactions = data.length > 0 ? data[0].transactions : [];
-      } else {
-        // New logic for Etherscan data
+      } else if (dataSource === "etherscan") {
+        // Direct Etherscan API calls
         extractedTransactions =
           await fetchEtherscanTransactions(addressToSearch);
+      } else if (dataSource === "synced") {
+        // New synced approach - fetch, store, then retrieve
+        extractedTransactions = await syncEtherscanData(addressToSearch);
       }
 
       console.log(extractedTransactions);
@@ -75,23 +82,25 @@ const TransactionExplorer: React.FC = () => {
 
     try {
       let extractedTransactions: Transaction[] = [];
+      const nextPage = currentPage + 1;
 
       if (dataSource === "internal") {
         // Existing logic for your internal data source
         const newData = await fetchTransactions(address, "older", lastIndex);
         extractedTransactions =
           newData.length > 0 ? newData[0].transactions : [];
-      } else {
-        // New logic for Etherscan - load next page
-        const nextPage = currentPage + 1;
+      } else if (dataSource === "etherscan") {
+        // Direct from Etherscan
         extractedTransactions = await fetchEtherscanTransactions(
           address,
           nextPage,
         );
+      } else if (dataSource === "synced") {
+        // Get from synced Neo4j database
+        extractedTransactions = await getEtherscanPageFromDb(address, nextPage);
       }
 
       if (extractedTransactions.length > 0) {
-        const nextPage = currentPage + 1;
         setTransactionsByPage((prev) => ({
           ...prev,
           [nextPage]: extractedTransactions,
@@ -135,8 +144,8 @@ const TransactionExplorer: React.FC = () => {
     handleSearch(newAddress);
   };
 
-  const toggleDataSource = () => {
-    setDataSource((prev) => (prev === "internal" ? "etherscan" : "internal"));
+  const selectDataSource = (source: "internal" | "etherscan" | "synced") => {
+    setDataSource(source);
     // Reset data when switching sources
     setTransactionsByPage({});
     setLastIndex(undefined);
@@ -147,34 +156,45 @@ const TransactionExplorer: React.FC = () => {
   const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
   const maxPage = Math.max(...loadedPages, 0);
   const currentTransactions = transactionsByPage[currentPage] || [];
-
   return (
     <div className="mx-auto max-w-6xl p-4">
       <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
 
-      {/* Add data source toggle */}
-      <div className="mb-4 flex items-center">
+      {/* Updated data source toggle */}
+      <div className="mb-4">
         <span className="mr-2 text-sm font-medium">Data Source:</span>
-        <button
-          onClick={toggleDataSource}
-          className={`rounded-md px-4 py-2 text-sm font-medium ${
-            dataSource === "internal"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-800"
-          }`}
-        >
-          Internal
-        </button>
-        <button
-          onClick={toggleDataSource}
-          className={`ml-2 rounded-md px-4 py-2 text-sm font-medium ${
-            dataSource === "etherscan"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-800"
-          }`}
-        >
-          Etherscan
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => selectDataSource("internal")}
+            className={`rounded-md px-4 py-2 text-sm font-medium ${
+              dataSource === "internal"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-800"
+            }`}
+          >
+            Internal DB
+          </button>
+          <button
+            onClick={() => selectDataSource("etherscan")}
+            className={`rounded-md px-4 py-2 text-sm font-medium ${
+              dataSource === "etherscan"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-800"
+            }`}
+          >
+            Etherscan API
+          </button>
+          <button
+            onClick={() => selectDataSource("synced")}
+            className={`rounded-md px-4 py-2 text-sm font-medium ${
+              dataSource === "synced"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-800"
+            }`}
+          >
+            Synced Etherscan
+          </button>
+        </div>
       </div>
 
       <SearchBar

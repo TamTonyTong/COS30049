@@ -30,6 +30,7 @@ export default function CryptoList() {
   const initialMaxPrice = Number(searchParams?.get("maxPrice") ?? "50000")
 
   const [cryptos, setCryptos] = useState<Crypto[]>([])
+  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
   const [sortBy, setSortBy] = useState(initialSortBy)
@@ -58,6 +59,7 @@ export default function CryptoList() {
   useEffect(() => {
     const fetchCryptos = async () => {
       setLoading(true)
+      setError(null)
       try {
         const queryParams = new URLSearchParams({
           search: debouncedSearchTerm,
@@ -68,10 +70,21 @@ export default function CryptoList() {
         })
 
         const response = await fetch(`/api/crypto?${queryParams.toString()}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch data")
+        }
         const data = await response.json()
+
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid data format received")
+        }
+
         setCryptos(data)
       } catch (error) {
         console.error("Error fetching crypto data:", error)
+        setError(error instanceof Error ? error.message : "An error occurred")
+        setCryptos([]) // Reset to empty array on error
       } finally {
         setLoading(false)
       }
@@ -92,6 +105,17 @@ export default function CryptoList() {
   const getSortIcon = (column: string) => {
     if (sortBy !== column) return <ArrowUpDown className="ml-2 h-4 w-4" />
     return sortOrder === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <Card className="bg-[#1a2b4b] border-gray-700">
+        <CardContent className="p-6">
+          <div className="text-center py-12 text-red-400">Error loading cryptocurrencies: {error}</div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -159,9 +183,7 @@ export default function CryptoList() {
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-        ) : cryptos.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">No cryptocurrencies found matching your criteria.</div>
-        ) : (
+        ) : Array.isArray(cryptos) && cryptos.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -185,7 +207,7 @@ export default function CryptoList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cryptos.map((crypto) => (
+                {cryptos.map((crypto: Crypto) => (
                   <TableRow key={crypto.id} className="border-gray-700 hover:bg-[#243860]">
                     <TableCell className="font-medium text-white">{crypto.name}</TableCell>
                     <TableCell className="text-gray-300">{crypto.symbol}</TableCell>
@@ -203,6 +225,8 @@ export default function CryptoList() {
               </TableBody>
             </Table>
           </div>
+        ) : (
+          <div className="text-center py-12 text-gray-400">No cryptocurrencies found matching your criteria.</div>
         )}
       </CardContent>
     </Card>

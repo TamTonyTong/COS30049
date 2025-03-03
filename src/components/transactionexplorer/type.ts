@@ -1,8 +1,12 @@
 export interface Transaction {
+  contract_address: any;
+  function_name: any;
+  nonce: string;
+  is_error: string;
   hash: string;
   value: number | string;
-  input: number;
-  gas: number;
+  input: string;
+  gas: string;
   gas_used: number;
   gas_price: number;
   transaction_fee: number;

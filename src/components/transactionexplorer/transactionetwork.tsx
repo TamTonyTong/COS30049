@@ -5,19 +5,23 @@ import TransactionDetail from "./transactiondetail";
 
 interface Transaction {
   hash: string;
-  value: number;
-  input: number;
-  gas: number;
-  gas_used: number;
-  gas_price: number;
-  transaction_fee: number;
+  value: string; // Changed from number since Etherscan returns strings
+  input: string; // Changed from number since it's hex data
+  gas: string; // Changed to string to match Etherscan data
+  gas_used: string;
+  gas_price: string;
+  transaction_fee: string;
   block_number: number;
   transaction_index: string;
   block_hash: string;
   block_timestamp: number;
-  receiver?: string;
-  sender?: string;
+  receiver: string;
+  sender: string;
   direction: "incoming" | "outgoing";
+  contract_address?: string;
+  function_name?: string;
+  is_error?: string;
+  nonce?: string;
 }
 
 interface NetworkNode {
@@ -324,33 +328,31 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Add event handlers after transitions complete
     setTimeout(() => {
       // Add event handlers to links
-      svg
-        .selectAll(".link")
-        .on("mousedown", function (event, d) {
-          if (d.transaction) {
-            setSelectedTransaction(d.transaction);
-          }
-        })
-        .on("mouseover", function (event, d) {
-          d3.select(this)
-            .transition()
-            .duration(200)
-            .style("opacity", 1)
-            .style("stroke-width", (d) => {
-              const tx = d.transaction;
-              return tx ? Math.max(2, Math.min(7, (tx.value / 1e18) * 0.5)) : 3;
-            });
-        })
-        .on("mouseout", function (event, d) {
-          d3.select(this)
-            .transition()
-            .duration(200)
-            .style("opacity", 0.7)
-            .style("stroke-width", (d) => {
-              const tx = d.transaction;
-              return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
-            });
-        });
+      svg.selectAll(".link").on("mousedown", function (event, d) {
+        if (d.transaction) {
+          setSelectedTransaction(d.transaction);
+        }
+      });
+      // .on("mouseover", function (event, d) {
+      //   d3.select(this)
+      //     .transition()
+      //     .duration(200)
+      //     .style("opacity", 1)
+      //     .style("stroke-width", (d) => {
+      //       const tx = d.transaction;
+      //       return tx ? Math.max(2, Math.min(7, (tx.value / 1e18) * 0.5)) : 3;
+      //     });
+      // });
+      // .on("mouseout", function (event, d) {
+      //   d3.select(this)
+      //     .transition()
+      //     .duration(200)
+      //     .style("opacity", 0.7)
+      //     .style("stroke-width", (d) => {
+      //       const tx = d.transaction;
+      //       return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
+      //     });
+      // });
 
       // Add event handlers to transaction nodes
       svg

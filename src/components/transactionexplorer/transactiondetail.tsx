@@ -15,7 +15,7 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
   if (!transaction) return null;
 
   // Format ETH value
-  const formatEth = (value: string) => {
+  const formatEth = (value: string | number) => {
     return (Number(value) / 1e18).toFixed(6) + " ETH";
   };
 
@@ -208,7 +208,7 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
           >
             {showRawData ? "Hide" : "View"} Raw Transaction Data
           </button>
-          
+
           {showRawData && (
             <div className="mt-2 max-h-60 overflow-y-auto rounded border bg-gray-100 p-4">
               <pre className="whitespace-pre-wrap text-xs text-black">

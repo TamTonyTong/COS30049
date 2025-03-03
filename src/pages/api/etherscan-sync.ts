@@ -16,8 +16,8 @@ export async function syncEtherscanData(
   // If address was recently synced and we don't force fresh data
   const lastSynced = syncedAddresses.get(address);
   const now = Date.now();
-  if (lastSynced && !forceFresh && now - lastSynced < 5 * 60 * 1000) {
-    // If synced in last 5 minutes, just get from Neo4j
+  if (lastSynced && !forceFresh && now - lastSynced < 15 * 60 * 1000) {
+    // If synced in last 15 minutes, just get from Neo4j
     return await getEtherscanTransactionsFromNeo4j(address);
   }
 

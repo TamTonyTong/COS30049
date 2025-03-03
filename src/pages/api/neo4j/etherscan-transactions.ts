@@ -20,17 +20,25 @@ export async function storeEtherscanTransactions(
     const params = {
       txHash: tx.hash,
       value: tx.value.toString(),
-      input: tx.input || 0,
-      gas: tx.gas || 0,
-      gasUsed: tx.gas_used || 0,
-      gasPrice: tx.gas_price || 0,
-      txFee: tx.transaction_fee || 0,
+      input: tx.input || "0x",
+      gas: tx.gas || "0",
+      gasUsed: tx.gas_used || "0",
+      gasPrice: tx.gas_price || "0",
+      txFee: tx.transaction_fee || "0",
       blockNumber: tx.block_number || 0,
-      txIndex: tx.transaction_index,
+      txIndex: tx.transaction_index || "0",
       blockHash: tx.block_hash || "",
-      timestamp: tx.block_timestamp,
+      timestamp: tx.block_timestamp || 0,
       from: tx.sender,
       to: tx.receiver || address,
+      methodId: tx.method_id || "",
+      functionName: tx.function_name || "",
+      contractAddress: tx.contract_address || "",
+      cumulativeGasUsed: tx.cumulative_gas_used || "0",
+      txReceiptStatus: tx.tx_receipt_status || "",
+      confirmations: tx.confirmations || "0",
+      isError: tx.is_error || "0",
+      nonce: tx.nonce || "0",
     };
 
     // Create transaction and connect to addresses
@@ -54,7 +62,15 @@ export async function storeEtherscanTransactions(
         tx.block_number = $blockNumber,
         tx.transaction_index = $txIndex,
         tx.block_hash = $blockHash,
-        tx.block_timestamp = $timestamp
+        tx.block_timestamp = $timestamp,
+        tx.method_id = $methodId,
+        tx.function_name = $functionName,
+        tx.contract_address = $contractAddress,
+        tx.cumulative_gas_used = $cumulativeGasUsed,
+        tx.tx_receipt_status = $txReceiptStatus,
+        tx.confirmations = $confirmations,
+        tx.is_error = $isError,
+        tx.nonce = $nonce
       
       // Create relationships
       MERGE (sender)-[out:SENT]->(tx)
@@ -102,7 +118,15 @@ export async function getEtherscanTransactionsFromNeo4j(
          block_number: outgoing.block_number,
          block_hash: outgoing.block_hash,
          block_timestamp: outgoing.block_timestamp,
-         sender: a.addressId
+         sender: a.addressId,
+         method_id: outgoing.method_id, 
+         function_name: outgoing.function_name,
+         contract_address: outgoing.contract_address,
+         cumulative_gas_used: outgoing.cumulative_gas_used,
+         tx_receipt_status: outgoing.tx_receipt_status,
+         confirmations: outgoing.confirmations,
+         is_error: outgoing.is_error,
+         nonce: outgoing.nonce
       } END) AS outTransactions,
       
       // Collect incoming transactions
@@ -120,7 +144,15 @@ export async function getEtherscanTransactionsFromNeo4j(
          block_number: incoming.block_number,
          block_hash: incoming.block_hash,
          block_timestamp: incoming.block_timestamp,
-         receiver: a.addressId
+         receiver: a.addressId,
+         method_id: incoming.method_id, 
+         function_name: incoming.function_name,
+         contract_address: incoming.contract_address,
+         cumulative_gas_used: incoming.cumulative_gas_used,
+         tx_receipt_status: incoming.tx_receipt_status,
+         confirmations: incoming.confirmations,
+         is_error: incoming.is_error,
+         nonce: incoming.nonce
       } END) AS inTransactions
       
     // Combine and filter null values

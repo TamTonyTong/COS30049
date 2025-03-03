@@ -207,48 +207,21 @@ const TransactionExplorer: React.FC = () => {
 
       {hasLoadedTransactions && (
         <>
-          <div className="mb-6 flex rounded-lg border bg-black">
-            <TransactionNetwork
-              transactions={currentTransactions}
-              address={address}
-              onAddressChange={handleAddressChange}
-            />
-            <table className="w-1/2 rounded-lg bg-black">
-              <thead className="bg-gray-200">
-                <tr>
-                  <th className="text-middle px-2 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-                    ID
-                  </th>
-                  <th className="text-middle px-2 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Receiver
-                  </th>
-                  <th className="text-middle px-2 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Value
-                  </th>
-                  <th className="text-middle px-2 py-3 text-xs font-medium uppercase text-gray-500">
-                    Time
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-gray-200">
-                {currentTransactions.map((t, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-2 py-4 text-xs text-gray-900">
-                      {t.transaction_index}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-4 text-xs text-gray-500">
-                      {t.receiver ? t.receiver : address}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-4 text-xs text-gray-500">
-                      {(Number(t.value) / 1e18).toFixed(4)} ETH
-                    </td>
-                    <td className="whitespace-nowrap py-4 text-xs text-gray-500">
-                      {new Date(t.block_timestamp * 1000).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mb-6 flex flex-col rounded-lg border md:flex-row">
+            <div className="w-full md:w-1/2">
+              <TransactionNetwork
+                transactions={currentTransactions}
+                address={address}
+                onAddressChange={handleAddressChange}
+              />
+            </div>
+
+            <div className="w-full md:w-1/2">
+              <TransactionList
+                transactions={currentTransactions}
+                address={address}
+              />
+            </div>
           </div>
 
           <h3 className="mb-2 text-lg font-semibold">Transaction List</h3>

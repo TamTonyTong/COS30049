@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
+import TransactionDetail from "./transactiondetail";
 
 interface Transaction {
   hash: string;
@@ -477,7 +478,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
               style={{ height: "500px" }}
             ></svg>
 
-            {selectedTransaction && (
+            {/* {selectedTransaction && (
               <div className="mt-4 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
                 <h4 className="mb-2 font-medium">Transaction Details</h4>
                 <div className="grid grid-cols-1 gap-2 break-words text-sm">
@@ -551,8 +552,6 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
                   >
                     Close
                   </button>
-
-                  {/* Add explore button to view this address's transactions */}
                   <button
                     className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
                     onClick={() => {
@@ -572,6 +571,12 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
                   </button>
                 </div>
               </div>
+            )} */}
+            {selectedTransaction && (
+              <TransactionDetail
+                transaction={selectedTransaction}
+                onClose={() => setSelectedTransaction(null)}
+              />
             )}
           </>
         )}

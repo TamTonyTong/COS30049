@@ -83,12 +83,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </table>
       </div>
 
-      {selectedTransaction && (
+      {/* {selectedTransaction && (
         <TransactionDetail
           transaction={selectedTransaction}
           onClose={() => setSelectedTransaction(null)}
         />
-      )}
+      )} */}
     </>
   );
 };

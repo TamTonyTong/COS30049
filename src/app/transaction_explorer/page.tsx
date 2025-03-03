@@ -174,7 +174,7 @@ const TransactionExplorer: React.FC = () => {
           >
             Internal DB
           </button>
-          <button
+          {/* <button
             onClick={() => selectDataSource("etherscan")}
             className={`rounded-md px-4 py-2 text-sm font-medium ${
               dataSource === "etherscan"
@@ -183,7 +183,7 @@ const TransactionExplorer: React.FC = () => {
             }`}
           >
             Etherscan API
-          </button>
+          </button> */}
           <button
             onClick={() => selectDataSource("synced")}
             className={`rounded-md px-4 py-2 text-sm font-medium ${

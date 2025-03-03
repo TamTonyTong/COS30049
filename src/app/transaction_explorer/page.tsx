@@ -5,8 +5,7 @@ import { fetchEtherscanTransactions } from "@/src/pages/api/etherscanapi";
 import SearchBar from "@/src/components/transactionexplorer/searchbar";
 import TransactionList from "@/src/components/transactionexplorer/transactionlist";
 import Pagination from "@/src/components/transactionexplorer/pagnition";
-import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork2";
-import TransactionNetwork2 from "@/src/components/transactionexplorer/transactionetwork2";
+import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork";
 import { Transaction } from "@/src/components/transactionexplorer/type";
 
 const TransactionExplorer: React.FC = () => {

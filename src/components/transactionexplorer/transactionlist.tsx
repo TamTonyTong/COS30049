@@ -20,8 +20,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <>
-      <div className="w-full overflow-hidden rounded-lg border shadow">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="col-span-4 w-full rounded-lg border p-8 shadow">
+        <table className="min-w-full divide-y divide-gray-200 rounded-lg border">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -33,9 +33,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Value
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              {/* <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Gas Used
-              </th>
+              </th> */}
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Time
               </th>
@@ -49,11 +49,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 className="cursor-pointer hover:bg-gray-50"
               >
                 <td className="whitespace-nowrap px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    {transaction.hash.substring(0, 10)}...
+                  <div className="text-xs text-gray-900">
+                    {transaction.hash.substring(0, 7)}...
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4">
+                <td className="whitespace-nowrap px-6 py-4 text-xs">
                   <span
                     className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
                       transaction.sender && address
@@ -72,13 +72,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
                       : "Unknown"}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
                   {(Number(transaction.value) / 1e18).toFixed(6)} ETH
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                {/* <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
                   {transaction.gas_used || "-"}
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                </td> */}
+                <td className="break-words px-6 py-4 text-xs text-gray-500">
                   {new Date(
                     transaction.block_timestamp * 1000,
                   ).toLocaleString()}

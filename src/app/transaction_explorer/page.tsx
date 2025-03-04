@@ -207,8 +207,8 @@ const TransactionExplorer: React.FC = () => {
 
       {hasLoadedTransactions && (
         <>
-          <div className="mb-6 flex flex-col rounded-lg border md:flex-row">
-            <div className="w-full md:w-1/2">
+          <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
+            <div className="col-span-3 rounded-lg border shadow">
               <TransactionNetwork
                 transactions={currentTransactions}
                 address={address}
@@ -216,15 +216,11 @@ const TransactionExplorer: React.FC = () => {
               />
             </div>
 
-            <div className="w-full md:w-1/2">
-              <TransactionList
-                transactions={currentTransactions}
-                address={address}
-              />
-            </div>
+            <TransactionList
+              transactions={currentTransactions}
+              address={address}
+            />
           </div>
-
-          <h3 className="mb-2 text-lg font-semibold">Transaction List</h3>
 
           <Pagination
             currentPage={currentPage}

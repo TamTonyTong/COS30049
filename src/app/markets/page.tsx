@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Input } from "@/src/components/ui/input";
 import {
   Card,
   CardContent,
@@ -17,27 +16,24 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 import { Badge } from "@/src/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, Search } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import Layout from "../../components/layout";
 
 export default function MarketsPage() {
-  interface DigitalAsset {
-    AssetID: string;
+  interface Price {
+    symbol: string;
     name: string;
-    shortname: string;
-    value: number;
-    change: number;
-    volume: number;
-    marketCap: number;
+    current_price: number;
+    price_change_percentage_24h: number;
+    total_volume: number;
+    market_cap: number;
   }
 
-  const [digitalAssets, setDigitalAssets] = useState<DigitalAsset[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [prices, setPrices] = useState<Price[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch data from the API route
     fetch("/api/assets")
       .then((response) => {
         if (!response.ok) {
@@ -46,21 +42,15 @@ export default function MarketsPage() {
         return response.json();
       })
       .then((data) => {
-        setDigitalAssets(data.assets);
+        setPrices(data.assets); // Use data.assets instead of data.prices
         setIsLoading(false);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
-        setError("Error fetching data")
+        setError("Error fetching data");
         setIsLoading(false);
       });
   }, []);
-
-  const filteredAssets = digitalAssets.filter(
-    (asset) =>
-      asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.shortname.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -85,6 +75,25 @@ export default function MarketsPage() {
     );
   }
 
+  if (prices.length === 0) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <Card className="border-blue-500/30 bg-[#1a2b4b]">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold text-white">
+                No Prices Found
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-300">No prices are available.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
@@ -95,16 +104,6 @@ export default function MarketsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search by name or symbol..."
-                className="w-full rounded-md border-gray-700 bg-[#0d1829] py-2 pl-10 pr-4 text-white"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -125,43 +124,43 @@ export default function MarketsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAssets.map((asset) => (
+                  {prices.map((price) => (
                     <TableRow
-                      key={asset.AssetID}
+                      key={price.symbol}
                       className="transition-colors hover:bg-[#0d1829]"
                     >
                       <TableCell className="font-medium text-white">
                         <div className="flex items-center">
                           <Badge variant="outline" className="mr-2">
-                            {asset.shortname}
+                            {price.symbol.toUpperCase()}
                           </Badge>
-                          {asset.name}
+                          {price.name}
                         </div>
                       </TableCell>
                       <TableCell className="text-right text-white">
-                        ${asset.value.toLocaleString()}
+                        ${price.current_price.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right">
                         <span
                           className={`flex items-center justify-end ${
-                            asset.change >= 0
+                            price.price_change_percentage_24h >= 0
                               ? "text-green-500"
                               : "text-red-500"
                           }`}
                         >
-                          {asset.change >= 0 ? (
+                          {price.price_change_percentage_24h >= 0 ? (
                             <ArrowUpRight className="mr-1" size={16} />
                           ) : (
                             <ArrowDownRight className="mr-1" size={16} />
                           )}
-                          {Math.abs(asset.change)}%
+                          {Math.abs(price.price_change_percentage_24h).toFixed(2)}%
                         </span>
                       </TableCell>
                       <TableCell className="text-right text-gray-300">
-                        {asset.volume}
+                        {price.total_volume.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right text-gray-300">
-                        {asset.marketCap}
+                        {price.market_cap.toLocaleString()}
                       </TableCell>
                     </TableRow>
                   ))}

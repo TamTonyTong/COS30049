@@ -8,11 +8,10 @@ let etherscanDriver: neo4j.Driver | null = null;
 export function getEtherscanDriver() {
   if (!etherscanDriver) {
     etherscanDriver = neo4j.driver(
-      process.env.NEO4J_URI3 || "neo4j+s://3b88003a.databases.neo4j.io",
+      process.env.NEXT_PUBLIC_NEO4J_URI3 || "",
       neo4j.auth.basic(
-        process.env.NEO4J_USER || "neo4j",
-        process.env.NEO4J_PASSWORD3 ||
-          "a3k3OhY4GMMafnRjEkOXXeQUqdxOs16UnpCrUdiO8Lo",
+        process.env.NEXT_PUBLIC_NEO4J_USER || "",
+        process.env.NEXT_PUBLIC_NEO4J_PASSWORD3 || "",
       ),
       {
         // Add this configuration to convert JavaScript numbers to Neo4j integers

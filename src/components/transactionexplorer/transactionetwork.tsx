@@ -358,7 +358,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       svg
         .selectAll(".transaction-node")
         .on("mousedown", function (event, d) {
-          if (d.transaction) {
+          if (d.transaction && !event.target.closest(".explore-group")) {
             setSelectedTransaction(d.transaction);
           }
         })

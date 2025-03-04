@@ -41,30 +41,6 @@ app.get("/transactions/:addressId", async (req, res) => {
     let query;
     let params = { addressId };
     if (direction === "initial") {
-      // Initial load - get the most recent transactions
-      // query = `
-      //   MATCH (a:Address {addressId: $addressId})
-      //   OPTIONAL MATCH (a)-[t]->(b:Address)
-      //   WITH a, t, b
-      //   ORDER BY t.transaction_index DESC
-      //   LIMIT 8
-      //   RETURN
-      //   a.addressId AS searched_address,
-      //   COLLECT(DISTINCT {
-      //       receiver: b.addressId,
-      //       hash: t.hash,
-      //       value: t.value,
-      //       input: t.input,
-      //       transaction_index: t.transaction_index,
-      //       gas: t.gas,
-      //       gas_used: t.gas_used,
-      //       gas_price: t.gas_price,
-      //       transaction_fee: t.transaction_fee,
-      //       block_number: t.block_number,
-      //       block_hash: t.block_hash,
-      //       block_timestamp: t.block_timestamp
-      //   }) AS transactions;
-      // `;
       query = `
         MATCH (a:Address {addressId: $addressId})  
         OPTIONAL MATCH (a)-[outgoing:Transaction]->(receiver:Address)
@@ -75,6 +51,7 @@ app.get("/transactions/:addressId", async (req, res) => {
         WITH a, 
       COLLECT(CASE WHEN outgoing IS NOT NULL THEN {
          direction: "outgoing",
+         sender: a.addressId,
          receiver: receiver.addressId,
          hash: outgoing.hash,  
          value: outgoing.value,
@@ -91,6 +68,7 @@ app.get("/transactions/:addressId", async (req, res) => {
      COLLECT(CASE WHEN incoming IS NOT NULL THEN {
          direction: "incoming",
          sender: sender.addressId,
+         receiver: a.addressId,
          hash: incoming.hash,  
          value: incoming.value,
          input: incoming.input,

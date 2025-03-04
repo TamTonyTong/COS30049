@@ -56,14 +56,20 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <td className="whitespace-nowrap px-6 py-4">
                   <span
                     className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                      transaction.sender.toLowerCase() === address.toLowerCase()
-                        ? "bg-red-100 text-red-800"
-                        : "bg-green-100 text-green-800"
+                      transaction.sender && address
+                        ? transaction.sender.toLowerCase() ===
+                          address.toLowerCase()
+                          ? "bg-red-100 text-red-800"
+                          : "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800" // Fallback style when sender is undefined
                     }`}
                   >
-                    {transaction.sender.toLowerCase() === address.toLowerCase()
-                      ? "OUT"
-                      : "IN"}
+                    {transaction.sender
+                      ? transaction.sender.toLowerCase() ===
+                        address.toLowerCase()
+                        ? "Outgoing"
+                        : "Incoming"
+                      : "Unknown"}
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">

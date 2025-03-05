@@ -17,7 +17,6 @@ import {
 } from "@/src/components/ui/dropdown-menu"
 import { Badge } from "@/src/components/ui/badge"
 import { useRouter } from "next/navigation"
-import { SearchSuggestions } from "./search-suggestions"
 
 type AssetType = "crypto" | "stocks" | "forex" | "commodities" | "all"
 type PriceRange = "all" | "under10" | "10to100" | "100to1000" | "over1000"
@@ -25,26 +24,13 @@ type SortOrder = "nameAsc" | "nameDesc" | "priceAsc" | "priceDesc" | "changeAsc"
 
 export default function EnhancedSearchBar() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [assetType, setAssetType] = useState<AssetType>("crypto")
+  const [assetType, setAssetType] = useState<AssetType>("crypto") // Default to crypto
   const [priceRange, setPriceRange] = useState<PriceRange>("all")
   const [sortOrder, setSortOrder] = useState<SortOrder>("nameAsc")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const router = useRouter()
-  const searchContainerRef = useRef<HTMLDivElement>(null)
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Update active filters whenever filter options change
   useEffect(() => {
@@ -66,15 +52,18 @@ export default function EnhancedSearchBar() {
   }, [assetType, priceRange, sortOrder])
 
   const handleSearch = () => {
-    setShowSuggestions(false)
-    // Always redirect to crypto markets page for now
-    let targetUrl = "/markets/crypto"
+    // Always redirect to markets page
+    let targetUrl = "/markets"
 
     // Build query parameters
     const params = new URLSearchParams()
 
     if (searchTerm) {
       params.append("search", searchTerm)
+    }
+
+    if (assetType !== "all") {
+      params.append("assetType", assetType)
     }
 
     if (priceRange !== "all") {
@@ -98,15 +87,7 @@ export default function EnhancedSearchBar() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSearch()
-    } else if (e.key === "Escape") {
-      setShowSuggestions(false)
     }
-  }
-
-  const handleSuggestionSelect = (crypto: { symbol: string; name: string }) => {
-    setSearchTerm(crypto.name)
-    setShowSuggestions(false)
-    router.push(`/markets/crypto?search=${encodeURIComponent(crypto.name)}`)
   }
 
   const clearFilter = (filter: string) => {
@@ -178,13 +159,13 @@ export default function EnhancedSearchBar() {
       case "nameDesc":
         return ["name", "desc"]
       case "priceAsc":
-        return ["price", "asc"]
+        return ["current_price", "asc"]
       case "priceDesc":
-        return ["price", "desc"]
+        return ["current_price", "desc"]
       case "changeAsc":
-        return ["change", "asc"]
+        return ["price_change_percentage_24h", "asc"]
       case "changeDesc":
-        return ["change", "desc"]
+        return ["price_change_percentage_24h", "desc"]
       default:
         return ["name", "asc"]
     }
@@ -192,27 +173,24 @@ export default function EnhancedSearchBar() {
 
   return (
     <div className="w-full">
-      <div className="relative" ref={searchContainerRef}>
-        <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full" />
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl" />
         <div className="relative flex items-center bg-[#1a2b4b]/80 rounded-full overflow-hidden border border-blue-500/30">
-          <Search className="w-5 h-5 text-blue-400 ml-4" />
+          <Search className="w-5 h-5 ml-4 text-blue-400" />
           <Input
+            ref={searchInputRef}
             type="text"
-            placeholder="Search Markets Here..."
+            placeholder="Search by name or symbol..."
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value)
-              setShowSuggestions(true)
-            }}
-            onFocus={() => setShowSuggestions(true)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="border-0 bg-transparent text-white placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
+            className="flex-1 text-white bg-transparent border-0 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
 
           <DropdownMenu open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-1 text-blue-400 hover:text-blue-300 hover:bg-[#243860]">
-                <Filter className="h-5 w-5" />
+                <Filter className="w-5 h-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 bg-[#1a2b4b] border-gray-700 text-white">
@@ -347,27 +325,20 @@ export default function EnhancedSearchBar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button className="mr-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full" onClick={handleSearch}>
+          <Button className="mr-2 text-white bg-blue-500 rounded-full hover:bg-blue-600" onClick={handleSearch}>
             Search
           </Button>
         </div>
-
-        {/* Search Suggestions */}
-        <SearchSuggestions
-          searchTerm={searchTerm}
-          onSelect={handleSuggestionSelect}
-          isOpen={showSuggestions && searchTerm.length >= 2}
-        />
       </div>
 
       {/* Active filters */}
       {activeFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3 justify-center">
+        <div className="flex flex-wrap justify-center gap-2 mt-3">
           {activeFilters.map((filter) => (
             <Badge key={filter} variant="secondary" className="bg-[#243860] text-white hover:bg-[#2c4a7c]">
               {filter}
               <button className="ml-1 hover:text-blue-300" onClick={() => clearFilter(filter)}>
-                <X className="h-3 w-3" />
+                <X className="w-3 h-3" />
               </button>
             </Badge>
           ))}

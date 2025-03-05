@@ -17,8 +17,21 @@ import {
 } from "@/src/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
 import { Slider } from "@/src/components/ui/slider"
-import { ArrowUpRight, ArrowDownRight, Search, ArrowUp, ArrowDown, X, SlidersHorizontal } from "lucide-react"
+import {
+  ArrowUpRight,
+  ArrowDownRight,
+  Search,
+  ArrowUp,
+  ArrowDown,
+  X,
+  SlidersHorizontal,
+  Info,
+  RefreshCw,
+  Eye,
+} from "lucide-react"
 import Layout from "@/src/components/layout"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/src/components/ui/tooltip"
+import Link from "next/link"
 
 interface Asset {
   symbol: string
@@ -40,16 +53,17 @@ export default function MarketsPage() {
   const searchParams = useSearchParams()
 
   // Get initial values from URL parameters
-const initialSearchTerm = searchParams?.get("search") || "";
-const initialSortField = (searchParams?.get("sortBy") as SortField) || "market_cap";
-const initialSortOrder = (searchParams?.get("sortOrder") as SortOrder) || "desc";
-const initialMinPrice = Number(searchParams?.get("minPrice") || "0");
-const initialMaxPrice = Number(searchParams?.get("maxPrice") || "1000000");
-const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
+  const initialSearchTerm = searchParams?.get("search") || ""
+  const initialSortField = (searchParams?.get("sortBy") as SortField) || "market_cap"
+  const initialSortOrder = (searchParams?.get("sortOrder") as SortOrder) || "desc"
+  const initialMinPrice = Number(searchParams?.get("minPrice") || "0")
+  const initialMaxPrice = Number(searchParams?.get("maxPrice") || "1000000")
+  const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all"
 
   const [assets, setAssets] = useState<Asset[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState<string>(initialSearchTerm)
@@ -61,46 +75,50 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
   const [assetType, setAssetType] = useState<AssetType>(initialAssetType)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
   // Maximum price for UI purposes - dynamically set based on highest price
   const [maxPriceValue, setMaxPriceValue] = useState(100000)
 
   // Fetch data
+  const fetchData = async () => {
+    try {
+      setIsRefreshing(true)
+      const response = await fetch("/api/assets")
+      if (!response.ok) {
+        throw new Error("Network response was not ok")
+      }
+      const data = await response.json()
+
+      if (data.assets && Array.isArray(data.assets)) {
+        setAssets(data.assets)
+
+        // Find the highest price for the slider max value
+        const highestPrice = Math.max(...data.assets.map((asset: Asset) => asset.current_price))
+        // Round up to the nearest power of 10 for a clean max value
+        const roundedMax = Math.pow(10, Math.ceil(Math.log10(highestPrice)))
+        setMaxPriceValue(roundedMax)
+
+        // If the initial max price was the default, update it to the new max
+        if (initialMaxPrice === 1000000) {
+          setPriceRange([initialMinPrice, roundedMax])
+          setDebouncedPriceRange([initialMinPrice, roundedMax])
+        }
+      } else {
+        setAssets([])
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error)
+      setError("Error fetching data")
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }
+
   useEffect(() => {
-    setIsLoading(true)
-    fetch("/api/assets")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok")
-        }
-        return response.json()
-      })
-      .then((data) => {
-        if (data.assets && Array.isArray(data.assets)) {
-          setAssets(data.assets)
-
-          // Find the highest price for the slider max value
-          const highestPrice = Math.max(...data.assets.map((asset: Asset) => asset.current_price))
-          // Round up to the nearest power of 10 for a clean max value
-          const roundedMax = Math.pow(10, Math.ceil(Math.log10(highestPrice)))
-          setMaxPriceValue(roundedMax)
-
-          // If the initial max price was the default, update it to the new max
-          if (initialMaxPrice === 1000000) {
-            setPriceRange([initialMinPrice, roundedMax])
-            setDebouncedPriceRange([initialMinPrice, roundedMax])
-          }
-        } else {
-          setAssets([])
-        }
-        setIsLoading(false)
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error)
-        setError("Error fetching data")
-        setIsLoading(false)
-      })
-  }, [initialMinPrice, initialMaxPrice])
+    fetchData()
+  }, [])
 
   // Debounce search term
   useEffect(() => {
@@ -236,6 +254,11 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
     setSearchTerm("")
   }
 
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchData()
+  }
+
   if (isLoading) {
     return (
       <Layout>
@@ -258,6 +281,13 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
             </CardHeader>
             <CardContent>
               <p className="text-red-400">{error}</p>
+              <Button
+                variant="outline"
+                className="mt-4 text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
+                onClick={handleRefresh}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" /> Try Again
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -275,6 +305,13 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
             </CardHeader>
             <CardContent>
               <p className="text-gray-300">No assets are available.</p>
+              <Button
+                variant="outline"
+                className="mt-4 text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
+                onClick={handleRefresh}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -288,7 +325,27 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
         <Card className="border-blue-500/30 bg-[#1a2b4b]">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-2xl font-bold text-white">Digital Asset Markets</CardTitle>
-            <div className="text-sm text-gray-400">{assets.length} assets available</div>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-400">{assets.length} assets available</div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-blue-400 hover:text-blue-300 hover:bg-[#243860]"
+                      onClick={handleRefresh}
+                      disabled={isRefreshing}
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Refresh market data</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent>
             {/* Enhanced Search Bar */}
@@ -353,7 +410,7 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
                             step={maxPriceValue / 100}
                             onValueChange={(newValue) => {
                               // Assuming newValue is an array with two elements (min, max)
-                              setPriceRange([newValue[0], newValue[1]]);
+                              setPriceRange([newValue[0], newValue[1]])
                             }}
                             className="[&>span:first-child]:bg-blue-500 [&>span:first-child]:h-2 [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white"
                           />
@@ -439,10 +496,10 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto border rounded-md border-blue-500/20">
               <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-[#0d1829]/50">
+                <TableHeader className="bg-[#0d1829]/70">
+                  <TableRow className="hover:bg-[#0d1829] border-b border-blue-500/20">
                     <TableHead className="text-white cursor-pointer" onClick={() => handleSort("name")}>
                       <div className="flex items-center">Asset {getSortIcon("name")}</div>
                     </TableHead>
@@ -472,18 +529,26 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
                     >
                       <div className="flex items-center justify-end">Market Cap {getSortIcon("market_cap")}</div>
                     </TableHead>
+                    <TableHead className="w-10 text-right text-white">
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAndSortedAssets.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-gray-400">
+                      <TableCell colSpan={6} className="py-8 text-center text-gray-400">
                         No assets found matching your criteria
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredAndSortedAssets.map((asset) => (
-                      <TableRow key={asset.symbol} className="transition-colors hover:bg-[#0d1829]">
+                      <TableRow
+                        key={asset.symbol}
+                        className={`transition-colors border-b border-blue-500/10 hover:bg-[#0d1829] ${hoveredRow === asset.symbol ? "bg-[#0d1829]/50" : ""}`}
+                        onMouseEnter={() => setHoveredRow(asset.symbol)}
+                        onMouseLeave={() => setHoveredRow(null)}
+                      >
                         <TableCell className="font-medium text-white">
                           <div className="flex items-center">
                             <Badge variant="outline" className="mr-2 border-blue-500/30">
@@ -515,11 +580,54 @@ const initialAssetType = (searchParams?.get("assetType") as AssetType) || "all";
                         </TableCell>
                         <TableCell className="text-right text-gray-300">${formatNumber(asset.total_volume)}</TableCell>
                         <TableCell className="text-right text-gray-300">${formatNumber(asset.market_cap)}</TableCell>
+                        <TableCell className="text-right">
+                          <div
+                            className={`flex justify-end transition-opacity ${hoveredRow === asset.symbol ? "opacity-100" : "opacity-0"}`}
+                          >
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-[#243860]"
+                                    asChild
+                                  >
+                                    <Link href={`/asset/${asset.symbol}`}>
+                                      <Eye className="w-4 h-4" />
+                                    </Link>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>View details</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* Market info */}
+            <div className="flex items-center justify-between mt-6 text-sm text-gray-400">
+              <div className="flex items-center">
+                <Info className="w-4 h-4 mr-2 text-blue-400" />
+                Data refreshed {isRefreshing ? "now" : "recently"}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+                {isRefreshing ? "Refreshing..." : "Refresh Data"}
+              </Button>
             </div>
           </CardContent>
         </Card>

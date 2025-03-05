@@ -66,7 +66,6 @@ export default function OrderForm({
               }
             }}
             required
-            disabled
           />
           <Label htmlFor="buy-amount">Amount</Label>
           <Input
@@ -107,7 +106,6 @@ export default function OrderForm({
               }
             }}
             required
-            disabled
           />
           <Label htmlFor="sell-amount">Amount</Label>
           <Input

@@ -10,6 +10,8 @@ export async function storeEtherscanTransactions(
   await runEtherscanQuery(
     `
     MERGE (a:Address {addressId: $address})
+    ON CREATE SET a.blockchain = 'ETH'
+    ON MATCH SET a.blockchain = 'ETH'
     RETURN a
   `,
     { address },
@@ -46,9 +48,13 @@ export async function storeEtherscanTransactions(
       `
       // Create or get sender address
       MERGE (sender:Address {addressId: $from})
+      ON CREATE SET sender.blockchain = 'ETH'
+      ON MATCH SET sender.blockchain = 'ETH'
       
       // Create or get receiver address 
       MERGE (receiver:Address {addressId: $to})
+      ON CREATE SET receiver.blockchain = 'ETH'
+      ON MATCH SET receiver.blockchain = 'ETH'
       
       // Create transaction if it doesn't exist
       MERGE (tx:Transaction {hash: $txHash})
@@ -70,8 +76,10 @@ export async function storeEtherscanTransactions(
         tx.tx_receipt_status = $txReceiptStatus,
         tx.confirmations = $confirmations,
         tx.is_error = $isError,
-        tx.nonce = $nonce
-      
+        tx.nonce = $nonce,
+        tx.blockchain = 'ETH'
+      ON MATCH SET
+        tx.blockchain = 'ETH'
       // Create relationships
       MERGE (sender)-[out:SENT]->(tx)
       MERGE (tx)-[in:RECEIVED]->(receiver)
@@ -85,6 +93,7 @@ export async function getEtherscanTransactionsFromNeo4j(
   address: string,
   page: number = 1,
   offset: number = 8,
+  blockchain: string = "ETH", // Add blockchain parameter with ETH as default
 ): Promise<Transaction[]> {
   // Ensure these are integers
   const skip = Math.floor((page - 1) * offset);
@@ -96,9 +105,11 @@ export async function getEtherscanTransactionsFromNeo4j(
     
     // Outgoing transactions
     OPTIONAL MATCH (a)-[:SENT]->(outgoing:Transaction)-[:RECEIVED]->(receiver:Address)
+    WHERE outgoing.blockchain = $blockchain
     
     // Incoming transactions
     OPTIONAL MATCH (sender:Address)-[:SENT]->(incoming:Transaction)-[:RECEIVED]->(a)
+    WHERE incoming.blockchain = $blockchain
     
     WITH a, outgoing, receiver, incoming, sender
     
@@ -126,7 +137,8 @@ export async function getEtherscanTransactionsFromNeo4j(
          tx_receipt_status: outgoing.tx_receipt_status,
          confirmations: outgoing.confirmations,
          is_error: outgoing.is_error,
-         nonce: outgoing.nonce
+         nonce: outgoing.nonce,
+         blockchain: outgoing.blockchain
       } END) AS outTransactions,
       
       // Collect incoming transactions
@@ -152,7 +164,8 @@ export async function getEtherscanTransactionsFromNeo4j(
          tx_receipt_status: incoming.tx_receipt_status,
          confirmations: incoming.confirmations,
          is_error: incoming.is_error,
-         nonce: incoming.nonce
+         nonce: incoming.nonce,
+         blockchain: outgoing.blockchain
       } END) AS inTransactions
       
     // Combine and filter null values
@@ -167,7 +180,7 @@ export async function getEtherscanTransactionsFromNeo4j(
     
     RETURN tx as transaction
   `,
-    { address, skip, limit },
+    { address, skip, limit, blockchain },
   );
 
   return result.map(

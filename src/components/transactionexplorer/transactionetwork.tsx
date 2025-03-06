@@ -38,12 +38,14 @@ interface TransactionNetworkProps {
   transactions: Transaction[];
   address: string;
   onAddressChange: (newAddress: string) => void;
+  blockchainType: "ETH" | "SWC";
 }
 
 const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
   transactions,
   address,
   onAddressChange,
+  blockchainType,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [centerNode, setCenterNode] = useState<string>(address);
@@ -210,7 +212,6 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     svg
       .selectAll(".center-node")
       .append("text")
-      .text("Your Address")
       .attr("dy", 45)
       .style("text-anchor", "middle")
       .style("fill", "#FFFFFF")
@@ -285,7 +286,9 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     labelGroups
       .append("text")
       .attr("class", "amount-label")
-      .text((d) => `${(d.transaction?.value! / 1e18).toFixed(4)} ETH`)
+      .text(
+        (d) => `${(d.transaction?.value! / 1e18).toFixed(4)} ${blockchainType}`,
+      )
       .attr("y", 5)
       .style("text-anchor", "middle")
       .style("fill", "#FFFFFF")
@@ -578,6 +581,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
               <TransactionDetail
                 transaction={selectedTransaction}
                 onClose={() => setSelectedTransaction(null)}
+                blockchainType={blockchainType}
               />
             )}
           </>

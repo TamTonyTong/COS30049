@@ -23,10 +23,12 @@ const TransactionExplorer: React.FC = () => {
   const [lastIndex, setLastIndex] = useState<number | undefined>(undefined);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
-  // Update data source options to include synced
-  const [dataSource, setDataSource] = useState<
-    "internal" | "etherscan" | "synced"
-  >("internal");
+
+  // Keep only blockchain type, remove dataSource
+  const [blockchainType, setBlockchainType] = useState<"ETH" | "SWC">("ETH");
+
+  // ETH has a submodes toggle - direct API or synced
+  const [ethMode, setEthMode] = useState<"direct" | "synced">("synced");
 
   const handleSearch = async (addressToSearch: string = address) => {
     if (!addressToSearch) return;
@@ -36,20 +38,22 @@ const TransactionExplorer: React.FC = () => {
     try {
       let extractedTransactions: Transaction[] = [];
 
-      if (dataSource === "internal") {
-        // Existing logic for internal data source
+      if (blockchainType === "SWC") {
+        // SWC always uses internal database
         const data = await fetchTransactions(addressToSearch, "initial");
         extractedTransactions = data.length > 0 ? data[0].transactions : [];
-      } else if (dataSource === "etherscan") {
-        // Direct Etherscan API calls
-        extractedTransactions =
-          await fetchEtherscanTransactions(addressToSearch);
-      } else if (dataSource === "synced") {
-        // New synced approach - fetch, store, then retrieve
-        extractedTransactions = await syncEtherscanData(addressToSearch);
+      } else {
+        // ETH uses either direct API or synced data
+        if (ethMode === "direct") {
+          extractedTransactions =
+            await fetchEtherscanTransactions(addressToSearch);
+        } else {
+          extractedTransactions = await syncEtherscanData(
+            addressToSearch,
+            "ETH",
+          );
+        }
       }
-
-      console.log(extractedTransactions);
 
       if (extractedTransactions.length > 0) {
         setTransactionsByPage({ 1: extractedTransactions });
@@ -76,7 +80,7 @@ const TransactionExplorer: React.FC = () => {
   };
 
   const loadMore = async () => {
-    if (dataSource === "internal" && !lastIndex) return;
+    if (blockchainType === "SWC" && !lastIndex) return;
     setLoading(true);
     setError(null);
 
@@ -84,20 +88,24 @@ const TransactionExplorer: React.FC = () => {
       let extractedTransactions: Transaction[] = [];
       const nextPage = currentPage + 1;
 
-      if (dataSource === "internal") {
-        // Existing logic for your internal data source
+      if (blockchainType === "SWC") {
+        // SWC always uses internal database for pagination
         const newData = await fetchTransactions(address, "older", lastIndex);
         extractedTransactions =
           newData.length > 0 ? newData[0].transactions : [];
-      } else if (dataSource === "etherscan") {
-        // Direct from Etherscan
-        extractedTransactions = await fetchEtherscanTransactions(
-          address,
-          nextPage,
-        );
-      } else if (dataSource === "synced") {
-        // Get from synced Neo4j database
-        extractedTransactions = await getEtherscanPageFromDb(address, nextPage);
+      } else {
+        // ETH uses either direct API or synced data
+        if (ethMode === "direct") {
+          extractedTransactions = await fetchEtherscanTransactions(
+            address,
+            nextPage,
+          );
+        } else {
+          extractedTransactions = await getEtherscanPageFromDb(
+            address,
+            nextPage,
+          );
+        }
       }
 
       if (extractedTransactions.length > 0) {
@@ -106,7 +114,7 @@ const TransactionExplorer: React.FC = () => {
           [nextPage]: extractedTransactions,
         }));
 
-        if (dataSource === "internal") {
+        if (blockchainType === "SWC") {
           setLastIndex(
             extractedTransactions.length > 0
               ? Number(extractedTransactions.at(-1)?.transaction_index) ||
@@ -128,6 +136,7 @@ const TransactionExplorer: React.FC = () => {
     setLoading(false);
   };
 
+  // Other functions remain the same
   const navigateToPage = (page: number) => {
     if (page >= 1 && page <= Math.max(...loadedPages, 0)) {
       setCurrentPage(page);
@@ -137,65 +146,93 @@ const TransactionExplorer: React.FC = () => {
   const handleAddressChange = (newAddress: string) => {
     setAddress(newAddress);
     // Reset pagination and search with the new address
-    setTransactionsByPage({});
-    setLastIndex(undefined);
-    setCurrentPage(1);
-    setLoadedPages([]);
+    resetState();
     handleSearch(newAddress);
   };
 
-  const selectDataSource = (source: "internal" | "etherscan" | "synced") => {
-    setDataSource(source);
-    // Reset data when switching sources
+  // Helper function to reset state
+  const resetState = () => {
     setTransactionsByPage({});
     setLastIndex(undefined);
     setCurrentPage(1);
     setLoadedPages([]);
+  };
+
+  // Simplified selector
+  const selectBlockchainType = (type: "ETH" | "SWC") => {
+    setBlockchainType(type);
+    resetState();
+  };
+
+  // For ETH mode (direct/synced)
+  const selectEthMode = (mode: "direct" | "synced") => {
+    setEthMode(mode);
+    resetState();
   };
 
   const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
   const maxPage = Math.max(...loadedPages, 0);
   const currentTransactions = transactionsByPage[currentPage] || [];
+
   return (
     <div className="mx-auto max-w-6xl p-4">
       <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
 
-      {/* Updated data source toggle */}
+      {/* Blockchain selector */}
       <div className="mb-4">
-        <span className="mr-2 text-sm font-medium">Data Source:</span>
+        <span className="mr-2 text-sm font-medium">Blockchain:</span>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => selectDataSource("internal")}
+            onClick={() => selectBlockchainType("ETH")}
             className={`rounded-md px-4 py-2 text-sm font-medium ${
-              dataSource === "internal"
+              blockchainType === "ETH"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-200 text-gray-800"
             }`}
           >
-            Internal DB
+            Ethereum (ETH)
           </button>
-          {/* <button
-            onClick={() => selectDataSource("etherscan")}
-            className={`rounded-md px-4 py-2 text-sm font-medium ${
-              dataSource === "etherscan"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800"
-            }`}
-          >
-            Etherscan API
-          </button> */}
           <button
-            onClick={() => selectDataSource("synced")}
+            onClick={() => selectBlockchainType("SWC")}
             className={`rounded-md px-4 py-2 text-sm font-medium ${
-              dataSource === "synced"
+              blockchainType === "SWC"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-200 text-gray-800"
             }`}
           >
-            Synced Etherscan
+            Swinburne (SWC)
           </button>
         </div>
       </div>
+
+      {/* ETH modes - only show when ETH is selected */}
+      {blockchainType === "ETH" && (
+        <div className="mb-4">
+          <span className="mr-2 text-sm font-medium">ETH Data Source:</span>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => selectEthMode("synced")}
+              className={`rounded-md px-4 py-2 text-sm font-medium ${
+                ethMode === "synced"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              Synced Etherscan
+            </button>
+            <button
+              onClick={() => selectEthMode("direct")}
+              className={`rounded-md px-4 py-2 text-sm font-medium ${
+                ethMode === "direct"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              Direct Etherscan API
+            </button>
+          </div>
+        </div>
+      )}
 
       <SearchBar
         address={address}
@@ -213,12 +250,14 @@ const TransactionExplorer: React.FC = () => {
                 transactions={currentTransactions}
                 address={address}
                 onAddressChange={handleAddressChange}
+                blockchainType={blockchainType}
               />
             </div>
 
             <TransactionList
               transactions={currentTransactions}
               address={address}
+              blockchainType={blockchainType}
             />
           </div>
 

@@ -4,19 +4,21 @@ import { Transaction } from "./type";
 interface TransactionDetailProps {
   transaction: Transaction | null;
   onClose: () => void;
+  blockchainType: "ETH" | "SWC";
 }
 
 const TransactionDetail: React.FC<TransactionDetailProps> = ({
   transaction,
   onClose,
+  blockchainType,
 }) => {
   const [showRawData, setShowRawData] = useState<boolean>(false);
 
   if (!transaction) return null;
 
-  // Format ETH value
-  const formatEth = (value: string | number) => {
-    return (Number(value) / 1e18).toFixed(6) + " ETH";
+  // Format value with the correct currency
+  const formatValue = (value: string | number) => {
+    return (Number(value) / 1e18).toFixed(6) + ` ${blockchainType}`;
   };
 
   // Format function input
@@ -68,12 +70,12 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
                 <span className="font-medium text-black">Status:</span>
                 <span
                   className={`ml-2 rounded-full px-2 py-1 text-sm ${
-                    transaction.is_error === "0"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
+                    transaction.is_error === "1"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-green-100 text-green-800"
                   }`}
                 >
-                  {transaction.is_error === "0" ? "Success" : "Failed"}
+                  {transaction.is_error === "1" ? "Failed" : "Success"}
                 </span>
               </div>
               <div>
@@ -93,7 +95,7 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
               <div>
                 <span className="font-medium text-black">Value:</span>
                 <span className="ml-2 text-sm text-black">
-                  {formatEth(transaction.value)}
+                  {formatValue(transaction.value)}
                 </span>
               </div>
             </div>
@@ -155,7 +157,8 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
               <div>
                 <span className="font-medium text-black">Transaction Fee:</span>
                 <span className="ml-2 text-sm text-black">
-                  {(Number(transaction.transaction_fee) / 1e18).toFixed(6)} ETH
+                  {(Number(transaction.transaction_fee) / 1e18).toFixed(6)}{" "}
+                  {blockchainType}
                 </span>
               </div>
             </div>

@@ -5,11 +5,13 @@ import TransactionDetail from "@/src/components/transactionexplorer/transactiond
 interface TransactionListProps {
   transactions: Transaction[];
   address: string;
+  blockchainType: "ETH" | "SWC";
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   address,
+  blockchainType,
 }) => {
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
@@ -73,7 +75,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
-                  {(Number(transaction.value) / 1e18).toFixed(6)} ETH
+                  {(Number(transaction.value) / 1e18).toFixed(6)}{" "}
+                  {blockchainType}
                 </td>
                 {/* <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
                   {transaction.gas_used || "-"}
@@ -88,13 +91,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
           </tbody>
         </table>
       </div>
-
-      {/* {selectedTransaction && (
-        <TransactionDetail
-          transaction={selectedTransaction}
-          onClose={() => setSelectedTransaction(null)}
-        />
-      )} */}
     </>
   );
 };

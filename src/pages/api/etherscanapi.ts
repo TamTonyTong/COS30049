@@ -18,41 +18,19 @@ interface Transaction {
   direction: "incoming" | "outgoing";
 }
 
-// You'll need to get an API key from https://etherscan.io/apis
-const ETHERSCAN_API_KEY =
-  process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY || "YOUR_API_KEY";
-const BASE_URL = "https://api.etherscan.io/api";
-
 export async function fetchEtherscanTransactions(
   address: string,
   page: number = 1,
-  offset: number = 8, // Number of transactions per page
 ): Promise<Transaction[]> {
   try {
-    console.log(
-      `Fetching Etherscan data for address: ${address}, page: ${page}, offset: ${offset}`,
-    );
-
-    const response = await axios.get(BASE_URL, {
+    // Use the backend proxy instead of calling Etherscan directly
+    const response = await axios.get(`/api/wallet/transaction`, {
       params: {
-        module: "account",
-        action: "txlist",
         address,
-        startblock: 0,
-        endblock: 99999999,
         page,
-        offset,
-        sort: "desc",
-        apikey: ETHERSCAN_API_KEY,
+        offset: 10,
       },
     });
-
-    // Log the raw Etherscan response
-    console.log(
-      "Raw Etherscan API response:",
-      JSON.stringify(response.data, null, 2),
-    );
-
     if (response.data.status === "1") {
       // Transform Etherscan data to match your Transaction type
       const transformedData = response.data.result.map(

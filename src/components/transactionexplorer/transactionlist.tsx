@@ -109,7 +109,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 className="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                 onClick={() => requestSort("value")}
               >
-                Value {getSortDirectionIndicator("value")}
+                Value{" "}
+                {getSortDirectionIndicator("value") ? (
+                  <span className="ml-1">
+                    {getSortDirectionIndicator("value")}
+                  </span>
+                ) : (
+                  <span className="ml-1 transition-opacity">↕</span>
+                )}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Time

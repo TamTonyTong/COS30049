@@ -13,7 +13,10 @@ app.use(express.json());
   try {
     driver = neo4j.driver(
       process.env.NEO4J_URI2,
-      neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD2),
+      neo4j.auth.basic(
+        process.env.NEXT_PUBLIC_NEO4J_USER,
+        process.env.NEO4J_PASSWORD2,
+      ),
     );
     const serverInfo = await driver.getServerInfo();
     console.log("Connection established");
@@ -27,7 +30,10 @@ app.use(express.json());
 app.get("/transactions/:addressId", async (req, res) => {
   driver = neo4j.driver(
     process.env.NEO4J_URI2,
-    neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD2),
+    neo4j.auth.basic(
+      process.env.NEXT_PUBLIC_NEO4J_USER,
+      process.env.NEO4J_PASSWORD2,
+    ),
   );
   const { addressId } = req.params;
   const direction = req.query.direction || "initial"; // "initial", "older", or "newer"

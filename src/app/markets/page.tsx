@@ -1,4 +1,9 @@
+
 "use client"
+
+// src/app/markets/page.tsx
+import dynamic from "next/dynamic";
+
 
 import { useState, useEffect, useMemo } from "react"
 import { useSearchParams } from "next/navigation"

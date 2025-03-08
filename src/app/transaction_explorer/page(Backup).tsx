@@ -1,7 +1,11 @@
 "use client";
 import React, { useState } from "react";
 import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
-import { fetchInfuraTransactions } from "@/src/pages/api/infuraapi";
+import { fetchEtherscanTransactions } from "@/src/pages/api/etherscanapi";
+import {
+  syncEtherscanData,
+  getEtherscanPageFromDb,
+} from "@/src/pages/api/etherscan-sync";
 import SearchBar from "@/src/components/transactionexplorer/searchbar";
 import TransactionList from "@/src/components/transactionexplorer/transactionlist";
 import Pagination from "@/src/components/transactionexplorer/pagnition";
@@ -20,11 +24,11 @@ const TransactionExplorer: React.FC = () => {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
 
-  // Keep blockchain type selection
+  // Keep only blockchain type, remove dataSource
   const [blockchainType, setBlockchainType] = useState<"ETH" | "SWC">("ETH");
 
-  // Replace ETH modes with a single Infura mode
-  const [ethDataSource, setEthDataSource] = useState<"infura">("infura");
+  // ETH has a submodes toggle - direct API or synced
+  const [ethMode, setEthMode] = useState<"direct" | "synced">("synced");
 
   const handleSearch = async (addressToSearch: string = address) => {
     if (!addressToSearch) return;
@@ -35,12 +39,20 @@ const TransactionExplorer: React.FC = () => {
       let extractedTransactions: Transaction[] = [];
 
       if (blockchainType === "SWC") {
-        // SWC still uses internal database
+        // SWC always uses internal database
         const data = await fetchTransactions(addressToSearch, "initial");
         extractedTransactions = data.length > 0 ? data[0].transactions : [];
       } else {
-        // ETH now always uses Infura
-        extractedTransactions = await fetchInfuraTransactions(addressToSearch);
+        // ETH uses either direct API or synced data
+        if (ethMode === "direct") {
+          extractedTransactions =
+            await fetchEtherscanTransactions(addressToSearch);
+        } else {
+          extractedTransactions = await syncEtherscanData(
+            addressToSearch,
+            "ETH",
+          );
+        }
       }
 
       if (extractedTransactions.length > 0) {
@@ -53,7 +65,7 @@ const TransactionExplorer: React.FC = () => {
         );
         setCurrentPage(1);
         setLoadedPages([1]);
-        setHasMore(extractedTransactions.length >= 10); // Adjust based on page size
+        setHasMore(extractedTransactions.length >= 4);
       } else {
         setTransactionsByPage({});
         setLoadedPages([]);
@@ -77,16 +89,23 @@ const TransactionExplorer: React.FC = () => {
       const nextPage = currentPage + 1;
 
       if (blockchainType === "SWC") {
-        // SWC still uses internal database for pagination
+        // SWC always uses internal database for pagination
         const newData = await fetchTransactions(address, "older", lastIndex);
         extractedTransactions =
           newData.length > 0 ? newData[0].transactions : [];
       } else {
-        // ETH now always uses Infura for pagination
-        extractedTransactions = await fetchInfuraTransactions(
-          address,
-          nextPage,
-        );
+        // ETH uses either direct API or synced data
+        if (ethMode === "direct") {
+          extractedTransactions = await fetchEtherscanTransactions(
+            address,
+            nextPage,
+          );
+        } else {
+          extractedTransactions = await getEtherscanPageFromDb(
+            address,
+            nextPage,
+          );
+        }
       }
 
       if (extractedTransactions.length > 0) {
@@ -105,7 +124,7 @@ const TransactionExplorer: React.FC = () => {
         }
         setCurrentPage(nextPage);
         setLoadedPages((prev) => [...prev, nextPage]);
-        setHasMore(extractedTransactions.length >= 10);
+        setHasMore(extractedTransactions.length >= 4);
       } else {
         setHasMore(false);
       }
@@ -117,7 +136,7 @@ const TransactionExplorer: React.FC = () => {
     setLoading(false);
   };
 
-  // Keep other functions the same
+  // Other functions remain the same
   const navigateToPage = (page: number) => {
     if (page >= 1 && page <= Math.max(...loadedPages, 0)) {
       setCurrentPage(page);
@@ -142,6 +161,12 @@ const TransactionExplorer: React.FC = () => {
   // Simplified selector
   const selectBlockchainType = (type: "ETH" | "SWC") => {
     setBlockchainType(type);
+    resetState();
+  };
+
+  // For ETH mode (direct/synced)
+  const selectEthMode = (mode: "direct" | "synced") => {
+    setEthMode(mode);
     resetState();
   };
 
@@ -180,13 +205,30 @@ const TransactionExplorer: React.FC = () => {
         </div>
       </div>
 
-      {/* Replace ETH modes with Infura indicator */}
+      {/* ETH modes - only show when ETH is selected */}
       {blockchainType === "ETH" && (
         <div className="mb-4">
           <span className="mr-2 text-sm font-medium">ETH Data Source:</span>
           <div className="flex flex-wrap gap-2">
-            <button className="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white">
-              Infura API
+            <button
+              onClick={() => selectEthMode("synced")}
+              className={`rounded-md px-4 py-2 text-sm font-medium ${
+                ethMode === "synced"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              Synced Etherscan
+            </button>
+            <button
+              onClick={() => selectEthMode("direct")}
+              className={`rounded-md px-4 py-2 text-sm font-medium ${
+                ethMode === "direct"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              Direct Etherscan API
             </button>
           </div>
         </div>

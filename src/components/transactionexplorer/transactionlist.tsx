@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Transaction } from "@/src/components/transactionexplorer/type";
+import TransactionDetail from "./transactiondetail";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -25,6 +26,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   const handleRowClick = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
+  };
+  const handleCloseDetail = () => {
+    setSelectedTransaction(null);
   };
   // Sort transactions based on the current sort configuration
   const sortedTransactions = useMemo(() => {
@@ -171,6 +175,15 @@ const TransactionList: React.FC<TransactionListProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <TransactionDetail
+          transaction={selectedTransaction}
+          onClose={handleCloseDetail}
+          blockchainType={blockchainType}
+        />
+      )}
     </>
   );
 };

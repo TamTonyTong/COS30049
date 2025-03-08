@@ -2,12 +2,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import TransactionDetail from "./transactiondetail";
+import { syncInfuraData } from "@/src/pages/api/infura-sync";
 
 interface Transaction {
   hash: string;
-  value: string; // Changed from number since Etherscan returns strings
-  input: string; // Changed from number since it's hex data
-  gas: string; // Changed to string to match Etherscan data
+  value: string;
+  input: string;
+  gas: string;
   gas_used: string;
   gas_price: string;
   transaction_fee: string;
@@ -32,6 +33,9 @@ interface NetworkNode {
   transaction?: Transaction;
   x?: number;
   y?: number;
+  parentNode?: string;
+  isExpanded?: boolean;
+  isExpandable?: boolean;
 }
 
 interface TransactionNetworkProps {
@@ -51,6 +55,10 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
   const [centerNode, setCenterNode] = useState<string>(address);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
+  const [expandedNodes, setExpandedNodes] = useState<{
+    [address: string]: Transaction[];
+  }>({});
+  const [isExpanding, setIsExpanding] = useState<boolean>(false);
 
   useEffect(() => {
     // Update center node when address changes
@@ -58,62 +66,176 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
   }, [address]);
 
   useEffect(() => {
-    if (!svgRef.current || transactions.length === 0) return;
+    if (!svgRef.current || !transactions || transactions.length === 0) return;
+
+    console.log(
+      "Rendering visualization with",
+      transactions.length,
+      "transactions",
+    );
+    console.log("Expanded nodes:", Object.keys(expandedNodes).length);
 
     // Clear previous content
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Create nodes data - one center node and one node per transaction
-    const nodes: NetworkNode[] = [
-      {
-        id: centerNode,
-        address: centerNode,
-        main: true,
-        isTransactionNode: false,
-      },
-      ...transactions.map((tx) => ({
-        id: tx.hash, // Use transaction hash as node ID
-        address: tx.direction === "outgoing" ? tx.receiver! : tx.sender!, // Use the counterparty address based on direction
+    // Combine main transactions with expanded node transactions
+    const allTransactions = [
+      ...transactions,
+      ...Object.entries(expandedNodes).flatMap(([address, txs]) => txs),
+    ];
+
+    // Create a unique set of nodes
+    const uniqueNodes = new Map<string, NetworkNode>();
+
+    // Add center node
+    uniqueNodes.set(centerNode, {
+      id: centerNode,
+      address: centerNode,
+      main: true,
+      isTransactionNode: false,
+      isExpanded: false,
+    });
+
+    // Add transaction nodes for main transactions
+    transactions.forEach((tx) => {
+      const counterpartyAddress =
+        tx.direction === "outgoing" ? tx.receiver! : tx.sender!;
+      const nodeId = tx.hash;
+
+      uniqueNodes.set(nodeId, {
+        id: nodeId,
+        address: counterpartyAddress,
         main: false,
         isTransactionNode: true,
         transaction: tx,
-      })),
-    ];
+        parentNode: centerNode,
+        isExpanded: expandedNodes[counterpartyAddress] !== undefined,
+      });
 
-    // Position nodes in an even circle around the center
-    const width = svgRef.current.clientWidth || 600;
-    const height = 500;
-    const baseRadius = Math.min(width, height) / 3;
-
-    // Calculate positions for all transaction nodes evenly around the circle
-    const transactionNodes = nodes.filter((node) => !node.main);
-    const angleStep = (2 * Math.PI) / transactionNodes.length;
-
-    transactionNodes.forEach((node, index) => {
-      const angle = index * angleStep;
-      node.x = baseRadius * Math.cos(angle);
-      node.y = baseRadius * Math.sin(angle);
+      // Also add the counterparty as a potential expandable node if not already there
+      if (!uniqueNodes.has(counterpartyAddress)) {
+        uniqueNodes.set(counterpartyAddress, {
+          id: counterpartyAddress,
+          address: counterpartyAddress,
+          main: false,
+          isTransactionNode: false,
+          isExpandable: true,
+          parentNode: centerNode,
+          isExpanded: expandedNodes[counterpartyAddress] !== undefined,
+        });
+      }
     });
 
-    // Set position for center node
+    // Add nodes for expanded transactions
+    Object.entries(expandedNodes).forEach(([expandedAddress, expandedTxs]) => {
+      expandedTxs.forEach((tx) => {
+        const counterpartyAddress =
+          tx.direction === "outgoing" ? tx.receiver! : tx.sender!;
+        // Skip transactions to/from already visualized nodes to avoid clutter
+        if (
+          uniqueNodes.has(counterpartyAddress) &&
+          uniqueNodes.get(counterpartyAddress)?.parentNode === centerNode
+        ) {
+          return;
+        }
+
+        const nodeId = tx.hash;
+        uniqueNodes.set(nodeId, {
+          id: nodeId,
+          address: counterpartyAddress,
+          main: false,
+          isTransactionNode: true,
+          transaction: tx,
+          parentNode: expandedAddress,
+        });
+      });
+    });
+
+    // Convert Map to array
+    const nodes = Array.from(uniqueNodes.values());
+    console.log("Total nodes to render:", nodes.length);
+
+    // Position nodes algorithmically
+    const width = svgRef.current.clientWidth || 600;
+    const height = 500;
+
+    // Position center node in the middle
     const centerNodeObj = nodes.find((n) => n.main);
     if (centerNodeObj) {
       centerNodeObj.x = 0;
       centerNodeObj.y = 0;
     }
 
-    // Create SVG
+    // Group nodes by their parent
+    const nodesByParent: { [parentAddress: string]: NetworkNode[] } = {};
+
+    nodes.forEach((node) => {
+      if (!node.main) {
+        const parent = node.parentNode || centerNode;
+        if (!nodesByParent[parent]) {
+          nodesByParent[parent] = [];
+        }
+        nodesByParent[parent].push(node);
+      }
+    });
+
+    // Position nodes in groups around their parent nodes
+    const baseRadius = Math.min(width, height) / 3.5;
+
+    Object.entries(nodesByParent).forEach(([parentAddress, childNodes]) => {
+      const parentNode = uniqueNodes.get(parentAddress);
+      const parentX = parentNode?.x || 0;
+      const parentY = parentNode?.y || 0;
+
+      // If parent is center, use larger radius
+      const radius = parentAddress === centerNode ? baseRadius : baseRadius / 2;
+
+      // Position child nodes in a circle around parent
+      const angleStep = (2 * Math.PI) / childNodes.length;
+      childNodes.forEach((node, index) => {
+        const angle = index * angleStep;
+        node.x = parentX + radius * Math.cos(angle);
+        node.y = parentY + radius * Math.sin(angle);
+      });
+    });
+
+    // Create SVG and append necessary elements
     const svg = d3
       .select(svgRef.current)
       .attr("width", width)
-      .attr("height", height)
+      .attr("height", height);
+
+    // Create a container group for all elements that will be dragged/zoomed
+    const container = svg
       .append("g")
       .attr("transform", `translate(${width / 2},${height / 2})`);
 
-    // Create gradients for incoming and outgoing transactions
-    const defs = svg.append("defs");
+    // Add zoom behavior
+    const zoom = d3
+      .zoom()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        container.attr("transform", event.transform);
+      });
 
-    // Outgoing gradient (blue to gray)
+    // Apply zoom behavior to svg
+    svg.call(zoom as any);
+
+    // Double click to reset zoom
+    svg.on("dblclick.zoom", () => {
+      svg
+        .transition()
+        .duration(750)
+        .call(
+          zoom.transform as any,
+          d3.zoomIdentity.translate(width / 2, height / 2).scale(1),
+        );
+    });
+
+    // Add gradients for link colors
+    const defs = container.append("defs");
+
+    // Outgoing gradient
     const outgoingGradient = defs
       .append("linearGradient")
       .attr("id", "outgoing-gradient")
@@ -123,12 +245,13 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .append("stop")
       .attr("offset", "0%")
       .attr("stop-color", "#ff001e");
+
     outgoingGradient
       .append("stop")
       .attr("offset", "100%")
-      .attr("stop-color", "#9ca3af");
+      .attr("stop-color", "#ff6e6e");
 
-    // Incoming gradient (green to gray)
+    // Incoming gradient
     const incomingGradient = defs
       .append("linearGradient")
       .attr("id", "incoming-gradient")
@@ -138,445 +261,307 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .append("stop")
       .attr("offset", "0%")
       .attr("stop-color", "#10b981");
+
     incomingGradient
       .append("stop")
       .attr("offset", "100%")
-      .attr("stop-color", "#9ca3af");
+      .attr("stop-color", "#6ee7b7");
 
-    // Draw links - one per transaction
-    const links = svg
+    // Draw links
+    const links = container
       .selectAll(".link")
-      .data(nodes.filter((n) => !n.main))
+      .data(nodes.filter((n) => !n.main && n.isTransactionNode))
       .enter()
       .append("line")
       .attr("class", "link")
       .attr("data-hash", (d) => d.transaction?.hash)
-      .attr("x1", centerNodeObj?.x || 0)
-      .attr("y1", centerNodeObj?.y || 0)
+      .attr("x1", (d) => {
+        const parent = nodes.find((n) => n.address === d.parentNode);
+        return parent?.x || 0;
+      })
+      .attr("y1", (d) => {
+        const parent = nodes.find((n) => n.address === d.parentNode);
+        return parent?.y || 0;
+      })
       .attr("x2", (d) => d.x || 0)
       .attr("y2", (d) => d.y || 0)
       .style("stroke", (d) => {
-        // Use different gradient based on transaction direction
         return d.transaction?.direction === "outgoing"
           ? "url(#outgoing-gradient)"
           : "url(#incoming-gradient)";
       })
-      // .style("stroke-width", (d) => {
-      //   const tx = d.transaction;
-      //   return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
-      //   // return tx ? Math.max(tx.value) : 2;
-      // })
-      .style("stroke-width", "5")
+      .style("stroke-width", 3)
       .style("opacity", 0)
-      .style("cursor", "pointer")
       .transition()
       .duration(500)
       .style("opacity", 0.7);
 
-    // Create groups for transaction nodes
-    const transactionNodeGroups = svg
-      .selectAll(".transaction-node")
-      .data(nodes.filter((n) => !n.main))
+    // Value labels on links
+    container
+      .selectAll(".value-label")
+      .data(nodes.filter((n) => !n.main && n.isTransactionNode))
       .enter()
-      .append("g")
-      .attr("class", "transaction-node")
+      .append("text")
+      .attr("class", "value-label")
+      .attr("x", (d) => {
+        const parent = nodes.find((n) => n.address === d.parentNode);
+        return parent && d.x ? (parent.x + d.x) / 2 : 0;
+      })
+      .attr("y", (d) => {
+        const parent = nodes.find((n) => n.address === d.parentNode);
+        return parent && d.y ? (parent.y + d.y) / 2 - 8 : 0;
+      })
+      .attr("text-anchor", "middle")
+      .attr("dy", ".35em")
+      .style("font-size", "10px")
+      .style("fill", "white") // Changed to white
+      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)") // Add text shadow for better visibility
+      .text((d) => {
+        const val = Number(d.transaction?.value) / 1e18;
+        return val.toFixed(4) + " " + blockchainType;
+      })
       .style("opacity", 0)
-      .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
-      .transition()
-      .duration(500)
-      .style("opacity", 1);
-
-    // Create group for center node
-    const centerNodeGroup = svg
-      .selectAll(".center-node")
-      .data([centerNodeObj].filter(Boolean))
-      .enter()
-      .append("g")
-      .attr("class", "center-node")
-      .style("opacity", 0)
-      .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
       .transition()
       .duration(500)
       .style("opacity", 1);
 
     // Draw center node
-    svg
-      .selectAll(".center-node")
+    const centerNodeCircle = container
       .append("circle")
-      .attr("r", 30)
-      .style("fill", "#3b82f6")
-      .style("cursor", "pointer")
-      .style("transition", "all 0.2s ease");
+      .attr("r", 25)
+      .attr("fill", "#4F46E5")
+      .attr("stroke", "#312E81")
+      .attr("stroke-width", 2);
 
-    // Add label for center node
-    svg
-      .selectAll(".center-node")
+    // Center node address label
+    container
       .append("text")
-      .attr("dy", 45)
-      .style("text-anchor", "middle")
-      .style("fill", "#FFFFFF")
-      .style("font-size", "10px")
-      .style("pointer-events", "none");
-
-    // Draw transaction nodes with different colors based on direction
-    svg
-      .selectAll(".transaction-node")
-      .append("circle")
-      .attr("r", (d) => {
-        const tx = d.transaction;
-        // Base size between 40 and 70 based on transaction value
-        return tx ? Math.max(10, Math.min(20, (tx.value / 1e18) * 10)) : 20;
-      })
-      .style("fill", (d) => {
-        // Color by direction first, then by address for visual grouping
-        const direction = d.transaction?.direction;
-        if (direction === "outgoing") {
-          return "#ff001e"; // Red for outgoing
-        } else if (direction === "incoming") {
-          return "#10b981"; // Green for incoming
-        } else {
-          // If direction is undefined, use address-based coloring as fallback
-          const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-          return colorScale(d.address);
-        }
-      })
-      .style("cursor", "pointer")
-      .style("transition", "all 0.2s ease");
-
-    // Add transaction node labels in a dark background box
-    const labelGroups = svg
-      .selectAll(".transaction-node")
-      .append("g")
-      .attr("class", "label-group")
-      .attr("transform", "translate(0, -35)"); // Position above the node
-
-    // Add dark background rectangle for labels
-    labelGroups
-      .append("rect")
-      .attr("rx", 4)
-      .attr("ry", 4)
-      .attr("x", -60)
-      .attr("y", -25)
-      .attr("width", 120)
-      .attr("height", 40)
-      .style("fill", "#0d1829")
-      .style("opacity", 0.9);
-
-    // Add address label inside the box with direction indicator
-    labelGroups
-      .append("text")
-      .attr("class", "address-label")
-      .text((d) => {
-        const direction = d.transaction?.direction;
-        const dirIndicator = direction === "outgoing" ? "→ " : "← ";
-        return (
-          dirIndicator +
-          d.address.substring(0, 6) +
-          "..." +
-          d.address.substring(d.address.length - 4)
-        );
-      })
-      .attr("y", -10)
-      .style("text-anchor", "middle")
-      .style("fill", "#FFFFFF")
-      .style("font-size", "10px")
-      .style("pointer-events", "none");
-
-    // Add SCM amount label inside the box
-    labelGroups
-      .append("text")
-      .attr("class", "amount-label")
-      .text(
-        (d) => `${(d.transaction?.value! / 1e18).toFixed(4)} ${blockchainType}`,
-      )
-      .attr("y", 5)
-      .style("text-anchor", "middle")
-      .style("fill", "#FFFFFF")
-      .style("font-size", "10px")
+      .attr("text-anchor", "middle")
+      .attr("dy", -35)
+      .style("font-size", "14px")
       .style("font-weight", "bold")
-      .style("pointer-events", "none");
+      .style("fill", "white") // Changed to white
+      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)") // Add text shadow for better visibility
+      .text("Your Address");
 
-    // Add "Explore Address" badge
-    const exploreGroups = svg
+    // Center node address with ellipsis
+    container
+      .append("text")
+      .attr("text-anchor", "middle")
+      .attr("dy", 45)
+      .style("font-size", "12px")
+      .style("fill", "white") // Changed to white
+      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)") // Add text shadow for better visibility
+      .text(() => {
+        return `${centerNode.substring(0, 6)}...${centerNode.substring(centerNode.length - 4)}`;
+      });
+
+    // Draw transaction nodes
+    const transactionNodes = container
       .selectAll(".transaction-node")
+      .data(nodes.filter((n) => !n.main && n.isTransactionNode))
+      .enter()
       .append("g")
-      .attr("class", "explore-group")
-      .attr("transform", "translate(0, 25)"); // Position below the node
-
-    // Add background for explore badge
-    exploreGroups
-      .append("rect")
-      .attr("rx", 4)
-      .attr("ry", 4)
-      .attr("x", -40)
-      .attr("y", 0)
-      .attr("width", 80)
-      .attr("height", 20)
-      .style("fill", "#2563eb")
-      .style("opacity", 0.8)
+      .attr("class", "transaction-node")
+      .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
       .style("cursor", "pointer");
 
-    // Add explore text
-    exploreGroups
+    // Transaction node circles
+    transactionNodes
+      .append("circle")
+      .attr("r", 15)
+      .attr("fill", (d) => {
+        return d.transaction?.direction === "outgoing" ? "#df1b41" : "#10b981";
+      })
+      .attr("stroke", "#1F2937")
+      .attr("stroke-width", 1.5);
+
+    // Transaction node hash label (shortened)
+    transactionNodes
       .append("text")
-      .text("Explore")
-      .attr("y", 14)
-      .style("text-anchor", "middle")
-      .style("fill", "#FFFFFF")
+      .attr("text-anchor", "middle")
+      .attr("dy", 25)
       .style("font-size", "10px")
-      .style("font-weight", "bold")
-      .style("cursor", "pointer")
-      .style("pointer-events", "none");
-
-    // Add event handlers after transitions complete
-    setTimeout(() => {
-      // Add event handlers to links
-      svg.selectAll(".link").on("mousedown", function (event, d) {
-        if (d.transaction) {
-          setSelectedTransaction(d.transaction);
-        }
+      .style("fill", "white") // Changed to white
+      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)") // Add text shadow for better visibility
+      .text((d) => {
+        const hash = d.transaction?.hash;
+        return hash
+          ? `${hash.substring(0, 4)}...${hash.substring(hash.length - 4)}`
+          : "";
       });
-      // .on("mouseover", function (event, d) {
-      //   d3.select(this)
-      //     .transition()
-      //     .duration(200)
-      //     .style("opacity", 1)
-      //     .style("stroke-width", (d) => {
-      //       const tx = d.transaction;
-      //       return tx ? Math.max(2, Math.min(7, (tx.value / 1e18) * 0.5)) : 3;
-      //     });
-      // });
-      // .on("mouseout", function (event, d) {
-      //   d3.select(this)
-      //     .transition()
-      //     .duration(200)
-      //     .style("opacity", 0.7)
-      //     .style("stroke-width", (d) => {
-      //       const tx = d.transaction;
-      //       return tx ? Math.max(1, Math.min(5, (tx.value / 1e18) * 0.5)) : 2;
-      //     });
-      // });
 
-      // Add event handlers to transaction nodes
-      svg
-        .selectAll(".transaction-node")
-        .on("mousedown", function (event, d) {
-          if (d.transaction && !event.target.closest(".explore-group")) {
-            setSelectedTransaction(d.transaction);
-          }
-        })
-        .on("mouseover", function (event, d) {
-          d3.select(this)
-            .select("circle")
-            .transition()
-            .duration(200)
-            // .attr("r", 20)
-            .style("opacity", 0.9);
-        })
-        .on("mouseout", function (event, d) {
-          d3.select(this)
-            .select("circle")
-            .transition()
-            .duration(200)
-            // .attr("r", 15)
-            .style("opacity", 1);
-        });
-
-      // Add event handlers to center node
-      svg
-        .selectAll(".center-node")
-        .on("mouseover", function () {
-          d3.select(this)
-            .select("circle")
-            .transition()
-            .duration(200)
-            .attr("r", 35)
-            .style("opacity", 0.9);
-        })
-        .on("mouseout", function () {
-          d3.select(this)
-            .select("circle")
-            .transition()
-            .duration(200)
-            .attr("r", 30)
-            .style("opacity", 1);
-        });
-
-      // Add event handlers to explore badges
-      svg.selectAll(".explore-group").on("click", function (event, d) {
-        event.stopPropagation(); // Prevent triggering the node click
-        const newCenterAddress = d.address;
-        onAddressChange(newCenterAddress);
-      });
-    }, 500);
-
-    // Add legend for transaction directions
-    const legend = svg
+    // Draw address nodes
+    const addressNodes = container
+      .selectAll(".address-node")
+      .data(nodes.filter((n) => !n.main && !n.isTransactionNode))
+      .enter()
       .append("g")
-      .attr("class", "legend")
-      .attr("transform", `translate(${-width / 2 + 20}, ${-height / 2 + 20})`);
+      .attr("class", "address-node")
+      .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
+      .style("cursor", "pointer");
 
-    // Add legend title
-    legend
-      .append("text")
-      .text("Transaction Types")
-      .attr("x", 0)
-      .attr("y", 0)
-      .style("fill", "#ffffff")
-      .style("font-size", "20px")
-      .style("font-weight", "bold");
-
-    // Outgoing indicator
-    legend
+    // Address node circles
+    addressNodes
       .append("circle")
-      .attr("cx", 10)
-      .attr("cy", 18)
-      .attr("r", 6)
-      .style("fill", "#ff0000");
+      .attr("r", 20)
+      .attr("fill", "#6366F1") // Indigo color for address nodes
+      .attr("stroke", "#4338CA")
+      .attr("stroke-width", 1.5);
 
-    legend
+    // Address text (shortened)
+    addressNodes
       .append("text")
-      .text("Selling")
-      .attr("x", 25)
-      .attr("y", 24)
-      .style("fill", "#ffffff")
-      .style("font-size", "15px");
+      .attr("text-anchor", "middle")
+      .attr("dy", 30)
+      .style("font-size", "10px")
+      .style("fill", "white") // Changed to white
+      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)") // Add text shadow for better visibility
+      .text((d) => {
+        return `${d.address.substring(0, 4)}...${d.address.substring(d.address.length - 4)}`;
+      });
 
-    // Incoming indicator
-    legend
-      .append("circle")
-      .attr("cx", 10)
-      .attr("cy", 39)
-      .attr("r", 6)
-      .style("fill", "#10b981");
+    // Add "Expand" button for nodes that can be expanded but haven't been yet
+    const expandableNodes = nodes.filter(
+      (n) => !n.main && !n.isTransactionNode && !expandedNodes[n.address],
+    );
 
-    legend
+    if (expandableNodes.length > 0) {
+      const expandGroups = container
+        .selectAll(".expandable-node")
+        .data(expandableNodes)
+        .enter()
+        .append("g")
+        .attr("class", "expandable-node")
+        .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
+        .style("cursor", "pointer");
+
+      // Add circle for expandable nodes
+      expandGroups
+        .append("circle")
+        .attr("r", 10)
+        .attr("cy", -15)
+        .style("fill", "#4B5563")
+        .style("cursor", "pointer");
+
+      // Add "+" symbol
+      expandGroups
+        .append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", -11) // Adjusted position for better centering
+        .style("fill", "white") // Changed to white
+        .style("font-size", "16px")
+        .style("cursor", "pointer")
+        .text("+");
+
+      // Add click handler for expansion
+      expandGroups.on("click", function (event, d) {
+        event.stopPropagation();
+        handleNodeExpansion(d.address);
+      });
+    }
+
+    // Add click handlers
+    addressNodes.on("click", function (event, d) {
+      if (!d.isExpanded) {
+        handleNodeExpansion(d.address);
+      }
+    });
+
+    transactionNodes.on("click", function (event, d) {
+      if (d.transaction) {
+        setSelectedTransaction(d.transaction);
+      }
+    });
+
+    // Click on center node to view details
+    centerNodeCircle.on("click", function (event) {
+      event.stopPropagation();
+      // Handle center node click if needed
+    });
+
+    // Add instructions for zoom/pan
+    svg
       .append("text")
-      .text("Buying")
-      .attr("x", 25)
-      .attr("y", 44)
-      .style("fill", "#ffffff")
-      .style("font-size", "15px");
+      .attr("x", 10)
+      .attr("y", 20)
+      .style("font-size", "12px")
+      .style("fill", "white")
+      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
+      .text("Scroll to zoom, drag to pan");
+  }, [
+    transactions,
+    centerNode,
+    address,
+    onAddressChange,
+    expandedNodes,
+    blockchainType,
+  ]);
 
-    // // Add info about clicking nodes
-    // legend
-    //   .append("text")
-    //   .text("Click 'Explore' to view transactions for that address")
-    //   .attr("x", 0)
-    //   .attr("y", 70)
-    //   .style("font-size", "10px")
-    //   .style("font-style", "italic");
-  }, [transactions, centerNode, address, onAddressChange]);
+  const handleNodeExpansion = async (nodeAddress: string) => {
+    // Skip if this node is already expanded or it's the center node
+    if (expandedNodes[nodeAddress] || nodeAddress === centerNode) return;
+
+    console.log(`Expanding node: ${nodeAddress}`);
+    setIsExpanding(true);
+
+    try {
+      const nodeTransactions = await fetchTransactionsForAddress(nodeAddress);
+      console.log(
+        `Fetched ${nodeTransactions.length} transactions for node ${nodeAddress}`,
+      );
+
+      setExpandedNodes((prev) => ({
+        ...prev,
+        [nodeAddress]: nodeTransactions,
+      }));
+    } catch (error) {
+      console.error("Error expanding node:", error);
+    } finally {
+      setIsExpanding(false);
+    }
+  };
+
+  const fetchTransactionsForAddress = async (
+    address: string,
+  ): Promise<Transaction[]> => {
+    try {
+      const transactions = await syncInfuraData(address);
+      return transactions;
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      return [];
+    }
+  };
 
   return (
     <>
-      <div className="w-full rounded-lg border border-r bg-white p-4 dark:bg-gray-800">
+      <div className="relative w-full rounded-lg border border-r bg-gray-900 p-4">
         {transactions.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
-            <p className="text-gray-500">No transaction data to visualize</p>
+            <p className="text-gray-400">No transaction data to visualize</p>
           </div>
         ) : (
           <>
+            <div className="mb-2 flex justify-end">
+              {Object.keys(expandedNodes).length > 0 && (
+                <button
+                  onClick={() => setExpandedNodes({})}
+                  className="rounded-md bg-gray-700 px-3 py-1 text-sm text-white hover:bg-gray-600"
+                >
+                  Reset View
+                </button>
+              )}
+            </div>
             <svg
               ref={svgRef}
               className="w-full"
-              style={{ height: "500px" }}
+              style={{
+                height: "500px",
+                background: "linear-gradient(to bottom, #1F2937, #111827)",
+              }}
             ></svg>
 
-            {/* {selectedTransaction && (
-              <div className="mt-4 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20">
-                <h4 className="mb-2 font-medium">Transaction Details</h4>
-                <div className="grid grid-cols-1 gap-2 break-words text-sm">
-                  <div>
-                    <span className="font-medium">Hash:</span>{" "}
-                    {selectedTransaction.hash}
-                  </div>
-                  <div>
-                    <span className="font-medium">Value:</span>{" "}
-                    {selectedTransaction.value}
-                  </div>
-                  <div>
-                    <span className="font-medium">Input:</span>{" "}
-                    {selectedTransaction.input}
-                  </div>
-                  <div>
-                    <span className="font-medium">Gas:</span>{" "}
-                    {selectedTransaction.gas}
-                  </div>
-                  <div>
-                    <span className="font-medium">Gas Used:</span>{" "}
-                    {selectedTransaction.gas_used}
-                  </div>
-                  <div>
-                    <span className="font-medium">Gas Price:</span>{" "}
-                    {selectedTransaction.gas_price}
-                  </div>
-                  <div>
-                    <span className="font-medium">Transaction Fee:</span>{" "}
-                    {selectedTransaction.transaction_fee}
-                  </div>
-                  <div>
-                    <span className="font-medium">Block Number:</span>{" "}
-                    {selectedTransaction.block_number}
-                  </div>
-                  <div>
-                    <span className="font-medium">Transaction Index:</span>{" "}
-                    {selectedTransaction.transaction_index}
-                  </div>
-                  <div>
-                    <span className="font-medium">Block Hash:</span>{" "}
-                    {selectedTransaction.block_hash}
-                  </div>
-                  <div>
-                    <span className="font-medium">Action:</span>{" "}
-                    {selectedTransaction.direction === "outgoing"
-                      ? "Selling"
-                      : "Buying"}
-                  </div>
-                  <div>
-                    <span className="font-medium">
-                      {selectedTransaction.direction === "outgoing"
-                        ? "Receiver:"
-                        : "Sender:"}
-                    </span>{" "}
-                    {selectedTransaction.direction === "outgoing"
-                      ? selectedTransaction.receiver
-                      : selectedTransaction.sender}
-                  </div>
-                  <div>
-                    <span className="font-medium">Time:</span>{" "}
-                    {new Date(
-                      selectedTransaction.block_timestamp * 1000,
-                    ).toLocaleString()}
-                  </div>
-                </div>
-                <div className="mt-2 flex justify-between">
-                  <button
-                    className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    onClick={() => setSelectedTransaction(null)}
-                  >
-                    Close
-                  </button>
-                  <button
-                    className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
-                    onClick={() => {
-                      const addressToExplore =
-                        selectedTransaction.direction === "outgoing"
-                          ? selectedTransaction.receiver
-                          : selectedTransaction.sender;
-                      if (addressToExplore) {
-                        onAddressChange(addressToExplore);
-                      }
-                    }}
-                  >
-                    Explore{" "}
-                    {selectedTransaction.direction === "outgoing"
-                      ? "Receiver"
-                      : "Sender"}
-                  </button>
-                </div>
-              </div>
-            )} */}
             {selectedTransaction && (
               <TransactionDetail
                 transaction={selectedTransaction}
@@ -585,6 +570,33 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
               />
             )}
           </>
+        )}
+        {isExpanding && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-50">
+            <div className="rounded-md bg-gray-800 p-4 text-white shadow-lg">
+              <svg
+                className="mr-2 inline h-6 w-6 animate-spin text-blue-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <span>Expanding node...</span>
+            </div>
+          </div>
         )}
       </div>
     </>

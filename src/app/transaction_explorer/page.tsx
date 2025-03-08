@@ -7,6 +7,10 @@ import TransactionList from "@/src/components/transactionexplorer/transactionlis
 import Pagination from "@/src/components/transactionexplorer/pagnition";
 import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork";
 import { Transaction } from "@/src/components/transactionexplorer/type";
+import {
+  syncInfuraData,
+  getInfuraPageFromDb,
+} from "@/src/pages/api/infura-sync";
 
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
@@ -40,7 +44,7 @@ const TransactionExplorer: React.FC = () => {
         extractedTransactions = data.length > 0 ? data[0].transactions : [];
       } else {
         // ETH now always uses Infura
-        extractedTransactions = await fetchInfuraTransactions(addressToSearch);
+        extractedTransactions = await syncInfuraData(addressToSearch);
       }
 
       if (extractedTransactions.length > 0) {
@@ -83,10 +87,7 @@ const TransactionExplorer: React.FC = () => {
           newData.length > 0 ? newData[0].transactions : [];
       } else {
         // ETH now always uses Infura for pagination
-        extractedTransactions = await fetchInfuraTransactions(
-          address,
-          nextPage,
-        );
+        extractedTransactions = await getInfuraPageFromDb(address, nextPage);
       }
 
       if (extractedTransactions.length > 0) {

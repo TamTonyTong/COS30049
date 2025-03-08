@@ -3,7 +3,7 @@ import axios from "axios";
 import { Transaction } from "@/src/components/transactionexplorer/type";
 
 // Use server-side environment variable (not NEXT_PUBLIC_)
-const INFURA_API_KEY = "5d11d9fa5c734b8aba201738b508b225";
+const INFURA_API_KEY = process.env.NEXT_PUBLIC_INFURA_API_KEY;
 const INFURA_ENDPOINT = `https://mainnet.infura.io/v3/${INFURA_API_KEY}`;
 console.log("Using Infura endpoint:", INFURA_ENDPOINT);
 

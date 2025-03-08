@@ -36,8 +36,8 @@ interface NetworkNode {
   parentNode?: string;
   isExpanded?: boolean;
   isExpandable?: boolean;
-  sourceNode?: string; // Added for proper arrow direction
-  targetNode?: string; // Added for proper arrow direction
+  sourceNode?: string;
+  targetNode?: string;
 }
 
 interface TransactionNetworkProps {
@@ -121,12 +121,32 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
 
     // Add addresses from expanded transactions
     Object.entries(expandedNodes).forEach(([expandedAddress, expandedTxs]) => {
+      // First ensure the expanded node address is in our collection
+      if (!uniqueNodes.has(expandedAddress) && expandedAddress !== centerNode) {
+        uniqueNodes.set(expandedAddress, {
+          id: expandedAddress,
+          address: expandedAddress,
+          main: false,
+          isTransactionNode: false,
+          isExpandable: true,
+          parentNode: centerNode, // Connected to center as a fallback
+          isExpanded: true,
+        });
+      }
+
       expandedTxs.forEach((tx) => {
         const counterpartyAddress =
           tx.direction === "outgoing" ? tx.receiver! : tx.sender!;
 
-        // Only add new nodes, but don't skip if they are connected to main node
-        // as we need them for expanded transactions too
+        // Skip adding a node if it's already the center or expanded node
+        if (
+          counterpartyAddress === centerNode ||
+          counterpartyAddress === expandedAddress
+        ) {
+          return;
+        }
+
+        // Only add new nodes
         if (!uniqueNodes.has(counterpartyAddress)) {
           uniqueNodes.set(counterpartyAddress, {
             id: counterpartyAddress,
@@ -169,19 +189,31 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         const counterpartyAddress =
           tx.direction === "outgoing" ? tx.receiver! : tx.sender!;
 
-        uniqueNodes.set(nodeId, {
-          id: nodeId,
-          address: counterpartyAddress,
-          main: false,
-          isTransactionNode: true,
-          transaction: tx,
-          // Set source and target nodes for proper arrow drawing
-          sourceNode:
-            tx.direction === "outgoing" ? expandedAddress : counterpartyAddress,
-          targetNode:
-            tx.direction === "outgoing" ? counterpartyAddress : expandedAddress,
-          parentNode: expandedAddress,
-        });
+        // Skip transactions to/from already visualized nodes to avoid clutter
+        // But keep connections to center node or other expanded nodes
+        if (
+          counterpartyAddress !== centerNode &&
+          !expandedNodes[counterpartyAddress] &&
+          counterpartyAddress !== expandedAddress
+        ) {
+          uniqueNodes.set(nodeId, {
+            id: nodeId,
+            address: counterpartyAddress,
+            main: false,
+            isTransactionNode: true,
+            transaction: tx,
+            // Set source and target nodes for proper arrow drawing
+            sourceNode:
+              tx.direction === "outgoing"
+                ? expandedAddress
+                : counterpartyAddress,
+            targetNode:
+              tx.direction === "outgoing"
+                ? counterpartyAddress
+                : expandedAddress,
+            parentNode: expandedAddress,
+          });
+        }
       });
     });
 
@@ -214,7 +246,8 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     });
 
     // Position address nodes in circles around their parent nodes
-    const baseRadius = Math.min(width, height) / 4;
+    // Increase base radius for better node spacing
+    const baseRadius = Math.min(width, height) / 2.2;
 
     Object.entries(addressNodesByParent).forEach(
       ([parentAddress, childNodes]) => {
@@ -223,12 +256,13 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         const parentX = parentNode?.x || 0;
         const parentY = parentNode?.y || 0;
 
-        // If parent is center, use larger radius
+        // If parent is center, use larger radius, if parent is another expanded node, use medium radius
+        // This creates more hierarchical spacing
         const radius =
-          parentAddress === centerNode ? baseRadius : baseRadius / 2;
+          parentAddress === centerNode ? baseRadius : baseRadius * 0.65;
 
         // Position child nodes in a circle around parent
-        const angleStep = (2 * Math.PI) / childNodes.length;
+        const angleStep = (2 * Math.PI) / Math.max(childNodes.length, 1);
         childNodes.forEach((node, index) => {
           const angle = index * angleStep;
           node.x = parentX + radius * Math.cos(angle);
@@ -237,7 +271,24 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       },
     );
 
-    // Now position transaction nodes along the lines between source and target
+    // Group transactions by their source-target pair to identify duplicates
+    const transactionsByPair: { [key: string]: NetworkNode[] } = {};
+
+    nodes.forEach((node) => {
+      if (node.isTransactionNode) {
+        const sourceId = node.sourceNode || "";
+        const targetId = node.targetNode || "";
+        const pairKey = `${sourceId}-${targetId}`;
+
+        if (!transactionsByPair[pairKey]) {
+          transactionsByPair[pairKey] = [];
+        }
+
+        transactionsByPair[pairKey].push(node);
+      }
+    });
+
+    // Now position transaction nodes with better offsets when multiple transactions exist between same nodes
     nodes.forEach((node) => {
       if (node.isTransactionNode) {
         // Find the source and target address nodes
@@ -254,11 +305,51 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
           targetNode.x !== undefined &&
           targetNode.y !== undefined
         ) {
-          // Position transaction node along the line between source and target
-          // at a point 1/3 of the way from source to target
-          const ratio = 0.35;
-          node.x = sourceNode.x + (targetNode.x - sourceNode.x) * ratio;
-          node.y = sourceNode.y + (targetNode.y - sourceNode.y) * ratio;
+          const pairKey = `${node.sourceNode}-${node.targetNode}`;
+          const pairTransactions = transactionsByPair[pairKey];
+          const transactionCount = pairTransactions
+            ? pairTransactions.length
+            : 1;
+
+          // Get the index of the current transaction in the group
+          const index = pairTransactions
+            ? pairTransactions.findIndex((t) => t.id === node.id)
+            : 0;
+
+          // Calculate the distance between source and target
+          const dx = targetNode.x - sourceNode.x;
+          const dy = targetNode.y - sourceNode.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          // Calculate the base position (not fixed ratio, but proportional to distance)
+          // Place transaction nodes closer to their source for clearer visualization
+          const ratio = 0.25 + (0.2 * distance) / baseRadius; // Adaptive ratio based on distance
+          const baseX = sourceNode.x + (targetNode.x - sourceNode.x) * ratio;
+          const baseY = sourceNode.y + (targetNode.y - sourceNode.y) * ratio;
+
+          if (transactionCount > 1) {
+            // Calculate perpendicular offset direction
+            const length = Math.sqrt(dx * dx + dy * dy);
+
+            // Normalize and create perpendicular vector
+            const perpX = -dy / length;
+            const perpY = dx / length;
+
+            // Calculate offset based on index
+            // Use a larger max offset for better separation
+            const maxOffset = Math.min(25, distance * 0.15); // Adaptive offset
+            const offset =
+              (index - (transactionCount - 1) / 2) *
+              (maxOffset / Math.max(1, transactionCount - 1));
+
+            // Apply the offset perpendicular to the line
+            node.x = baseX + perpX * offset;
+            node.y = baseY + perpY * offset;
+          } else {
+            // If there's only one transaction, just use the base position
+            node.x = baseX;
+            node.y = baseY;
+          }
         } else if (
           sourceNode &&
           sourceNode.x !== undefined &&
@@ -266,8 +357,8 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         ) {
           // Fallback: position near source node
           const angle = Math.random() * 2 * Math.PI;
-          node.x = sourceNode.x + 40 * Math.cos(angle);
-          node.y = sourceNode.y + 40 * Math.sin(angle);
+          node.x = sourceNode.x + 50 * Math.cos(angle);
+          node.y = sourceNode.y + 50 * Math.sin(angle);
         }
       }
     });
@@ -313,7 +404,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .append("marker")
       .attr("id", "arrow")
       .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 20) // Position away from end of line
+      .attr("refX", 8) // Better positioning at end of line
       .attr("refY", 0)
       .attr("markerWidth", 6)
       .attr("markerHeight", 6)
@@ -322,7 +413,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .attr("d", "M0,-5L10,0L0,5")
       .attr("fill", "#a3a3a3");
 
-    // Draw connections between addresses (direct connections without transaction nodes)
+    // Draw faint background connections between directly connected addresses
     const addressConnections = container
       .selectAll(".address-connection")
       .data(nodes.filter((n) => n.isTransactionNode))
@@ -346,17 +437,63 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         return targetNode?.y || 0;
       })
       .style("stroke", "#a3a3a3") // Neutral color
-      .style("stroke-width", 1.5)
+      .style("stroke-width", 1)
       .style("stroke-dasharray", "3,3") // Dashed line
-      .style("opacity", 0.5);
+      .style("opacity", 0.25); // Very faint
 
-    // Draw transaction links with arrows
-    const links = container
-      .selectAll(".link")
+    // Create link groups for better click interaction
+    const linkGroups = container
+      .selectAll(".link-group")
       .data(nodes.filter((n) => n.isTransactionNode))
       .enter()
+      .append("g")
+      .attr("class", "link-group")
+      .style("cursor", "pointer")
+      .on("click", function (event, d) {
+        event.stopPropagation();
+        if (d.transaction) {
+          setSelectedTransaction(d.transaction);
+        }
+      });
+
+    // Add invisible wider line for better clicking (source to transaction)
+    linkGroups
       .append("line")
-      .attr("class", "link")
+      .attr("class", "click-area-source")
+      .attr("x1", (d) => {
+        const sourceNode = uniqueNodes.get(d.sourceNode || "");
+        return sourceNode?.x || 0;
+      })
+      .attr("y1", (d) => {
+        const sourceNode = uniqueNodes.get(d.sourceNode || "");
+        return sourceNode?.y || 0;
+      })
+      .attr("x2", (d) => d.x || 0)
+      .attr("y2", (d) => d.y || 0)
+      .style("stroke", "transparent")
+      .style("stroke-width", 12); // Wider invisible line for easier clicking
+
+    // Add invisible wider line for better clicking (transaction to target)
+    linkGroups
+      .append("line")
+      .attr("class", "click-area-target")
+      .attr("x1", (d) => d.x || 0)
+      .attr("y1", (d) => d.y || 0)
+      .attr("x2", (d) => {
+        const targetNode = uniqueNodes.get(d.targetNode || "");
+        return targetNode?.x || 0;
+      })
+      .attr("y2", (d) => {
+        const targetNode = uniqueNodes.get(d.targetNode || "");
+        return targetNode?.y || 0;
+      })
+      .style("stroke", "transparent")
+      .style("stroke-width", 12); // Wider invisible line for easier clicking
+
+    // Draw source-to-transaction links
+    linkGroups
+      .append("line")
+      .attr("class", "link visible-link-source")
       .attr("data-hash", (d) => d.transaction?.hash)
       .attr("x1", (d) => {
         const sourceNode = uniqueNodes.get(d.sourceNode || "");
@@ -371,12 +508,81 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .style("stroke", "#64748b") // Neutral slate color
       .style("stroke-width", 2)
       .style("opacity", 0)
-      .attr("marker-end", "url(#arrow)") // Add arrow marker
+      .on("mouseover", function () {
+        d3.select(this.parentNode)
+          .selectAll(".visible-link-source, .visible-link-target")
+          .style("stroke-width", 3)
+          .style("stroke", "#94a3b8");
+      })
+      .on("mouseout", function () {
+        d3.select(this.parentNode)
+          .selectAll(".visible-link-source, .visible-link-target")
+          .style("stroke-width", 2)
+          .style("stroke", "#64748b");
+      })
       .transition()
       .duration(500)
-      .style("opacity", 0.7);
+      .style("opacity", 0.85);
 
-    // Value labels on transaction nodes instead of links
+    // Draw transaction-to-target links with arrows
+    linkGroups
+      .append("line")
+      .attr("class", "link visible-link-target")
+      .attr("x1", (d) => d.x || 0)
+      .attr("y1", (d) => d.y || 0)
+      .attr("x2", (d) => {
+        const targetNode = uniqueNodes.get(d.targetNode || "");
+        return targetNode?.x || 0;
+      })
+      .attr("y2", (d) => {
+        const targetNode = uniqueNodes.get(d.targetNode || "");
+        return targetNode?.y || 0;
+      })
+      .style("stroke", "#64748b")
+      .style("stroke-width", 2)
+      .style("opacity", 0)
+      .attr("marker-end", "url(#arrow)")
+      .on("mouseover", function () {
+        d3.select(this.parentNode)
+          .selectAll(".visible-link-source, .visible-link-target")
+          .style("stroke-width", 3)
+          .style("stroke", "#94a3b8");
+      })
+      .on("mouseout", function () {
+        d3.select(this.parentNode)
+          .selectAll(".visible-link-source, .visible-link-target")
+          .style("stroke-width", 2)
+          .style("stroke", "#64748b");
+      })
+      .transition()
+      .duration(500)
+      .style("opacity", 0.85);
+
+    // Draw transaction nodes (these will be the actual transactions)
+    const transactionNodes = container
+      .selectAll(".transaction-node")
+      .data(nodes.filter((n) => n.isTransactionNode))
+      .enter()
+      .append("g")
+      .attr("class", "transaction-node")
+      .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
+      .style("cursor", "pointer")
+      .on("click", function (event, d) {
+        event.stopPropagation();
+        if (d.transaction) {
+          setSelectedTransaction(d.transaction);
+        }
+      });
+
+    // Transaction node circles
+    transactionNodes
+      .append("circle")
+      .attr("r", 6) // Smaller for less clutter
+      .attr("fill", "#475569")
+      .attr("stroke", "#334155")
+      .attr("stroke-width", 1);
+
+    // Value labels on transaction nodes
     container
       .selectAll(".value-label")
       .data(nodes.filter((n) => n.isTransactionNode))
@@ -384,12 +590,11 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .append("text")
       .attr("class", "value-label")
       .attr("x", (d) => d.x || 0)
-      .attr("y", (d) => (d.y || 0) - 15)
+      .attr("y", (d) => (d.y || 0) - 9) // Position slightly higher
       .attr("text-anchor", "middle")
-      .attr("dy", ".35em")
-      .style("font-size", "10px")
+      .style("font-size", "7px") // Smaller text
       .style("fill", "white")
-      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
+      .style("text-shadow", "0px 0px 3px rgba(0,0,0,0.9)")
       .text((d) => {
         const val = Number(d.transaction?.value) / 1e18;
         return val.toFixed(4) + " " + blockchainType;
@@ -402,7 +607,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Draw center node
     const centerNodeCircle = container
       .append("circle")
-      .attr("r", 25)
+      .attr("r", 20)
       .attr("fill", "#4F46E5")
       .attr("stroke", "#312E81")
       .attr("stroke-width", 2);
@@ -411,8 +616,8 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     container
       .append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", -35)
-      .style("font-size", "14px")
+      .attr("dy", -30)
+      .style("font-size", "11px")
       .style("font-weight", "bold")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
@@ -422,54 +627,12 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     container
       .append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", 45)
-      .style("font-size", "12px")
+      .attr("dy", 35)
+      .style("font-size", "9px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text(() => {
         return `${centerNode.substring(0, 6)}...${centerNode.substring(centerNode.length - 4)}`;
-      });
-
-    // Draw transaction nodes
-    const transactionNodes = container
-      .selectAll(".transaction-node")
-      .data(nodes.filter((n) => n.isTransactionNode))
-      .enter()
-      .append("g")
-      .attr("class", "transaction-node")
-      .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
-      .style("cursor", "pointer");
-
-    // // Transaction node circles
-    // transactionNodes
-    //   .append("circle")
-    //   .attr("r", 12)
-    //   .attr("fill", "#475569") // Neutral slate color for all transactions
-    //   .attr("stroke", "#334155")
-    //   .attr("stroke-width", 1.5);
-
-    // // Add small direction indicator inside transaction nodes
-    // transactionNodes
-    //   .append("text")
-    //   .attr("text-anchor", "middle")
-    //   .attr("dy", 4) // Center vertically
-    //   .style("font-size", "14px")
-    //   .style("fill", "white")
-    //   .text((d) => (d.transaction?.direction === "outgoing" ? "→" : "←"));
-
-    // Transaction node hash label (shortened)
-    transactionNodes
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dy", 25)
-      .style("font-size", "10px")
-      .style("fill", "white")
-      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
-      .text((d) => {
-        const hash = d.transaction?.hash;
-        return hash
-          ? `${hash.substring(0, 4)}...${hash.substring(hash.length - 4)}`
-          : "";
       });
 
     // Draw address nodes
@@ -480,22 +643,28 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .append("g")
       .attr("class", "address-node")
       .attr("transform", (d) => `translate(${d.x || 0},${d.y || 0})`)
-      .style("cursor", "pointer");
+      .style("cursor", "pointer")
+      .on("click", function (event, d) {
+        event.stopPropagation();
+        if (!d.isExpanded) {
+          handleNodeExpansion(d.address);
+        }
+      });
 
-    // Address node circles
+    // Address node circles with different colors for expanded vs non-expanded
     addressNodes
       .append("circle")
-      .attr("r", 20)
-      .attr("fill", "#6366F1") // Indigo color for address nodes
-      .attr("stroke", "#4338CA")
+      .attr("r", 14) // Smaller for less clutter
+      .attr("fill", (d) => (d.isExpanded ? "#8B5CF6" : "#6366F1")) // Different color for expanded nodes
+      .attr("stroke", (d) => (d.isExpanded ? "#7C3AED" : "#4338CA"))
       .attr("stroke-width", 1.5);
 
     // Address text (shortened)
     addressNodes
       .append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", 5) // Center text vertically
-      .style("font-size", "10px")
+      .attr("dy", 3) // Center text vertically
+      .style("font-size", "7px") // Smaller text
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text((d) => {
@@ -520,8 +689,8 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       // Add circle for expandable nodes
       expandGroups
         .append("circle")
-        .attr("r", 10)
-        .attr("cy", -15)
+        .attr("r", 7)
+        .attr("cy", -16)
         .style("fill", "#4B5563")
         .style("cursor", "pointer");
 
@@ -529,9 +698,9 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       expandGroups
         .append("text")
         .attr("text-anchor", "middle")
-        .attr("dy", -11) // Adjusted position for better centering
-        .style("fill", "white") // Changed to white
-        .style("font-size", "16px")
+        .attr("y", -13) // Better positioned
+        .style("fill", "white")
+        .style("font-size", "11px")
         .style("cursor", "pointer")
         .text("+");
 
@@ -542,31 +711,12 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       });
     }
 
-    // Add click handlers
-    addressNodes.on("click", function (event, d) {
-      if (!d.isExpanded) {
-        handleNodeExpansion(d.address);
-      }
-    });
-
-    transactionNodes.on("click", function (event, d) {
-      if (d.transaction) {
-        setSelectedTransaction(d.transaction);
-      }
-    });
-
-    // Click on center node to view details
-    centerNodeCircle.on("click", function (event) {
-      event.stopPropagation();
-      // Handle center node click if needed
-    });
-
     // Add instructions for zoom/pan
     svg
       .append("text")
       .attr("x", 10)
       .attr("y", 20)
-      .style("font-size", "12px")
+      .style("font-size", "9px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Scroll to zoom, drag to pan");
@@ -574,14 +724,14 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Add legend
     const legend = svg
       .append("g")
-      .attr("transform", `translate(${width - 140}, 30)`);
+      .attr("transform", `translate(${width - 100}, 20)`);
 
     // Legend title
     legend
       .append("text")
       .attr("x", 0)
       .attr("y", 0)
-      .style("font-size", "12px")
+      .style("font-size", "9px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Legend");
@@ -589,16 +739,16 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Transaction node legend
     legend
       .append("circle")
-      .attr("cx", 10)
+      .attr("cx", 8)
       .attr("cy", 20)
-      .attr("r", 6)
+      .attr("r", 4)
       .style("fill", "#475569");
 
     legend
       .append("text")
-      .attr("x", 25)
-      .attr("y", 24)
-      .style("font-size", "10px")
+      .attr("x", 18)
+      .attr("y", 23)
+      .style("font-size", "7px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Transaction");
@@ -606,35 +756,52 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Address node legend
     legend
       .append("circle")
-      .attr("cx", 10)
-      .attr("cy", 40)
-      .attr("r", 6)
+      .attr("cx", 8)
+      .attr("cy", 35)
+      .attr("r", 4)
       .style("fill", "#6366F1");
 
     legend
       .append("text")
-      .attr("x", 25)
-      .attr("y", 44)
-      .style("font-size", "10px")
+      .attr("x", 18)
+      .attr("y", 38)
+      .style("font-size", "7px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Address");
+
+    // Expanded node legend
+    legend
+      .append("circle")
+      .attr("cx", 8)
+      .attr("cy", 50)
+      .attr("r", 4)
+      .style("fill", "#8B5CF6");
+
+    legend
+      .append("text")
+      .attr("x", 18)
+      .attr("y", 53)
+      .style("font-size", "7px")
+      .style("fill", "white")
+      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
+      .text("Expanded Address");
 
     // Arrow direction legend
     legend
       .append("line")
       .attr("x1", 0)
-      .attr("y1", 60)
-      .attr("x2", 20)
-      .attr("y2", 60)
+      .attr("y1", 65)
+      .attr("x2", 15)
+      .attr("y2", 65)
       .style("stroke", "#a3a3a3")
       .attr("marker-end", "url(#arrow)");
 
     legend
       .append("text")
-      .attr("x", 25)
-      .attr("y", 64)
-      .style("font-size", "10px")
+      .attr("x", 18)
+      .attr("y", 68)
+      .style("font-size", "7px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Flow Direction");
@@ -655,15 +822,24 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     setIsExpanding(true);
 
     try {
-      const nodeTransactions = await fetchTransactionsForAddress(nodeAddress);
+      // Pass true as second parameter to force fresh data
+      const nodeTransactions = await fetchTransactionsForAddress(
+        nodeAddress,
+        true,
+      );
       console.log(
         `Fetched ${nodeTransactions.length} transactions for node ${nodeAddress}`,
       );
 
-      setExpandedNodes((prev) => ({
-        ...prev,
-        [nodeAddress]: nodeTransactions,
-      }));
+      if (nodeTransactions.length === 0) {
+        console.log("No transactions found for address:", nodeAddress);
+        // Show notification or feedback here if needed
+      } else {
+        setExpandedNodes((prev) => ({
+          ...prev,
+          [nodeAddress]: nodeTransactions,
+        }));
+      }
     } catch (error) {
       console.error("Error expanding node:", error);
     } finally {
@@ -673,9 +849,14 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
 
   const fetchTransactionsForAddress = async (
     address: string,
+    forceFresh = false,
   ): Promise<Transaction[]> => {
     try {
-      const transactions = await syncInfuraData(address);
+      console.log(
+        `Fetching transactions for ${address}, forceFresh: ${forceFresh}`,
+      );
+      // Pass the forceFresh parameter to syncInfuraData
+      const transactions = await syncInfuraData(address, forceFresh);
       return transactions;
     } catch (error) {
       console.error("Error fetching transactions:", error);

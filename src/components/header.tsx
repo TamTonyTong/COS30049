@@ -90,6 +90,11 @@ export default function Header() {
                             Transactions Graph
                           </Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Link href="/transaction_explorer" className="w-full">
+                            Transactions Graph Real
+                          </Link>
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </li>

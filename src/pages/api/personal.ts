@@ -5,8 +5,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log('API route invoked');
 
   try {
-    // Hardcoded userid for testing/development
-    const userId = '01416ac6-ff76-4f9d-84c1-4de4f90b0cb6'; // Replace with the actual userid
+    // Extract userid from the request headers (passed from the frontend)
+    const userId = req.headers['user-id'];
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
 
     // Handle GET request (fetch data)
     if (req.method === 'GET') {
@@ -14,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data: userData, error: userError } = await supabase
         .from('User')
         .select('userid, publicaddress, balance')
-        .eq('userid', userId) // Filter by the hardcoded userid
+        .eq('userid', userId) // Filter by the logged-in user's ID
         .single();
 
       if (userError) throw userError;
@@ -85,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data: userData, error: userError } = await supabase
         .from('User')
         .select('userid, balance')
-        .eq('userid', userId) // Filter by the hardcoded userid
+        .eq('userid', userId) // Filter by the logged-in user's ID
         .single();
 
       if (userError) throw userError;

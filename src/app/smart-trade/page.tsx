@@ -5,8 +5,8 @@ import { ethers } from "ethers";
 import SimTokenABI from "../../../contracts/SimToken.json";
 import TradingContractABI from "../../../contracts/TradingContract.json";
 
-const SIMTOKEN_ADDRESS = "0xF66814833053cCd821CDDD9eE9DCcA9beB08247b";
-const TRADING_CONTRACT_ADDRESS = "0xF2f084A2f4fB8D836d47b176726e6aD01a2B7143";
+const SIMTOKEN_ADDRESS = "0x419FFc8a54A09F0a52E0972DA27f62dC3FA7afC4";
+const TRADING_CONTRACT_ADDRESS = "0x2B3b831D4Eb1AdD0b6F5ddB8dbebc0F1E365C7Fe";
 
 export default function SmartTrade() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);

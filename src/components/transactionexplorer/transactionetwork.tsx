@@ -184,6 +184,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
 
     // Add transactions for expanded nodes
     Object.entries(expandedNodes).forEach(([expandedAddress, expandedTxs]) => {
+      if (!expandedTxs || expandedTxs.length === 0) return;
       expandedTxs.forEach((tx) => {
         const nodeId = tx.hash;
         const counterpartyAddress =
@@ -191,27 +192,60 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
 
         // Skip transactions to/from already visualized nodes to avoid clutter
         // But keep connections to center node or other expanded nodes
+        // if (
+        //   counterpartyAddress !== centerNode &&
+        //   !expandedNodes[counterpartyAddress] &&
+        //   counterpartyAddress !== expandedAddress
+        // ) {
+        //   uniqueNodes.set(nodeId, {
+        //     id: nodeId,
+        //     address: counterpartyAddress,
+        //     main: false,
+        //     isTransactionNode: true,
+        //     transaction: tx,
+        //     // Set source and target nodes for proper arrow drawing
+        //     sourceNode:
+        //       tx.direction === "outgoing"
+        //         ? expandedAddress
+        //         : counterpartyAddress,
+        //     targetNode:
+        //       tx.direction === "outgoing"
+        //         ? counterpartyAddress
+        //         : expandedAddress,
+        //     parentNode: expandedAddress,
+        //   });
+        // }
+
+        // Add transaction node with correct connections
+        // Don't skip any - we want to show ALL transactions from expanded nodes
+        uniqueNodes.set(nodeId, {
+          id: nodeId,
+          address: counterpartyAddress,
+          main: false,
+          isTransactionNode: true,
+          transaction: tx,
+          // Set source and target nodes for proper arrow drawing
+          sourceNode:
+            tx.direction === "outgoing" ? expandedAddress : counterpartyAddress,
+          targetNode:
+            tx.direction === "outgoing" ? counterpartyAddress : expandedAddress,
+          parentNode: expandedAddress,
+        });
+
+        // Make sure the counterparty address is also added if it's not yet in our nodes
         if (
-          counterpartyAddress !== centerNode &&
-          !expandedNodes[counterpartyAddress] &&
-          counterpartyAddress !== expandedAddress
+          !uniqueNodes.has(counterpartyAddress) &&
+          counterpartyAddress !== expandedAddress &&
+          counterpartyAddress !== centerNode
         ) {
-          uniqueNodes.set(nodeId, {
-            id: nodeId,
+          uniqueNodes.set(counterpartyAddress, {
+            id: counterpartyAddress,
             address: counterpartyAddress,
             main: false,
-            isTransactionNode: true,
-            transaction: tx,
-            // Set source and target nodes for proper arrow drawing
-            sourceNode:
-              tx.direction === "outgoing"
-                ? expandedAddress
-                : counterpartyAddress,
-            targetNode:
-              tx.direction === "outgoing"
-                ? counterpartyAddress
-                : expandedAddress,
+            isTransactionNode: false,
+            isExpandable: true,
             parentNode: expandedAddress,
+            isExpanded: expandedNodes[counterpartyAddress] !== undefined,
           });
         }
       });
@@ -834,14 +868,37 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       if (nodeTransactions.length === 0) {
         console.log("No transactions found for address:", nodeAddress);
         // Show notification or feedback here if needed
-      } else {
+
         setExpandedNodes((prev) => ({
           ...prev,
-          [nodeAddress]: nodeTransactions,
+          [nodeAddress]: [], // Empty array but still marked as expanded
         }));
+      } else {
+        // Add transactions to expanded nodes
+        setExpandedNodes((prev) => {
+          // Create a copy of the existing expanded nodes
+          const newExpandedNodes = { ...prev };
+
+          // Add the new transactions
+          newExpandedNodes[nodeAddress] = nodeTransactions;
+
+          console.log(
+            `Added ${nodeTransactions.length} transactions for ${nodeAddress}`,
+          );
+          console.log(
+            `Total expanded nodes: ${Object.keys(newExpandedNodes).length}`,
+          );
+
+          return newExpandedNodes;
+        });
       }
     } catch (error) {
       console.error("Error expanding node:", error);
+      // Still mark as expanded to prevent repeated attempts
+      setExpandedNodes((prev) => ({
+        ...prev,
+        [nodeAddress]: [], // Empty array but still marked as expanded
+      }));
     } finally {
       setIsExpanding(false);
     }
@@ -855,8 +912,22 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       console.log(
         `Fetching transactions for ${address}, forceFresh: ${forceFresh}`,
       );
-      // Pass the forceFresh parameter to syncInfuraData
-      const transactions = await syncInfuraData(address, forceFresh);
+      // Add proper error handling and timeout
+      const fetchPromise = syncInfuraData(address, forceFresh);
+
+      // Add a timeout to prevent hanging
+      // const timeoutPromise = new Promise<Transaction[]>((_, reject) => {
+      //   setTimeout(
+      //     () => reject(new Error("Fetch transactions timeout")),
+      //     15000,
+      //   );
+      // });
+      // Race between fetch and timeout
+      const transactions = await Promise.race([fetchPromise]);
+
+      console.log(
+        `Received ${transactions.length} transactions from API for ${address}`,
+      );
       return transactions;
     } catch (error) {
       console.error("Error fetching transactions:", error);

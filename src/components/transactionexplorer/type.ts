@@ -1,4 +1,6 @@
 export interface Transaction {
+  from_address(from_address: any): string;
+  direction: string;
   contract_address: any;
   function_name: any;
   nonce: string;

@@ -6,6 +6,8 @@ interface SearchBarProps {
   handleSearch: () => void;
   loading: boolean;
   error: string | null;
+  isTransactionHash?: boolean;
+  setIsTransactionHash?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -14,6 +16,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   handleSearch,
   loading,
   error,
+  isTransactionHash = false,
+  setIsTransactionHash = () => {},
 }) => {
   return (
     <div className="mb-4">
@@ -24,18 +28,41 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Enter Address ID"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
+          placeholder={
+            isTransactionHash
+              ? "Enter transaction hash..."
+              : "Enter wallet address..."
+          }
           className="flex-grow rounded border bg-transparent p-2"
+          disabled={loading}
         />
+        {loading && (
+          <div className="absolute right-12 flex items-center">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-b-transparent border-t-blue-500"></div>
+          </div>
+        )}
         <button
           onClick={handleSearch}
           className="rounded bg-blue-500 px-4 py-2 text-white disabled:bg-blue-300"
           disabled={loading}
         >
-          {loading ? "Loading..." : "Search"}
+          Search
         </button>
+      </div>
+
+      {/* Search mode toggle */}
+      <div className="mt-2 flex items-center">
+        <label className="flex cursor-pointer items-center">
+          <input
+            type="checkbox"
+            value={isTransactionHash}
+            onChange={() => setIsTransactionHash(!isTransactionHash)}
+            className="h-4 w-4 cursor-pointer"
+          />
+          <span className="ml-2 text-sm">Search by Transaction Hash</span>
+        </label>
       </div>
       {error && <p className="mt-2 text-red-500">{error}</p>}
     </div>

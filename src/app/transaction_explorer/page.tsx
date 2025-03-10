@@ -10,6 +10,7 @@ import { Transaction } from "@/src/components/transactionexplorer/type";
 import {
   syncInfuraData,
   getInfuraPageFromDb,
+  getTransactionByHash,
 } from "@/src/pages/api/infura-sync";
 
 const TransactionExplorer: React.FC = () => {
@@ -23,6 +24,7 @@ const TransactionExplorer: React.FC = () => {
   const [lastIndex, setLastIndex] = useState<number | undefined>(undefined);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
+  const [isTransactionHash, setIsTransactionHash] = useState<boolean>(false);
 
   // Keep blockchain type selection
   const [blockchainType, setBlockchainType] = useState<"ETH" | "SWC">("ETH");
@@ -37,16 +39,33 @@ const TransactionExplorer: React.FC = () => {
 
     try {
       let extractedTransactions: Transaction[] = [];
+      if (isTransactionHash) {
+        // Search by transaction hash
+        const transaction = await getTransactionByHash(addressToSearch);
 
-      if (blockchainType === "SWC") {
-        // SWC still uses internal database
-        const data = await fetchTransactions(addressToSearch, "initial");
-        extractedTransactions = data.length > 0 ? data[0].transactions : [];
+        if (transaction) {
+          // If transaction found, display it
+          extractedTransactions = [transaction];
+
+          // If we found a transaction, change the address to the sender address
+          // for proper context in the visualization
+          setAddress(transaction.from_address);
+
+          // Set direction for the transaction based on current context
+          transaction.direction = "outgoing"; // Default to outgoing
+        } else {
+          setError("Transaction not found.");
+        }
       } else {
-        // ETH now always uses Infura
-        extractedTransactions = await syncInfuraData(addressToSearch);
+        if (blockchainType === "SWC") {
+          // SWC still uses internal database
+          const data = await fetchTransactions(addressToSearch, "initial");
+          extractedTransactions = data.length > 0 ? data[0].transactions : [];
+        } else {
+          // ETH now always uses Infura
+          extractedTransactions = await syncInfuraData(addressToSearch);
+        }
       }
-
       if (extractedTransactions.length > 0) {
         setTransactionsByPage({ 1: extractedTransactions });
         setLastIndex(
@@ -138,6 +157,7 @@ const TransactionExplorer: React.FC = () => {
     setLastIndex(undefined);
     setCurrentPage(1);
     setLoadedPages([]);
+    setIsTransactionHash(false); // Reset to address search when changing blockchain
   };
 
   // Simplified selector
@@ -199,12 +219,14 @@ const TransactionExplorer: React.FC = () => {
         handleSearch={() => handleSearch()}
         loading={loading}
         error={error}
+        isTransactionHash={isTransactionHash}
+        setIsTransactionHash={setIsTransactionHash}
       />
 
       {hasLoadedTransactions && (
         <>
           <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
-            <div className="col-span-3 rounded-lg border shadow">
+            <div className="col-span-7 rounded-lg border shadow">
               <TransactionNetwork
                 transactions={currentTransactions}
                 address={address}
@@ -212,14 +234,12 @@ const TransactionExplorer: React.FC = () => {
                 blockchainType={blockchainType}
               />
             </div>
-
-            <TransactionList
-              transactions={currentTransactions}
-              address={address}
-              blockchainType={blockchainType}
-            />
           </div>
-
+          <TransactionList
+            transactions={currentTransactions}
+            address={address}
+            blockchainType={blockchainType}
+          />
           <Pagination
             currentPage={currentPage}
             maxPage={maxPage}

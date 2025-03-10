@@ -8,8 +8,47 @@ import { Transaction } from "@/src/components/transactionexplorer/type";
 import { ethers } from "ethers";
 
 // Cache to track recently synced addresses
-const syncedAddresses = new Map<string, number>();
+// Cache management functions at the top of the file
+const CACHE_KEY = "infura_synced_addresses";
+const CACHE_EXPIRY = 15 * 60 * 1000; // 15 minutes in milliseconds
 
+// Function to load cache from localStorage
+function loadSyncedAddressesCache(): Map<string, number> {
+  if (typeof window === "undefined") {
+    // Running on server, return empty map
+    return new Map<string, number>();
+  }
+
+  try {
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      return new Map(Object.entries(parsed));
+    }
+  } catch (error) {
+    console.error("Error loading synced addresses cache:", error);
+  }
+
+  return new Map<string, number>();
+}
+
+// Function to save cache to localStorage
+function saveSyncedAddressesCache(cache: Map<string, number>): void {
+  if (typeof window === "undefined") {
+    // Running on server, do nothing
+    return;
+  }
+
+  try {
+    const cacheObject = Object.fromEntries(cache.entries());
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+  } catch (error) {
+    console.error("Error saving synced addresses cache:", error);
+  }
+}
+
+// Initialize the cache from localStorage
+const syncedAddresses = loadSyncedAddressesCache();
 export async function syncInfuraData(
   address: string,
   forceFresh = false,
@@ -44,6 +83,8 @@ export async function syncInfuraData(
 
     // Mark this address as synced
     syncedAddresses.set(address, now);
+    saveSyncedAddressesCache(syncedAddresses);
+
     console.log(
       `Address ${address} marked as synced at ${new Date(now).toLocaleString()}`,
     );

@@ -89,6 +89,10 @@ export default function SignUpForm() {
 
       if (error) throw error;
 
+      // Save email and userid to localStorage
+      localStorage.setItem("email", formData.email);
+      localStorage.setItem("userid", userId);
+
       // Redirect to personal-assets after successful signup
       router.push("/personal-assets");
     } catch (error: any) {

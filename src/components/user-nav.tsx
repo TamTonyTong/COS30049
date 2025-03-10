@@ -24,6 +24,10 @@ import type React from "react"; // Added import for React
 export function UserNav({ children }: { children?: React.ReactNode }) {
   const router = useRouter();
 
+  // Get user data from localStorage
+  const userId = localStorage.getItem("userid") || "Guest";
+  const email = localStorage.getItem("email") || "guest@example.com";
+
   const handleLogout = () => {
     // Implement logout logic here
     localStorage.setItem("isLoggedIn", "false");
@@ -51,9 +55,9 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Alice</p>
+            <p className="text-sm font-medium leading-none">{userId}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              alice@example.com
+              {email}
             </p>
           </div>
         </DropdownMenuLabel>

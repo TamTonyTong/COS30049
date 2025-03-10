@@ -7,44 +7,43 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient"
+import { supabase } from "@/lib/supabaseClient";
 import CryptoJS from "crypto-js"; // Import hashing library
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-
   const sanitizeInput = (input: string): string => {
-    return input.trim().replace(/[<>]/g, "")
-  }
+    return input.trim().replace(/[<>]/g, "");
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
     // Sanitize input as user types
-    const sanitizedValue = sanitizeInput(value)
+    const sanitizedValue = sanitizeInput(value);
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: sanitizedValue }));
   };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = "Email is required"
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
+      newErrors.email = "Please enter a valid email address";
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = "Password is required"
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters"
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     setErrors(newErrors);
@@ -55,14 +54,13 @@ export default function LoginPage() {
     e.preventDefault();
 
     if (validateForm()) {
-      setIsLoading(true)
+      setIsLoading(true);
 
       try {
-
         // Use Supabase authentication
         const { data, error } = await supabase
           .from("User") // Table user
-          .select("email, passwordhash, salt")
+          .select("userid, email, passwordhash, salt")
           .eq("email", formData.email)
           .single();
 
@@ -70,24 +68,30 @@ export default function LoginPage() {
           throw new Error("Invalid email");
         }
 
-        const { email, passwordhash, salt } = data;
+        const { userid, email, passwordhash, salt } = data;
 
-        //Hash the input password using the stored salt
-        const hashedInputPassword = CryptoJS.SHA256(formData.password + salt).toString();
+        // Hash the input password using the stored salt
+        const hashedInputPassword = CryptoJS.SHA256(
+          formData.password + salt
+        ).toString();
 
-        //Compare with stored passwordhash
+        // Compare with stored passwordhash
         if (hashedInputPassword !== passwordhash) {
           throw new Error(`Invalid password.`);
         }
 
-        //Update user login time
+        // Update user login time
         await supabase
           .from("User")
           .update({ lastlogin: new Date().toISOString() })
           .eq("email", formData.email);
 
-        //Login successful
+        // Save user data to localStorage
         localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("userid", userid);
+        localStorage.setItem("email", email);
+
+        // Login successful
         router.push("/personal-assets");
       } catch (error: any) {
         // Handle Supabase-specific errors
@@ -95,7 +99,7 @@ export default function LoginPage() {
           setErrors({ general: error.message || "An unexpected error occurred." });
         }
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
   };
@@ -151,8 +155,9 @@ export default function LoginPage() {
           <Button
             type="submit"
             className="w-full bg-blue-500 text-white hover:bg-blue-600"
+            disabled={isLoading}
           >
-            Log In
+            {isLoading ? "Logging in..." : "Log In"}
           </Button>
         </form>
         <div className="mt-4 text-center text-sm text-blue-300 hover:text-blue-200">

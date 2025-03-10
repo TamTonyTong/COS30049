@@ -7,49 +7,95 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient"
+import CryptoJS from "crypto-js"; // Import hashing library
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter();
+
+
+  const sanitizeInput = (input: string): string => {
+    return input.trim().replace(/[<>]/g, "")
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
+    // Sanitize input as user types
+    const sanitizedValue = sanitizeInput(value)
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.email) newErrors.email = "Email is required";
-    if (!formData.password) newErrors.password = "Password is required";
+    const newErrors: Record<string, string> = {}
+
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = "Email is required"
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = "Password is required"
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters"
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (validateForm()) {
-      try {
-        const response = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Login successful:", data);
-          // Set login state in localStorage
-          localStorage.setItem("isLoggedIn", "true");
-          router.push("/personal-assets"); // Redirect to the desired page
-        } else {
-          const errorData = await response.json();
-          setErrors({ general: errorData.message });
+    if (validateForm()) {
+      setIsLoading(true)
+
+      try {
+
+        // Use Supabase authentication
+        const { data, error } = await supabase
+          .from("User") // Table user
+          .select("email, passwordhash, salt")
+          .eq("email", formData.email)
+          .single();
+
+        if (error || !data) {
+          throw new Error("Invalid email");
         }
-      } catch (error) {
-        setErrors({
-          general: "An unexpected error occurred. Please try again.",
-        });
+
+        const { email, passwordhash, salt } = data;
+
+        //Hash the input password using the stored salt
+        const hashedInputPassword = CryptoJS.SHA256(formData.password + salt).toString();
+
+        //Compare with stored passwordhash
+        if (hashedInputPassword !== passwordhash) {
+          throw new Error(`Invalid password.`);
+        }
+
+        //Update user login time
+        await supabase
+          .from("User")
+          .update({ lastlogin: new Date().toISOString() })
+          .eq("email", formData.email);
+
+        //Login successful
+        localStorage.setItem("isLoggedIn", "true");
+        router.push("/personal-assets");
+      } catch (error: any) {
+        // Handle Supabase-specific errors
+        if (error.message) {
+          setErrors({ general: error.message || "An unexpected error occurred." });
+        }
+      } finally {
+        setIsLoading(false)
       }
     }
   };
@@ -61,8 +107,8 @@ export default function LoginPage() {
           Login to TradePro
         </h1>
         <p className="text-center font-bold">Example Account</p>
-        <p className="text-center">alice@example.com</p>
-        <p className="text-center">passwordAlice</p>
+        <p className="text-center">user1@example.com</p>
+        <p className="text-center">a1b2c3d4e5</p>
         <br />
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

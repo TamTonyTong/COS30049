@@ -79,6 +79,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
     return sortConfig.direction === "ascending" ? " ↑" : " ↓";
   };
+  // Format value with the correct currency
+  const formatValue = (value: string | number) => {
+    return (Number(value) / 1e18).toFixed(6) + ` ${blockchainType}`;
+  };
   return (
     <>
       <div className="col-span-4 w-full rounded-lg border p-8 shadow">
@@ -107,7 +111,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 Hash
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Direction
+                Sender
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Reciever
               </th>
               <th
                 className="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
@@ -139,32 +146,15 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     {transaction.hash.substring(0, 7)}...
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-xs">
-                  <span
-                    className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                      transaction.sender && address
-                        ? transaction.sender.toLowerCase() ===
-                          address.toLowerCase()
-                          ? "bg-red-100 text-red-800"
-                          : "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800" // Fallback style when sender is undefined
-                    }`}
-                  >
-                    {transaction.sender
-                      ? transaction.sender.toLowerCase() ===
-                        address.toLowerCase()
-                        ? "Outgoing"
-                        : "Incoming"
-                      : "Unknown"}
-                  </span>
+                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
+                  {transaction.sender.substring(0, 4)}...
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
-                  {(Number(transaction.value) / 1e18).toFixed(6)}{" "}
-                  {blockchainType}
+                  {transaction.receiver.substring(0, 4)}...
                 </td>
-                {/* <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
-                  {transaction.gas_used || "-"}
-                </td> */}
+                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
+                  {formatValue(transaction.value)}
+                </td>
                 <td className="break-words px-6 py-4 text-xs text-gray-500">
                   {new Date(
                     transaction.block_timestamp * 1000,

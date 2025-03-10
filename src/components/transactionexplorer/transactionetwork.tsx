@@ -376,7 +376,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
           const baseX = sourceNode.x + (targetNode.x - sourceNode.x) * ratio;
           const baseY = sourceNode.y + (targetNode.y - sourceNode.y) * ratio;
 
-          if (transactionCount > 1) {
+          if (transactionCount > 3) {
             // Calculate perpendicular offset direction
             const length = Math.sqrt(dx * dx + dy * dy);
 
@@ -386,7 +386,25 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
 
             // Calculate offset based on index
             // Use a larger max offset for better separation
-            const maxOffset = Math.min(25, distance * 0.15); // Adaptive offset
+            const maxOffset = Math.min(150, distance * 2.5); // Adaptive offset
+            const offset =
+              (index - (transactionCount - 1) / 2) *
+              (maxOffset / Math.max(1, transactionCount - 1));
+
+            // Apply the offset perpendicular to the line
+            node.x = baseX + perpX * offset;
+            node.y = baseY + perpY * offset;
+          } else if (transactionCount > 1) {
+            // Calculate perpendicular offset direction
+            const length = Math.sqrt(dx * dx + dy * dy);
+
+            // Normalize and create perpendicular vector
+            const perpX = -dy / length;
+            const perpY = dx / length;
+
+            // Calculate offset based on index
+            // Use a larger max offset for better separation
+            const maxOffset = Math.min(50, distance * 0.2); // Adaptive offset
             const offset =
               (index - (transactionCount - 1) / 2) *
               (maxOffset / Math.max(1, transactionCount - 1));
@@ -453,14 +471,14 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .append("marker")
       .attr("id", "arrow")
       .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 8) // Better positioning at end of line
+      .attr("refX", 35) // Better positioning at end of line
       .attr("refY", 0)
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
+      .attr("markerWidth", 3)
+      .attr("markerHeight", 3)
       .attr("orient", "auto")
       .append("path")
       .attr("d", "M0,-5L10,0L0,5")
-      .attr("fill", "#a3a3a3");
+      .attr("fill", "#FFFFFF");
 
     // Draw faint background connections between directly connected addresses
     const addressConnections = container
@@ -485,9 +503,6 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         const targetNode = uniqueNodes.get(d.targetNode || "");
         return targetNode?.y || 0;
       })
-      .style("stroke", "#a3a3a3") // Neutral color
-      .style("stroke-width", 1)
-      .style("stroke-dasharray", "3,3") // Dashed line
       .style("opacity", 0.25); // Very faint
 
     // Create link groups for better click interaction
@@ -626,7 +641,37 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Transaction node circles
     transactionNodes
       .append("circle")
-      .attr("r", 6) // Smaller for less clutter
+      .attr("r", (d) => {
+        // Get transaction value in ETH (convert from Wei)
+        const valueInEth = Number(d.transaction?.value) / 1e18;
+
+        // Set min and max radius
+        const minRadius = 4;
+        const maxRadius = 12;
+
+        // Scale the radius based on value (capped at 0.9 ETH)
+        // For values between 0-0.1, use minRadius
+        // For values between 0.1-0.9, scale linearly
+        // For values > 0.9, cap at maxRadius
+        if (valueInEth < 0.1) {
+          return minRadius;
+        } else if (valueInEth >= 0.9) {
+          return maxRadius;
+        } else {
+          // Linear interpolation between min and max radius
+          const normalizedValue = (valueInEth - 0.1) / 0.8; // Maps 0.1-0.9 to 0-1
+          return minRadius + normalizedValue * (maxRadius - minRadius);
+        }
+      })
+      .attr("fill", "#475569")
+      .attr("stroke", "#334155")
+      .attr("stroke-width", 1)
+      // Add tooltip on hover to show exact value
+      .append("title")
+      .text((d) => {
+        const val = Number(d.transaction?.value) / 1e18;
+        return `${val.toFixed(6)} ${blockchainType}`;
+      })
       .attr("fill", "#475569")
       .attr("stroke", "#334155")
       .attr("stroke-width", 1);
@@ -660,17 +705,6 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .attr("fill", "#4F46E5")
       .attr("stroke", "#312E81")
       .attr("stroke-width", 2);
-
-    // Center node address label
-    container
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dy", -30)
-      .style("font-size", "11px")
-      .style("font-weight", "bold")
-      .style("fill", "white")
-      .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
-      .text("Your Address");
 
     // Center node address with ellipsis
     container
@@ -764,23 +798,36 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     svg
       .append("text")
       .attr("x", 10)
-      .attr("y", 20)
-      .style("font-size", "9px")
+      .attr("y", 30)
+      .style("font-size", "20px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Scroll to zoom, drag to pan");
 
-    // Add legend
+    // Create a more organized and visually appealing legend
     const legend = svg
       .append("g")
-      .attr("transform", `translate(${width - 100}, 20)`);
+      .attr("transform", `translate(${width - 150}, 30)`); // Move it more to the left and down
+
+    // Add semi-transparent background to make the legend stand out
+    legend
+      .append("rect")
+      .attr("x", -30)
+      .attr("y", -15)
+      .attr("width", 170)
+      .attr("height", 160) // Make it taller to accommodate the enlarged flow direction
+      .attr("rx", 8) // Rounded corners
+      .attr("ry", 8)
+      .style("fill", "#1e293b") // Darker background
+      .style("opacity", 0.7); // Semi-transparent
 
     // Legend title
     legend
       .append("text")
       .attr("x", 0)
       .attr("y", 0)
-      .style("font-size", "9px")
+      .style("font-size", "16px")
+      .style("font-weight", "bold")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Legend");
@@ -788,16 +835,16 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Transaction node legend
     legend
       .append("circle")
-      .attr("cx", 8)
-      .attr("cy", 20)
-      .attr("r", 4)
+      .attr("cx", -15)
+      .attr("cy", 25)
+      .attr("r", 10)
       .style("fill", "#475569");
 
     legend
       .append("text")
-      .attr("x", 18)
-      .attr("y", 23)
-      .style("font-size", "7px")
+      .attr("x", 5)
+      .attr("y", 30)
+      .style("font-size", "14px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Transaction");
@@ -805,16 +852,16 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Address node legend
     legend
       .append("circle")
-      .attr("cx", 8)
-      .attr("cy", 35)
-      .attr("r", 4)
+      .attr("cx", -15)
+      .attr("cy", 55)
+      .attr("r", 10)
       .style("fill", "#6366F1");
 
     legend
       .append("text")
-      .attr("x", 18)
-      .attr("y", 38)
-      .style("font-size", "7px")
+      .attr("x", 5)
+      .attr("y", 60)
+      .style("font-size", "14px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Address");
@@ -822,38 +869,49 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     // Expanded node legend
     legend
       .append("circle")
-      .attr("cx", 8)
-      .attr("cy", 50)
-      .attr("r", 4)
+      .attr("cx", -15)
+      .attr("cy", 85)
+      .attr("r", 10)
       .style("fill", "#8B5CF6");
 
     legend
       .append("text")
-      .attr("x", 18)
-      .attr("y", 53)
-      .style("font-size", "7px")
+      .attr("x", 5)
+      .attr("y", 90)
+      .style("font-size", "14px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
       .text("Expanded Address");
 
-    // Arrow direction legend
-    legend
-      .append("line")
-      .attr("x1", 0)
-      .attr("y1", 65)
-      .attr("x2", 15)
-      .attr("y2", 65)
-      .style("stroke", "#a3a3a3")
-      .attr("marker-end", "url(#arrow)");
-
+    // Improved arrow direction legend with better spacing and size
+    // Add a label for the flow direction section
     legend
       .append("text")
-      .attr("x", 18)
-      .attr("y", 68)
-      .style("font-size", "7px")
+      .attr("x", -23)
+      .attr("y", 120)
+      .style("font-size", "14px")
       .style("fill", "white")
       .style("text-shadow", "0px 0px 2px rgba(0,0,0,0.7)")
-      .text("Flow Direction");
+      .text("Flow Direction:");
+
+    // Create a more visible flow direction arrow
+    legend
+      .append("line")
+      .attr("x1", -20)
+      .attr("y1", 140)
+      .attr("x2", 40)
+      .attr("y2", 140)
+      .style("stroke", "#a3a3a3")
+      .style("stroke-width", 2)
+      .attr("marker-end", "url(#arrow)");
+
+    // Add a sample transaction node to flow direction
+    legend
+      .append("circle")
+      .attr("cx", 15)
+      .attr("cy", 140)
+      .attr("r", 5)
+      .style("fill", "#475569");
   }, [
     transactions,
     centerNode,

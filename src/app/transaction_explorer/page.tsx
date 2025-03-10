@@ -88,7 +88,7 @@ const TransactionExplorer: React.FC = () => {
         );
         setCurrentPage(1);
         setLoadedPages([1]);
-        setHasMore(extractedTransactions.length >= 10); // Adjust based on page size
+        setHasMore(extractedTransactions.length >= 8); // Adjust based on page size
       } else {
         setTransactionsByPage({});
         setLoadedPages([]);
@@ -280,10 +280,6 @@ const TransactionExplorer: React.FC = () => {
           />
         </>
       )}
-      <div className="mb-2 text-xs text-gray-500">
-        Initial Transactions: {currentTransactions.length} | Expanded
-        Transactions: {allTransactions.length} | Total: {allTransactions.length}
-      </div>
     </div>
   );
 };

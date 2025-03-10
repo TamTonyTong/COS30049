@@ -8,27 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
 import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import Link from "next/link";
-import { DollarSign, Activity, Clock } from "lucide-react";
-import { fakeSmartContract } from "@/src/components/trading/transactions/smart-contract-real";
-import TradeHistory from "@/src/components/trading/transactions/trading-history";
+import { DollarSign, Activity } from "lucide-react";
 
 // Define Asset and Transaction types
 type Asset = {
   name: string;
-  amount: number;
+  quantity: number;
   price: number;
+  totalValue: number;
 };
 
 type Transaction = {
@@ -40,54 +30,74 @@ type Transaction = {
 };
 
 export default function HomePage() {
-  const [address, setAddress] = useState<string>("0x1234567890abcdef");
-  const [balances, setBalances] = useState({ USD: 0, BTC: 0 });
+  const [address, setAddress] = useState<string>("");
+  const [balance, setBalance] = useState<number>(0);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [depositAmount, setDepositAmount] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [refresh, setRefresh] = useState(false);
 
-  // Fetch balance from Smart Contract
-  const updateBalance = () => {
-    setBalances(fakeSmartContract.getBalance("UserA"));
-  };
+  // Fetch data from the API route
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/personal');
+        if (!response.ok) {
+          throw new Error("Failed to fetch data");
+        }
+        const data = await response.json();
+
+        // Map the fetched data to your state
+        setAddress(data.publicaddress);
+        setBalance(data.balance);
+        setAssets(data.assets);
+        setTransactions(
+          data.transactions.map((tx: any) => ({
+            id: tx.txid,
+            timestamp: new Date(tx.creationtimestamp).toLocaleString(),
+            type: tx.type,
+            amount: tx.amount,
+            status: tx.status,
+          }))
+        );
+      } catch (error) {
+        setError('Error fetching data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Handle Deposit
-  const handleDepositUSD = () => {
-    fakeSmartContract.depositUSD("UserA", Number(depositAmount));
-    setDepositAmount("");
-    setTimeout(updateBalance, 100);
+  const handleDepositUSD = async () => {
+    if (!depositAmount || isNaN(Number(depositAmount))) {
+      setError('Invalid deposit amount');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/personal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount: Number(depositAmount) }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update balance");
+      }
+
+      const data = await response.json();
+      setBalance(data.balance); // Update the balance in the state
+      setDepositAmount(""); // Clear the deposit input
+    } catch (error) {
+      setError('Error updating balance');
+    }
   };
-
-  // Handle Reset
-  const handleResetUSD = () => {
-    fakeSmartContract.resetUSDBalance("UserA");
-    setTimeout(() => {
-      updateBalance();
-      setRefresh((prev) => !prev);
-    }, 100);
-  };
-
-  // Fetch Data
-  useEffect(() => {
-    const userId = "personal";
-    fetch(`/api/${userId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setAssets(data.assets);
-          setTransactions(data.transactions);
-        }
-      })
-      .catch(() => setError("Error fetching data"))
-      .finally(() => setLoading(false));
-
-    updateBalance();
-  }, []);
 
   if (loading) {
     return (
@@ -147,7 +157,7 @@ export default function HomePage() {
               </h2>
               <div className="rounded-lg bg-[#0d1829] p-6">
                 <span className="text-4xl font-bold text-green-400">
-                  ${balances.USD.toLocaleString()}
+                  ${balance.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -172,53 +182,64 @@ export default function HomePage() {
               </Button>
             </div>
 
-            {/* Assets Table */}
+            {/* User Assets */}
             <div className="mb-6">
-              <h2 className="mb-4 text-2xl font-medium text-white">Assets</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-white">Cryptocurrency</TableHead>
-                    <TableHead className="text-right text-white">
-                      Amount
-                    </TableHead>
-                    <TableHead className="text-right text-white">
-                      Price (USD)
-                    </TableHead>
-                    <TableHead className="text-right text-white">
-                      Total
-                    </TableHead>
-                    <TableHead className="text-right text-white">
-                      Action
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="text-white">BTC</TableCell>
-                    <TableCell className="text-right text-white">
-                      {balances.BTC}
-                    </TableCell>
-                    <TableCell className="text-right text-white">
-                      100$
-                    </TableCell>
-                    <TableCell className="text-right text-white">
-                      {balances.BTC * 100}$
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Link href="/trade">
-                        <Button className="bg-blue-500 text-white hover:bg-blue-600">
-                          Trade
-                        </Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                  {/* ))} */}
-                </TableBody>
-              </Table>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-medium text-white">Assets</h2>
+                <Link href="/trading"> {/* Replace "View All Coins" with "Trade" button */}
+                  <Button variant="outline" className="text-white">
+                    Trade
+                  </Button>
+                </Link>
+              </div>
+              <table className="min-w-full bg-[#0d1829] border border-gray-700 text-center">
+                <thead>
+                  <tr className="bg-[#1a2b4b]">
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Cryptocurrency</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Amount</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Price (USD)</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Total Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assets.map((asset, index) => (
+                    <tr key={index} className="hover:bg-[#1a2b4b]">
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.name}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.quantity}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">${asset.price.toFixed(2)}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">${asset.totalValue.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <TradeHistory />
+            {/* Transaction History */}
+            <div className="mb-6">
+              <h2 className="text-xl font-medium text-white mb-3">Transaction History</h2>
+              <table className="min-w-full bg-[#0d1829] border border-gray-700 text-center">
+                <thead>
+                  <tr className="bg-[#1a2b4b]">
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Transaction ID</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Timestamp</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Type</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Amount</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-[#1a2b4b]">
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.id}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.timestamp}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.type}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.amount}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>

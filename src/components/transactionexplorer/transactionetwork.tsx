@@ -44,6 +44,9 @@ interface TransactionNetworkProps {
   transactions: Transaction[];
   address: string;
   onAddressChange: (newAddress: string) => void;
+  onNodeExpanded?: (address: string, transactions: Transaction[]) => void;
+  expandedNodes?: { [address: string]: Transaction[] };
+
   blockchainType: "ETH" | "SWC";
 }
 
@@ -52,6 +55,8 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
   address,
   onAddressChange,
   blockchainType,
+  onNodeExpanded, // Make sure this prop is properly referenced here
+  expandedNodes: externalExpandedNodes, // Rename to avoid conflict with local state
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [centerNode, setCenterNode] = useState<string>(address);
@@ -61,11 +66,21 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     [address: string]: Transaction[];
   }>({});
   const [isExpanding, setIsExpanding] = useState<boolean>(false);
-
+  const [pendingExpansions, setPendingExpansions] = useState<{
+    address: string;
+    transactions: Transaction[];
+  } | null>(null);
   useEffect(() => {
     // Update center node when address changes
     setCenterNode(address);
   }, [address]);
+  // Use effect to notify parent component after our state is updated
+  useEffect(() => {
+    if (pendingExpansions && onNodeExpanded) {
+      onNodeExpanded(pendingExpansions.address, pendingExpansions.transactions);
+      setPendingExpansions(null); // Reset after notifying
+    }
+  }, [pendingExpansions, onNodeExpanded]);
 
   useEffect(() => {
     if (!svgRef.current || !transactions || transactions.length === 0) return;
@@ -876,18 +891,16 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       } else {
         // Add transactions to expanded nodes
         setExpandedNodes((prev) => {
-          // Create a copy of the existing expanded nodes
-          const newExpandedNodes = { ...prev };
+          const newExpandedNodes = {
+            ...prev,
+            [nodeAddress]: nodeTransactions,
+          };
 
-          // Add the new transactions
-          newExpandedNodes[nodeAddress] = nodeTransactions;
-
-          console.log(
-            `Added ${nodeTransactions.length} transactions for ${nodeAddress}`,
-          );
-          console.log(
-            `Total expanded nodes: ${Object.keys(newExpandedNodes).length}`,
-          );
+          // IMPORTANT: Pass the transactions up to parent component
+          setPendingExpansions({
+            address: nodeAddress,
+            transactions: nodeTransactions,
+          });
 
           return newExpandedNodes;
         });
@@ -928,7 +941,22 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       console.log(
         `Received ${transactions.length} transactions from API for ${address}`,
       );
-      return transactions;
+      // Make sure these transactions have properly set sender/receiver/direction
+      const processedTransactions = transactions.map((tx) => {
+        // For 2nd hop transactions, we need to ensure the direction is correctly set
+        // relative to the address being expanded
+        const isOutgoing =
+          tx.sender && tx.sender.toLowerCase() === address.toLowerCase();
+
+        return {
+          ...tx,
+          // Ensure these fields are set correctly
+          sender: tx.sender || tx.from_address || "",
+          receiver: tx.receiver || tx.receiver || "",
+          direction: isOutgoing ? "outgoing" : "incoming",
+        };
+      });
+      return processedTransactions;
     } catch (error) {
       console.error("Error fetching transactions:", error);
       return [];

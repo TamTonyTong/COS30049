@@ -25,13 +25,25 @@ const TransactionExplorer: React.FC = () => {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadedPages, setLoadedPages] = useState<number[]>([]);
   const [isTransactionHash, setIsTransactionHash] = useState<boolean>(false);
-
+  // Add state for expanded transactions
+  const [expandedNodes, setExpandedNodes] = useState<{
+    [address: string]: Transaction[];
+  }>({});
   // Keep blockchain type selection
   const [blockchainType, setBlockchainType] = useState<"ETH" | "SWC">("ETH");
 
   // Replace ETH modes with a single Infura mode
   const [ethDataSource, setEthDataSource] = useState<"infura">("infura");
-
+  // Add this function to be passed to TransactionNetwork
+  const handleNodeExpansion = async (
+    address: string,
+    transactions: Transaction[],
+  ) => {
+    setExpandedNodes((prev) => ({
+      ...prev,
+      [address]: transactions,
+    }));
+  };
   const handleSearch = async (addressToSearch: string = address) => {
     if (!addressToSearch) return;
     setLoading(true);
@@ -158,6 +170,7 @@ const TransactionExplorer: React.FC = () => {
     setCurrentPage(1);
     setLoadedPages([]);
     setIsTransactionHash(false); // Reset to address search when changing blockchain
+    setExpandedNodes({}); // Also reset expanded nodes
   };
 
   // Simplified selector
@@ -169,7 +182,22 @@ const TransactionExplorer: React.FC = () => {
   const hasLoadedTransactions = Object.keys(transactionsByPage).length > 0;
   const maxPage = Math.max(...loadedPages, 0);
   const currentTransactions = transactionsByPage[currentPage] || [];
+  const expandedTransactions = Object.values(expandedNodes).flat();
 
+  // Use a Map with transaction hash as key to remove duplicates
+  const uniqueTransactions = new Map();
+
+  // Add current transactions first
+  currentTransactions.forEach((tx) => {
+    uniqueTransactions.set(tx.hash, tx);
+  });
+
+  // Then add expanded transactions, replacing any duplicates
+  expandedTransactions.forEach((tx) => {
+    uniqueTransactions.set(tx.hash, tx);
+  });
+
+  const allTransactions = Array.from(uniqueTransactions.values());
   return (
     <div className="mx-auto max-w-6xl p-4">
       <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
@@ -232,11 +260,13 @@ const TransactionExplorer: React.FC = () => {
                 address={address}
                 onAddressChange={handleAddressChange}
                 blockchainType={blockchainType}
+                onNodeExpanded={handleNodeExpansion}
+                expandedNodes={expandedNodes}
               />
             </div>
           </div>
           <TransactionList
-            transactions={currentTransactions}
+            transactions={allTransactions}
             address={address}
             blockchainType={blockchainType}
           />
@@ -250,6 +280,10 @@ const TransactionExplorer: React.FC = () => {
           />
         </>
       )}
+      <div className="mb-2 text-xs text-gray-500">
+        Initial Transactions: {currentTransactions.length} | Expanded
+        Transactions: {allTransactions.length} | Total: {allTransactions.length}
+      </div>
     </div>
   );
 };

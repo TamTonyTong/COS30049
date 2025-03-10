@@ -21,13 +21,13 @@ export default function TradingPage(this: any) {
   const [tradingPair, setTradingPair] = useState<string>("bitcoin");
   const icon_order = <i className="bx bxs-cart"></i>;
 
-  // Set a fixed price for BTC
-  const FIXED_BTC_PRICE = "100"; // Fixed BTC price in USD
+  // // Set a fixed price for BTC
+  //const FIXED_BTC_PRICE = "100"; // Fixed BTC price in USD
 
-  useEffect(() => {
-    // Set the fixed price once when the component mounts
-    setPrice(FIXED_BTC_PRICE);
-  }, []);
+  // useEffect(() => {
+  //   // // Set the fixed price once when the component mounts
+  //   setPrice("100");
+  // }, []);
   return (
     <Layout>
       <div className="mb-6 grid gap-8 lg:grid-cols-3">

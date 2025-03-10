@@ -16,20 +16,21 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 import { Badge } from "@/src/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Button } from "@/src/components/ui/button"; // Import Button component
+import Link from "next/link"; // Import Link component
 import Layout from "../../components/layout";
 
 export default function MarketsPage() {
-  interface Price {
+  interface Asset {
     symbol: string;
     name: string;
-    current_price: number;
-    price_change_percentage_24h: number;
-    total_volume: number;
-    market_cap: number;
+    price: number;
+    currencypair: string;
+    assettype: string;
+    volume: number;
   }
 
-  const [prices, setPrices] = useState<Price[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +43,7 @@ export default function MarketsPage() {
         return response.json();
       })
       .then((data) => {
-        setPrices(data.assets); // Use data.assets instead of data.prices
+        setAssets(data.assets);
         setIsLoading(false);
       })
       .catch((error) => {
@@ -75,18 +76,18 @@ export default function MarketsPage() {
     );
   }
 
-  if (prices.length === 0) {
+  if (assets.length === 0) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8">
           <Card className="border-blue-500/30 bg-[#1a2b4b]">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-white">
-                No Prices Found
+                No Assets Found
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-300">No prices are available.</p>
+              <p className="text-gray-300">No assets are available.</p>
             </CardContent>
           </Card>
         </div>
@@ -99,9 +100,16 @@ export default function MarketsPage() {
       <div className="container mx-auto px-4 py-8">
         <Card className="border-blue-500/30 bg-[#1a2b4b]">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-white">
-              Digital Asset Markets
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl font-bold text-white">
+                Digital Asset Markets
+              </CardTitle>
+              <Link href="/trade"> {/* Link to the trading page */}
+                <Button variant="outline" className="text-white">
+                  Trade
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -110,57 +118,44 @@ export default function MarketsPage() {
                   <TableRow>
                     <TableHead className="text-white">Asset</TableHead>
                     <TableHead className="text-right text-white">
-                      Price (USD)
+                      Price
                     </TableHead>
                     <TableHead className="text-right text-white">
-                      24h Change
+                      Currency Pair
                     </TableHead>
                     <TableHead className="text-right text-white">
-                      24h Volume
+                      Asset Type
                     </TableHead>
                     <TableHead className="text-right text-white">
-                      Market Cap
+                      Volume
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {prices.map((price) => (
+                  {assets.map((asset) => (
                     <TableRow
-                      key={price.symbol}
+                      key={asset.symbol}
                       className="transition-colors hover:bg-[#0d1829]"
                     >
                       <TableCell className="font-medium text-white">
                         <div className="flex items-center">
                           <Badge variant="outline" className="mr-2">
-                            {price.symbol.toUpperCase()}
+                            {asset.symbol.toUpperCase()}
                           </Badge>
-                          {price.name}
+                          {asset.name}
                         </div>
                       </TableCell>
                       <TableCell className="text-right text-white">
-                        ${price.current_price.toLocaleString()}
+                        ${asset.price.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={`flex items-center justify-end ${
-                            price.price_change_percentage_24h >= 0
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {price.price_change_percentage_24h >= 0 ? (
-                            <ArrowUpRight className="mr-1" size={16} />
-                          ) : (
-                            <ArrowDownRight className="mr-1" size={16} />
-                          )}
-                          {Math.abs(price.price_change_percentage_24h).toFixed(2)}%
-                        </span>
+                      <TableCell className="text-right text-white">
+                        {asset.currencypair}
                       </TableCell>
-                      <TableCell className="text-right text-gray-300">
-                        {price.total_volume.toLocaleString()}
+                      <TableCell className="text-right text-white">
+                        {asset.assettype}
                       </TableCell>
-                      <TableCell className="text-right text-gray-300">
-                        {price.market_cap.toLocaleString()}
+                      <TableCell className="text-right text-white">
+                        {asset.volume.toLocaleString()}
                       </TableCell>
                     </TableRow>
                   ))}

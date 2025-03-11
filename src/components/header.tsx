@@ -6,6 +6,7 @@ import { Button } from "@/src/components/ui/button"
 import { UserNav } from "./user-nav"
 import { useEffect, useState } from "react"
 import { TrendingUp, ChevronDown, Menu, X } from "lucide-react"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,14 +24,14 @@ export default function Header() {
 
   useEffect(() => {
     // Check login state on component mount
-    const loggedIn = localStorage.getItem("isLoggedIn") === "true"
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
     if (loggedIn) {
-      setIsLoggedIn(true)
+      setIsLoggedIn(true);
     } else {
-      setIsLoggedIn(false)
+      setIsLoggedIn(false);
     }
-  }, [])
-
+  }, []);
+  
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {

@@ -137,7 +137,7 @@ const TransactionExplorer: React.FC = () => {
         }
         setCurrentPage(nextPage);
         setLoadedPages((prev) => [...prev, nextPage]);
-        setHasMore(extractedTransactions.length >= 10);
+        setHasMore(extractedTransactions.length >= 8);
       } else {
         setHasMore(false);
       }

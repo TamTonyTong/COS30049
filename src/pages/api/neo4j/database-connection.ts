@@ -1,11 +1,11 @@
-import neo4j from "neo4j-driver";
+import neo4j, { Driver } from "neo4j-driver";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
-let etherscanDriver: neo4j.Driver | null = null;
+let etherscanDriver: Driver | null = null;
 
-export function getEtherscanDriver() {
+export function getDbDriver() {
   if (!etherscanDriver) {
     etherscanDriver = neo4j.driver(
       process.env.NEXT_PUBLIC_NEO4J_URI3 || "",
@@ -29,7 +29,7 @@ export async function closeEtherscanDriver() {
   }
 }
 
-export async function runEtherscanQuery(cypher: string, params = {}) {
+export async function runQuery(cypher: string, params = {}) {
   // Convert any number parameters to integers for Neo4j
   const processedParams = Object.entries(params).reduce(
     (acc, [key, value]) => {
@@ -44,7 +44,7 @@ export async function runEtherscanQuery(cypher: string, params = {}) {
     {} as Record<string, any>,
   );
 
-  const session = getEtherscanDriver().session();
+  const session = getDbDriver().session();
   try {
     const result = await session.run(cypher, processedParams);
     return result.records.map((record) => record.toObject());

@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Driver } from "neo4j-driver";
-import { getEtherscanDriver } from "@/src/pages/api/neo4j/etherscan-client";
+import { getDbDriver } from "@/src/pages/api/neo4j/database-connection";
 
 export default async function handler(
   req: NextApiRequest,
@@ -21,7 +21,7 @@ export default async function handler(
   let driver: Driver | null = null;
 
   try {
-    driver = getEtherscanDriver();
+    driver = getDbDriver();
     if (!driver) {
       return res.status(500).json({ error: "Failed to connect to database" });
     }

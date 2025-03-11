@@ -1,6 +1,5 @@
 // src/pages/api/infuraapi.ts
 import axios from "axios";
-import { ethers } from "ethers";
 import { Transaction } from "@/src/components/transactionexplorer/type";
 
 // Use server-side environment variable (not NEXT_PUBLIC_)

@@ -1,5 +1,5 @@
 // src/pages/api/neo4j/infura-transactions.ts
-import { runEtherscanQuery } from "./etherscan-client"; // Reuse your existing Neo4j client
+import { runQuery } from "./database-connection"; // Reuse your existing Neo4j client
 import { Transaction } from "@/src/components/transactionexplorer/type";
 
 export async function storeInfuraTransactions(
@@ -7,7 +7,7 @@ export async function storeInfuraTransactions(
   address: string,
 ): Promise<void> {
   // Create or ensure the main Address node exists
-  await runEtherscanQuery(
+  await runQuery(
     `
     MERGE (a:Address {addressId: $address})
     ON CREATE SET a.blockchain = 'ETH'
@@ -36,7 +36,7 @@ export async function storeInfuraTransactions(
     };
 
     // Create transaction and connect to addresses
-    await runEtherscanQuery(
+    await runQuery(
       `
       // Create or get sender address
       MERGE (sender:Address {addressId: $from})
@@ -85,7 +85,7 @@ export async function getInfuraTransactionsFromNeo4j(
   const skip = Math.floor((page - 1) * offset);
   const limit = Math.floor(offset);
 
-  const result = await runEtherscanQuery(
+  const result = await runQuery(
     `
     MATCH (a:Address {addressId: $address})
     
@@ -153,7 +153,5 @@ export async function getInfuraTransactionsFromNeo4j(
     { address, skip, limit },
   );
 
-  return result.map(
-    (record: { transaction: Transaction }) => record.transaction as Transaction,
-  );
+  return result.map((record: any) => record.transaction as Transaction);
 }

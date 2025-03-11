@@ -37,12 +37,27 @@ export default function HomePage() {
   const [depositAmount, setDepositAmount] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null); // Store userId in state
+
+  // Fetch userId from localStorage (client-side only)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userId = localStorage.getItem("userid");
+      setUserId(userId);
+    }
+  }, []);
 
   // Fetch data from the API route
   useEffect(() => {
+    if (!userId) return; // Don't fetch data if userId is not available
+
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/personal');
+        const response = await fetch('/api/personal', {
+          headers: {
+            'user-id': userId, // Pass userId in the headers
+          },
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch data");
         }
@@ -69,7 +84,7 @@ export default function HomePage() {
     };
 
     fetchData();
-  }, []);
+  }, [userId]); // Re-fetch data when userId changes
 
   // Handle Deposit
   const handleDepositUSD = async () => {
@@ -83,6 +98,7 @@ export default function HomePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'user-id': userId || "", // Pass userId in the headers
         },
         body: JSON.stringify({ amount: Number(depositAmount) }),
       });
@@ -186,7 +202,7 @@ export default function HomePage() {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-medium text-white">Assets</h2>
-                <Link href="/trading"> {/* Replace "View All Coins" with "Trade" button */}
+                <Link href="/trade"> {/* Link to the trading page */}
                   <Button variant="outline" className="text-white">
                     Trade
                   </Button>

@@ -65,11 +65,13 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
         <DropdownMenuGroup>
           <DropdownMenuItem>Dashboard</DropdownMenuItem>
           <DropdownMenuItem>
-            <Link href="personal-assets">Personal Assets</Link>
+            <Link href="personal-assets">Account</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem>
+          <Link href="create">Create Asset</Link>
           </DropdownMenuItem>
           <DropdownMenuItem>Orders</DropdownMenuItem>
-          <DropdownMenuItem>Account</DropdownMenuItem>
-          <DropdownMenuItem>History</DropdownMenuItem>
           <DropdownMenuItem>Settings</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

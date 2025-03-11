@@ -48,7 +48,12 @@ const TransactionExplorer: React.FC = () => {
     if (!addressToSearch) return;
     setLoading(true);
     setError(null);
-
+    setExpandedNodes({}); // Reset expanded nodes
+    setTransactionsByPage({}); // Clear existing transactions
+    setLastIndex(undefined);
+    setCurrentPage(1);
+    setLoadedPages([]);
+    setHasMore(false);
     try {
       let extractedTransactions: Transaction[] = [];
       if (isTransactionHash) {
@@ -162,7 +167,13 @@ const TransactionExplorer: React.FC = () => {
     resetState();
     handleSearch(newAddress);
   };
+  const handleResetView = () => {
+    // Reset expanded nodes
+    setExpandedNodes({});
 
+    // Keep only the initial transactions for the current address
+    // This ensures we go back to just showing the first page
+  };
   // Helper function to reset state
   const resetState = () => {
     setTransactionsByPage({});
@@ -254,6 +265,12 @@ const TransactionExplorer: React.FC = () => {
       {hasLoadedTransactions && (
         <>
           <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
+            <button
+              onClick={handleResetView} // Change from onClick={() => setExpandedNodes({})}
+              className="rounded-md bg-gray-700 px-3 py-1 text-sm text-white hover:bg-gray-600"
+            >
+              Reset View
+            </button>
             <div className="col-span-7 rounded-lg border shadow">
               <TransactionNetwork
                 transactions={currentTransactions}
@@ -262,6 +279,7 @@ const TransactionExplorer: React.FC = () => {
                 blockchainType={blockchainType}
                 onNodeExpanded={handleNodeExpansion}
                 expandedNodes={expandedNodes}
+                onResetView={handleResetView}
               />
             </div>
           </div>

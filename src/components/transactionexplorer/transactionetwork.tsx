@@ -46,6 +46,7 @@ interface TransactionNetworkProps {
   onAddressChange: (newAddress: string) => void;
   onNodeExpanded?: (address: string, transactions: Transaction[]) => void;
   expandedNodes?: { [address: string]: Transaction[] };
+  onResetView?: () => void; // Add this new prop
 
   blockchainType: "ETH" | "SWC";
 }
@@ -57,6 +58,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
   blockchainType,
   onNodeExpanded, // Make sure this prop is properly referenced here
   expandedNodes: externalExpandedNodes, // Rename to avoid conflict with local state
+  onResetView,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [centerNode, setCenterNode] = useState<string>(address);
@@ -204,33 +206,6 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         const nodeId = tx.hash;
         const counterpartyAddress =
           tx.direction === "outgoing" ? tx.receiver! : tx.sender!;
-
-        // Skip transactions to/from already visualized nodes to avoid clutter
-        // But keep connections to center node or other expanded nodes
-        // if (
-        //   counterpartyAddress !== centerNode &&
-        //   !expandedNodes[counterpartyAddress] &&
-        //   counterpartyAddress !== expandedAddress
-        // ) {
-        //   uniqueNodes.set(nodeId, {
-        //     id: nodeId,
-        //     address: counterpartyAddress,
-        //     main: false,
-        //     isTransactionNode: true,
-        //     transaction: tx,
-        //     // Set source and target nodes for proper arrow drawing
-        //     sourceNode:
-        //       tx.direction === "outgoing"
-        //         ? expandedAddress
-        //         : counterpartyAddress,
-        //     targetNode:
-        //       tx.direction === "outgoing"
-        //         ? counterpartyAddress
-        //         : expandedAddress,
-        //     parentNode: expandedAddress,
-        //   });
-        // }
-
         // Add transaction node with correct connections
         // Don't skip any - we want to show ALL transactions from expanded nodes
         uniqueNodes.set(nodeId, {
@@ -932,7 +907,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       // Pass true as second parameter to force fresh data
       const nodeTransactions = await fetchTransactionsForAddress(
         nodeAddress,
-        true,
+        false,
       );
       console.log(
         `Fetched ${nodeTransactions.length} transactions for node ${nodeAddress}`,
@@ -1020,7 +995,15 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       return [];
     }
   };
+  const handleResetView = () => {
+    setExpandedNodes({});
+    setCenterNode(address);
 
+    // Call parent's reset handler if available
+    if (onResetView) {
+      onResetView();
+    }
+  };
   return (
     <>
       <div className="relative w-full rounded-lg border border-r bg-gray-900 p-4">
@@ -1033,7 +1016,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
             <div className="mb-2 flex justify-end">
               {Object.keys(expandedNodes).length > 0 && (
                 <button
-                  onClick={() => setExpandedNodes({})}
+                  onClick={handleResetView} // Change this from setExpandedNodes({})
                   className="rounded-md bg-gray-700 px-3 py-1 text-sm text-white hover:bg-gray-600"
                 >
                   Reset View

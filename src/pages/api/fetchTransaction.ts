@@ -4,6 +4,7 @@ export async function fetchTransactions(
   transaction_index?: number,
 ) {
   try {
+    console.log(`Fetching transactions for address: ${addressId}`);
     let url = `http://localhost:5001/transactions/${addressId}`;
 
     // Add query parameters for pagination
@@ -22,5 +23,27 @@ export async function fetchTransactions(
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return [];
+  }
+}
+export async function fetchTransactionByHash(hash: string) {
+  try {
+    console.log(`Fetching transaction with hash: ${hash}`);
+    const url = `http://localhost:5001/transaction/${hash}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log("Transaction not found");
+        return null;
+      }
+      throw new Error("Failed to fetch transaction");
+    }
+
+    const data = await response.json();
+    console.log("Transaction data:", data);
+    return data.transaction;
+  } catch (error) {
+    console.error("Error fetching transaction by hash:", error);
+    return null;
   }
 }

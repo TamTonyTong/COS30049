@@ -119,6 +119,7 @@ WITH a,
 WITH a, 
      COLLECT(CASE WHEN outgoing IS NOT NULL THEN {
          direction: "outgoing",
+         sender: a.addressId,
          receiver: receiver.addressId,
          hash: outgoing.hash,  
          value: outgoing.value,
@@ -179,7 +180,55 @@ RETURN
     await session.close();
   }
 });
+// Get Transaction by Hash
+app.get("/transaction/:hash", async (req, res) => {
+  driver = neo4j.driver(
+    process.env.NEO4J_URI2,
+    neo4j.auth.basic(
+      process.env.NEXT_PUBLIC_NEO4J_USER,
+      process.env.NEO4J_PASSWORD2,
+    ),
+  );
+  const { hash } = req.params;
+  console.log(`API Request: Search for transaction hash ${hash}`);
 
+  const session = driver.session();
+  try {
+    const query = `
+      MATCH (sender:Address)-[tx:Transaction {hash: $hash}]->(receiver:Address)
+      RETURN {
+        hash: tx.hash,
+        sender: sender.addressId,
+        receiver: receiver.addressId,
+        direction: "outgoing", // From the perspective of sender
+        value: tx.value,
+        input: tx.input,
+        transaction_index: tx.transaction_index,
+        gas: tx.gas,
+        gas_used: tx.gas_used,
+        gas_price: tx.gas_price,
+        transaction_fee: tx.transaction_fee,
+        block_number: tx.block_number,
+        block_hash: tx.block_hash,
+        block_timestamp: tx.block_timestamp
+      } as transaction
+    `;
+
+    const result = await session.run(query, { hash });
+
+    if (result.records.length === 0) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    const transaction = result.records[0].get("transaction");
+    res.json({ transaction });
+  } catch (error) {
+    console.error("Error fetching transaction by hash:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await session.close();
+  }
+});
 // Start the Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -12,6 +12,7 @@ import {
   getInfuraPageFromDb,
   getTransactionByHash,
 } from "@/src/pages/api/infura-sync";
+import { fetchTransactionByHash } from "@/src/pages/api/fetchTransaction";
 
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
@@ -58,7 +59,16 @@ const TransactionExplorer: React.FC = () => {
       let extractedTransactions: Transaction[] = [];
       if (isTransactionHash) {
         // Search by transaction hash
-        const transaction = await getTransactionByHash(addressToSearch);
+        let transaction;
+
+        // Try both sources based on blockchain type
+        if (blockchainType === "ETH") {
+          // Try Infura first
+          transaction = await getTransactionByHash(addressToSearch);
+        } else {
+          // SWC - use internal database
+          transaction = await fetchTransactionByHash(addressToSearch);
+        }
 
         if (transaction) {
           // If transaction found, display it
@@ -66,10 +76,7 @@ const TransactionExplorer: React.FC = () => {
 
           // If we found a transaction, change the address to the sender address
           // for proper context in the visualization
-          setAddress(transaction.sender);
-
-          // Set direction for the transaction based on current context
-          transaction.direction = "outgoing"; // Default to outgoing
+          setAddress(transaction.sender || transaction.from_address);
         } else {
           setError("Transaction not found.");
         }

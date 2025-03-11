@@ -4,6 +4,7 @@ import * as d3 from "d3";
 import TransactionDetail from "./transactiondetail";
 import { syncInfuraData } from "@/src/pages/api/infura-sync";
 import { Transaction } from "./type";
+import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
 
 interface NetworkNode {
   id: string;
@@ -936,24 +937,25 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
   ): Promise<Transaction[]> => {
     try {
       console.log(
-        `Fetching transactions for ${address}, forceFresh: ${forceFresh}`,
+        `Fetching transactions for ${address}, forceFresh: ${forceFresh}, blockchain: ${blockchainType}`,
       );
-      // Add proper error handling and timeout
-      const fetchPromise = syncInfuraData(address, forceFresh);
 
-      // Add a timeout to prevent hanging
-      // const timeoutPromise = new Promise<Transaction[]>((_, reject) => {
-      //   setTimeout(
-      //     () => reject(new Error("Fetch transactions timeout")),
-      //     15000,
-      //   );
-      // });
-      // Race between fetch and timeout
-      const transactions = await Promise.race([fetchPromise]);
+      let transactions: Transaction[] = [];
+
+      // Choose the correct data source based on blockchain type
+      if (blockchainType === "ETH") {
+        // For ETH, use Infura
+        transactions = await syncInfuraData(address, forceFresh);
+      } else {
+        // For SWC, use your internal DB
+        const response = await fetchTransactions(address, "initial");
+        transactions = response.length > 0 ? response[0].transactions : [];
+      }
 
       console.log(
-        `Received ${transactions.length} transactions from API for ${address}`,
+        `Received ${transactions.length} transactions from ${blockchainType === "ETH" ? "Infura" : "internal DB"} for ${address}`,
       );
+
       // Make sure these transactions have properly set sender/receiver/direction
       const processedTransactions = transactions.map((tx) => {
         // For 2nd hop transactions, we need to ensure the direction is correctly set
@@ -965,13 +967,14 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
           ...tx,
           // Ensure these fields are set correctly
           sender: tx.sender || tx.from_address || "",
-          receiver: tx.receiver || tx.receiver || "",
+          receiver: tx.receiver || tx.to_address || "",
           direction: isOutgoing ? "outgoing" : "incoming",
         };
       });
+
       return processedTransactions;
     } catch (error) {
-      console.error("Error fetching transactions:", error);
+      console.error(`Error fetching ${blockchainType} transactions:`, error);
       return [];
     }
   };

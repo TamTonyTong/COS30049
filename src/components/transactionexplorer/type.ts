@@ -1,21 +1,39 @@
 export interface Transaction {
-  from_address(from_address: any): string;
-  direction: string;
-  contract_address: any;
-  function_name: any;
-  nonce: string;
-  is_error: string;
+  // Essential properties
   hash: string;
-  value: number | string;
+  value: string | number;
+  block_number: string | number;
+  block_timestamp: string | number;
+
+  // Transaction details
   input: string;
   gas: string;
-  gas_used: number;
-  gas_price: number;
-  transaction_fee: number;
-  block_number: number;
+  gas_used: string | number;
+  gas_price: string | number;
+  transaction_fee: string | number;
   transaction_index: string;
   block_hash: string;
-  block_timestamp: number;
-  receiver: string;
+
+  // Address related
+  from_address?: string;
+  to_address?: string;
   sender: string;
+  receiver: string;
+  direction: string | "incoming" | "outgoing";
+
+  // Contract related
+  contract_address?: string;
+  function_name?: string;
+
+  // Additional metadata
+  nonce?: string;
+  is_error?: string;
+
+  // Optional receipt fields
+  receipt_cumulative_gas_used?: string;
+  receipt_gas_used?: string;
+  receipt_status?: string;
+
+  // To accommodate any function properties if needed
+  [key: string]: any;
 }

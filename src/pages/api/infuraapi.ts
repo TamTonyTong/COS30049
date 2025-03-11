@@ -169,11 +169,11 @@ export async function fetchInfuraTransactions(
           hash: tx.hash,
           value: tx.value,
           input: tx.input,
-          gas: parseInt(tx.gas, 16),
+          gas: parseInt(tx.gas, 16).toString(),
           gas_price: gasPrice,
           gas_used: gasUsed,
           transaction_fee: gasPrice * gasUsed,
-          block_number: parseInt(tx.blockNumber, 16),
+          block_number: parseInt(tx.blockNumber, 16).toString(),
           transaction_index: parseInt(tx.transactionIndex, 16).toString(),
           block_hash: tx.blockHash,
           block_timestamp: parseInt(blockResponse.data.result.timestamp, 16),
@@ -195,7 +195,10 @@ export async function fetchInfuraTransactions(
     }
 
     // Sort by block number (descending)
-    allTxs.sort((a, b) => b.block_number - a.block_number);
+    allTxs.sort(
+      (a, b) =>
+        parseInt(String(b.block_number)) - parseInt(String(a.block_number)),
+    );
 
     // Apply pagination
     const startIdx = (page - 1) * PAGE_SIZE;

@@ -66,7 +66,7 @@ const TransactionExplorer: React.FC = () => {
 
           // If we found a transaction, change the address to the sender address
           // for proper context in the visualization
-          setAddress(transaction.from_address);
+          setAddress(transaction.sender);
 
           // Set direction for the transaction based on current context
           transaction.direction = "outgoing"; // Default to outgoing
@@ -265,12 +265,6 @@ const TransactionExplorer: React.FC = () => {
       {hasLoadedTransactions && (
         <>
           <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
-            <button
-              onClick={handleResetView} // Change from onClick={() => setExpandedNodes({})}
-              className="rounded-md bg-gray-700 px-3 py-1 text-sm text-white hover:bg-gray-600"
-            >
-              Reset View
-            </button>
             <div className="col-span-7 rounded-lg border shadow">
               <TransactionNetwork
                 transactions={currentTransactions}

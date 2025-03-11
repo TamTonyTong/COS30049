@@ -45,12 +45,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
         } else {
           return bValue - aValue;
         }
-      } else {
+      } else if (sortConfig.key) {
         // Handle other fields as strings
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const key = sortConfig.key;
+        if (a[key] < b[key]) {
           return sortConfig.direction === "ascending" ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (a[key] > b[key]) {
           return sortConfig.direction === "ascending" ? 1 : -1;
         }
       }
@@ -85,9 +86,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
   };
   return (
     <>
-      <div className="col-span-4 w-full rounded-lg border p-8 shadow">
-        {/* Add instructions/hint for sorting */}
-        <div className="mb-2 text-xs italic text-gray-500">
+      <div className="col-span-4 w-full rounded-lg border border-gray-700 bg-gray-800 p-8 shadow">
+        {/* Add instructions/hint for sorting with updated styles */}
+        <div className="mb-2 text-xs italic text-gray-400">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="mr-1 inline-block h-4 w-4"
@@ -104,20 +105,20 @@ const TransactionList: React.FC<TransactionListProps> = ({
           </svg>
           Click on column headers to sort transactions
         </div>
-        <table className="min-w-full divide-y divide-gray-200 rounded-lg border">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-700 rounded-lg border border-gray-700">
+          <thead className="bg-gray-900">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Hash
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Sender
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Reciever
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
+                Receiver
               </th>
               <th
-                className="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                className="cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300"
                 onClick={() => requestSort("value")}
               >
                 Value{" "}
@@ -129,35 +130,35 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <span className="ml-1 transition-opacity">↕</span>
                 )}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-300">
                 Time
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-700 bg-gray-800">
             {sortedTransactions.map((transaction, index) => (
               <tr
                 key={index}
                 onClick={() => handleRowClick(transaction)}
-                className="cursor-pointer hover:bg-gray-50"
+                className="cursor-pointer transition-colors duration-150 hover:bg-gray-700"
               >
                 <td className="whitespace-nowrap px-6 py-4">
-                  <div className="text-xs text-gray-900">
+                  <div className="text-xs text-gray-300">
                     {transaction.hash.substring(0, 7)}...
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
+                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-400">
                   {transaction.sender.substring(0, 4)}...
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
+                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-400">
                   {transaction.receiver.substring(0, 4)}...
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-500">
+                <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-400">
                   {formatValue(transaction.value)}
                 </td>
-                <td className="break-words px-6 py-4 text-xs text-gray-500">
+                <td className="break-words px-6 py-4 text-xs text-gray-400">
                   {new Date(
-                    transaction.block_timestamp * 1000,
+                    Number(transaction.block_timestamp) * 1000,
                   ).toLocaleString()}
                 </td>
               </tr>

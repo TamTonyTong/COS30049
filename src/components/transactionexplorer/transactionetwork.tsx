@@ -3,27 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import TransactionDetail from "./transactiondetail";
 import { syncInfuraData } from "@/src/pages/api/infura-sync";
-
-interface Transaction {
-  hash: string;
-  value: string;
-  input: string;
-  gas: string;
-  gas_used: string;
-  gas_price: string;
-  transaction_fee: string;
-  block_number: number;
-  transaction_index: string;
-  block_hash: string;
-  block_timestamp: number;
-  receiver: string;
-  sender: string;
-  direction: "incoming" | "outgoing";
-  contract_address?: string;
-  function_name?: string;
-  is_error?: string;
-  nonce?: string;
-}
+import { Transaction } from "./type";
 
 interface NetworkNode {
   id: string;
@@ -533,7 +513,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
     linkGroups
       .append("line")
       .attr("class", "link visible-link-source")
-      .attr("data-hash", (d) => d.transaction?.hash)
+      .attr("data-hash", (d) => d.transaction?.hash || "")
       .attr("x1", (d) => {
         const sourceNode = uniqueNodes.get(d.sourceNode || "");
         return sourceNode?.x || 0;
@@ -548,13 +528,13 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .style("stroke-width", 2)
       .style("opacity", 0)
       .on("mouseover", function () {
-        d3.select(this.parentNode)
+        d3.select(this.parentNode as SVGGElement)
           .selectAll(".visible-link-source, .visible-link-target")
           .style("stroke-width", 3)
           .style("stroke", "#94a3b8");
       })
       .on("mouseout", function () {
-        d3.select(this.parentNode)
+        d3.select(this.parentNode as SVGGElement)
           .selectAll(".visible-link-source, .visible-link-target")
           .style("stroke-width", 2)
           .style("stroke", "#64748b");
@@ -582,13 +562,13 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .style("opacity", 0)
       .attr("marker-end", "url(#arrow)")
       .on("mouseover", function () {
-        d3.select(this.parentNode)
+        d3.select(this.parentNode as SVGGElement)
           .selectAll(".visible-link-source, .visible-link-target")
           .style("stroke-width", 3)
           .style("stroke", "#94a3b8");
       })
       .on("mouseout", function () {
-        d3.select(this.parentNode)
+        d3.select(this.parentNode as SVGGElement)
           .selectAll(".visible-link-source, .visible-link-target")
           .style("stroke-width", 2)
           .style("stroke", "#64748b");

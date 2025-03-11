@@ -154,7 +154,7 @@ export const getTransactionByHash = async (
       from_address: txData.from,
       to_address: txData.to || "",
       value: txData.value.toString(),
-      transaction_index: txData.transactionIndex?.toString() || "0",
+      transaction_index: txData.index?.toString() || "0",
       gas: txData.gasLimit.toString(),
       gas_used: txReceipt?.gasUsed?.toString() || "0",
       gas_price: txData.gasPrice?.toString() || "0",
@@ -166,7 +166,8 @@ export const getTransactionByHash = async (
       // Add relevant fields for visualization
       sender: txData.from,
       receiver: txData.to || "",
-      direction: "", // This will be set in the UI based on address context
+      direction: "",
+      block_hash: "",
     };
 
     // Also save to the database for future queries

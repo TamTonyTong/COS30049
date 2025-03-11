@@ -57,7 +57,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <label className="flex cursor-pointer items-center">
           <input
             type="checkbox"
-            value={isTransactionHash}
+            checked={isTransactionHash}
             onChange={() => setIsTransactionHash(!isTransactionHash)}
             className="h-4 w-4 cursor-pointer"
           />

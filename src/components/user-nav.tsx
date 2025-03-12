@@ -39,14 +39,14 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {children || (
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
+          <Button variant="ghost" className="relative w-8 h-8 rounded-full">
+            <Avatar className="w-8 h-8">
               <AvatarImage
                 src="/avatars/professional-avatar.png"
                 alt="@username"
               />
               <AvatarFallback>
-                <User className="h-4 w-4" />
+                <User className="w-4 h-4" />
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -67,12 +67,15 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
           <DropdownMenuItem>
             <Link href="personal-assets">Account</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+         
           <DropdownMenuItem>
           <Link href="create">Create Asset</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>Orders</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+          
+          <DropdownMenuItem>
+          <Link href="settings">Settings</Link>
+          </DropdownMenuItem>
+          
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

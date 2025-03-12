@@ -2,158 +2,132 @@
 
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import SimTokenABI from "../../../contracts/SimToken.json";
+import { isAddress } from "ethers";
 import TradingContractABI from "../../../contracts/TradingContract.json";
 
-const SIMTOKEN_ADDRESS = "0x419FFc8a54A09F0a52E0972DA27f62dC3FA7afC4";
-const TRADING_CONTRACT_ADDRESS = "0x2B3b831D4Eb1AdD0b6F5ddB8dbebc0F1E365C7Fe";
+const TRADING_CONTRACT_ADDRESS = "0xa67e85D0dE9f30Da3C531Ce2aC16003711a5Fdac";
 
-export default function SmartTrade() {
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
-  const [account, setAccount] = useState<string | null>(null);
-  const [simToken, setSimToken] = useState<ethers.Contract | null>(null);
-  const [tradingContract, setTradingContract] =
-    useState<ethers.Contract | null>(null);
-  const [ethBalance, setEthBalance] = useState<string>("0");
-  const [simBalance, setSimBalance] = useState<string>("0"); // Internal balance
-
-  const connectWallet = async () => {
-    if (typeof window !== "undefined" && window.ethereum) {
-      try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        setProvider(provider);
-        setSigner(signer);
-        setAccount(accounts[0]);
-
-        const simTokenContract = new ethers.Contract(
-          SIMTOKEN_ADDRESS,
-          SimTokenABI.abi,
-          signer
-        );
-        const tradingContract = new ethers.Contract(
-          TRADING_CONTRACT_ADDRESS,
-          TradingContractABI.abi,
-          signer
-        );
-        setSimToken(simTokenContract);
-        setTradingContract(tradingContract);
-
-        await updateBalances(provider, accounts[0], tradingContract);
-      } catch (error) {
-        console.error("Failed to connect wallet:", error);
+  export default function SmartTrade() {
+    const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+    const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
+    const [account, setAccount] = useState<string | null>(null);
+    const [tradingContract, setTradingContract] = useState<ethers.Contract | null>(null);
+    const [ethBalance, setEthBalance] = useState<string>("0");
+  
+    const [initiateRecipient, setInitiateRecipient] = useState<string>("");
+    const [initiateAmount, setInitiateAmount] = useState<string>("");
+    const [acceptSender, setAcceptSender] = useState<string>("");
+    const [acceptAmount, setAcceptAmount] = useState<string>("");
+  
+    const connectWallet = async () => {
+      if (typeof window !== "undefined" && window.ethereum) {
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+          setProvider(provider);
+          setSigner(signer);
+          setAccount(accounts[0]);
+  
+          const contract = new ethers.Contract(
+            TRADING_CONTRACT_ADDRESS,
+            TradingContractABI,
+            signer
+          );
+          setTradingContract(contract);
+  
+          await updateBalances(provider, accounts[0]);
+        } catch (error) {
+          console.error("Failed to connect wallet:", error);
+          alert("Failed to connect wallet. Check console for details.");
+        }
+      } else {
+        alert("Please install MetaMask!");
       }
-    } else {
-      alert("Please install MetaMask!");
-    }
-  };
-
-  const updateBalances = async (
-    provider: ethers.BrowserProvider,
-    account: string,
-    tradingContract: ethers.Contract // Use tradingContract instead
-  ) => {
-    try {
-      const ethBal = await provider.getBalance(account);
-      const internalSimBal = await tradingContract.tokenBalances(account); // Internal balance
-      setEthBalance(ethers.formatEther(ethBal));
-      setSimBalance(ethers.formatEther(internalSimBal));
-    } catch (error) {
-      console.error("Error in updateBalances:", error);
-    }
-  };
-
-  const buyTokens = async () => {
-    if (!tradingContract) return;
-    try {
-      const amount = BigInt(1); // Hardcode 1 for testing
-      const cost = amount * BigInt(1);
-      const tx = await tradingContract.buyTokens(amount, {
-        value: ethers.parseEther(cost.toString()),
-      });
-      await tx.wait();
-      await updateBalances(provider!, account!, tradingContract!);
-      alert("Buy successful!");
-    } catch (error) {
-      console.error("Buy failed:", error);
-    }
-  };
-
-  const withdrawTokens = async () => {
-    if (!tradingContract) return;
-    try {
-      const tx = await tradingContract.withdrawTokens(ethers.parseEther("1"));
-      await tx.wait();
-      await updateBalances(provider!, account!, tradingContract!);
-      alert("Withdraw successful!");
-    } catch (error) {
-      console.error("Withdraw failed:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.ethereum) {
-      window.ethereum.on("accountsChanged", (accounts: string[]) => {
-        setAccount(accounts[0]);
-        if (provider && tradingContract)
-          updateBalances(provider, accounts[0], tradingContract);
-      });
-    }
-  }, [provider, tradingContract]);
-
-  return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
-        <h1 className="text-2xl text-blue-600 dark:text-sky-400 font-bold text-center mb-6">
-          SimToken Trading
-        </h1>
-        {!account ? (
-          <button
-            onClick={connectWallet}
-            className="w-full bg-teal-500 text-white py-2 px-4 rounded hover:bg-teal-600 transition"
-          >
-            Connect Wallet
-          </button>
-        ) : (
-          <div className="space-y-6">
-            <div className="text-sm">
-              <p className="truncate text-black">
-                <strong>Account:</strong> {account}
-              </p>
-              <p className="text-black">
-                <strong>ETH Balance:</strong> {ethBalance} ETH
-              </p>
-              <p className="text-black">
-                <strong>Internal SIM Balance:</strong> {simBalance} SIM
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-lg text-black font-semibold">Buy SimToken</h2>
+    };
+  
+    const updateBalances = async (provider: ethers.BrowserProvider, account: string) => {
+      try {
+        const balance = await provider.getBalance(account);
+        setEthBalance(ethers.formatEther(balance));
+      } catch (error) {
+        console.error("Error updating balances:", error);
+      }
+    };
+  
+    const initiateTrade = async () => {
+      if (!tradingContract || !initiateRecipient || !initiateAmount) {
+        alert("Please fill in all fields.");
+        return;
+      }
+      if (!isAddress(initiateRecipient)) {
+        alert("Invalid recipient address. Please enter a valid 0x... address.");
+        return;
+      }
+      try {
+        const amountWei = ethers.parseEther(initiateAmount);
+        const tx = await tradingContract.initiateTrade(initiateRecipient, amountWei, {
+          value: amountWei,
+        });
+        await tx.wait();
+        await updateBalances(provider!, account!);
+        alert("Trade initiated successfully!");
+      } catch (error) {
+        console.error("Initiate trade failed:", error);
+        alert("Failed to initiate trade. Check console for details.");
+      }
+    };
+  
+  
+    useEffect(() => {
+      if (typeof window !== "undefined" && window.ethereum) {
+        window.ethereum.on("accountsChanged", (accounts: string[]) => {
+          setAccount(accounts[0]);
+          if (provider) updateBalances(provider, accounts[0]);
+        });
+      }
+    }, [provider]);
+  
+    return (
+      <div className="p-4 max-w-md mx-auto">
+        <h1 className="text-2xl font-bold mb-4">Smart Trade with ETH</h1>
+        <button
+          onClick={connectWallet}
+          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+        >
+          Connect Wallet
+        </button>
+        {account && (
+          <div className="mt-4">
+            <p className="text-sm">Account: {account}</p>
+            <p className="text-sm">ETH Balance: {ethBalance} ETH</p>
+  
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold">Initiate Trade</h2>
+              <input
+                type="text"
+                placeholder="Recipient Address (0x...)"
+                value={initiateRecipient}
+                onChange={(e) => setInitiateRecipient(e.target.value)}
+                className="border p-2 w-full mt-2 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Amount (e.g., 1)"
+                value={initiateAmount}
+                onChange={(e) => setInitiateAmount(e.target.value)}
+                className="border p-2 w-full mt-2 rounded"
+              />
               <button
-                onClick={buyTokens}
-                className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition"
+                onClick={initiateTrade}
+                className="bg-green-500 text-white p-2 mt-2 rounded w-full hover:bg-green-600"
               >
-                Buy 1 SIM
+                Initiate Trade
               </button>
             </div>
-            <div className="space-y-2">
-              <h2 className="text-lg text-black font-semibold">
-                Withdraw SimToken
-              </h2>
-              <button
-                onClick={withdrawTokens}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition"
-              >
-                Withdraw 1 SIM
-              </button>
-            </div>
+
           </div>
         )}
       </div>
-    </div>
-  );
-}
+    );
+  }

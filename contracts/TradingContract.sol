@@ -1,86 +1,36 @@
 pragma solidity ^0.8.20;
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TradingContract {
-    IERC20 public simToken;
-    uint256 public tokenPrice = 1; // 1 token = 1 ETH
     address public owner;
-    mapping(address => uint256) public ethBalances;
-    mapping(address => uint256) public tokenBalances;
+    mapping(bytes32 => uint256) public trades; // tradeId => ETH amount
 
-    constructor(address _simToken) {
-        simToken = IERC20(_simToken);
+    event TradeInitiated(address indexed sender, address indexed recipient, uint256 amount, bytes32 tradeId);
+    event TradeAccepted(address indexed sender, address indexed recipient, uint256 amount, bytes32 tradeId);
+
+    constructor() {
         owner = msg.sender;
     }
 
-    function depositETH() external payable {
-        require(msg.value > 0, "Must deposit some ETH");
-        ethBalances[msg.sender] += msg.value;
+    // Initiate a trade by sending ETH to the contract
+    function initiateTrade(address recipient, uint256 amount) external payable {
+        require(msg.value == amount, "Incorrect ETH amount sent");
+        require(recipient != address(0), "Invalid recipient address");
+        bytes32 tradeId = keccak256(abi.encodePacked(msg.sender, recipient, amount));
+        require(trades[tradeId] == 0, "Trade already exists");
+        trades[tradeId] = amount;
+        emit TradeInitiated(msg.sender, recipient, amount, tradeId);
     }
 
-    function depositTokens(uint256 amount) external {
-        require(amount > 0, "Must deposit some tokens");
-        require(
-            simToken.transferFrom(msg.sender, address(this), amount),
-            "Transfer failed"
-        );
-        tokenBalances[msg.sender] += amount;
+    // Accept a trade and receive the ETH
+    function acceptTrade(address sender, uint256 amount) external {
+        bytes32 tradeId = keccak256(abi.encodePacked(sender, msg.sender, amount));
+        uint256 tradeAmount = trades[tradeId];
+        require(tradeAmount > 0, "No such trade exists");
+        trades[tradeId] = 0; // Clear the trade
+        payable(msg.sender).transfer(tradeAmount);
+        emit TradeAccepted(sender, msg.sender, tradeAmount, tradeId);
     }
 
-    function withdrawETH(uint256 amount) external {
-        require(amount > 0, "Must withdraw some ETH");
-        require(ethBalances[msg.sender] >= amount, "Insufficient ETH balance");
-        ethBalances[msg.sender] -= amount;
-        payable(msg.sender).transfer(amount);
-    }
-
-    function withdrawTokens(uint256 amount) external {
-        require(
-            tokenBalances[msg.sender] >= amount,
-            "Insufficient token balance"
-        );
-        require(
-            simToken.balanceOf(address(this)) >= amount,
-            "Contract lacks sufficient tokens"
-        );
-        tokenBalances[msg.sender] -= amount;
-        simToken.transfer(msg.sender, amount);
-    }
-
-    function buyTokens(uint256 amount) external payable {
-        uint256 cost = amount * tokenPrice; // 1 ETH per token
-        require(msg.value >= cost * 1 ether, "Insufficient ETH sent");
-        require(
-            simToken.balanceOf(address(this)) >= amount * 1 ether,
-            "Insufficient token supply"
-        );
-        tokenBalances[msg.sender] += amount * 1 ether;
-    }
-
-    function sellTokens(uint256 amount) external {
-        uint256 payout = amount * tokenPrice;
-        require(
-            tokenBalances[msg.sender] >= amount * 1 ether,
-            "Insufficient token balance"
-        );
-        require(
-            address(this).balance >= payout * 1 ether,
-            "Contract lacks ETH"
-        );
-        tokenBalances[msg.sender] -= amount * 1 ether;
-        payable(msg.sender).transfer(payout * 1 ether); // Send ETH directly
-    }
-
-    function getBalances(
-        address user
-    ) external view returns (uint256 ethBalance, uint256 tokenBalance) {
-        return (ethBalances[user], tokenBalances[user]);
-    }
-
-    function setTokenPrice(uint256 newPrice) external {
-        require(msg.sender == owner, "Not owner");
-        tokenPrice = newPrice;
-    }
-
+    // Allow contract to receive ETH
     receive() external payable {}
 }

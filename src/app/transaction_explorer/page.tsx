@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
+import { fetchTransactions } from "@/src/pages/api/fetchTransactions2";
 import { fetchInfuraTransactions } from "@/src/pages/api/infuraapi";
 import SearchBar from "@/src/components/transactionexplorer/searchbar";
 import TransactionList from "@/src/components/transactionexplorer/transactionlist";
@@ -12,7 +12,7 @@ import {
   getInfuraPageFromDb,
   getTransactionByHash,
 } from "@/src/pages/api/infura-sync";
-import { fetchTransactionByHash } from "@/src/pages/api/fetchTransaction";
+import { fetchTransactionByHash } from "@/src/pages/api/fetchTransactions2";
 
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
@@ -125,7 +125,11 @@ const TransactionExplorer: React.FC = () => {
 
       if (blockchainType === "SWC") {
         // SWC still uses internal database for pagination
-        const newData = await fetchTransactions(address, "older", lastIndex);
+        const newData = await fetchTransactions(
+          address,
+          "older",
+          lastIndex !== undefined ? lastIndex.toString() : undefined,
+        );
         extractedTransactions =
           newData.length > 0 ? newData[0].transactions : [];
       } else {

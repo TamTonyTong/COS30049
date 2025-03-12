@@ -1,17 +1,14 @@
 import neo4j, { Driver } from "neo4j-driver";
-import * as dotenv from "dotenv";
-
-dotenv.config();
 
 let DbDriver: Driver | null = null;
 
 export function getDbDriver() {
   if (!DbDriver) {
     DbDriver = neo4j.driver(
-      process.env.NEXT_PUBLIC_NEO4J_URI3 || "",
+      process.env.NEXT_PUBLIC_NEO4J_URI2 || "",
       neo4j.auth.basic(
         process.env.NEXT_PUBLIC_NEO4J_USER || "",
-        process.env.NEXT_PUBLIC_NEO4J_PASSWORD3 || "",
+        process.env.NEXT_PUBLIC_NEO4J_PASSWORD2 || "",
       ),
       {
         // Add this configuration to convert JavaScript numbers to Neo4j integers

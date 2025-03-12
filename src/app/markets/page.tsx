@@ -1,350 +1,128 @@
-"use client"
+"use client";
 
-export const dynamic = "force-dynamic"
-export const fetchCache = "force-no-store"
-
-import { useState, useEffect, useMemo } from "react"
-import Layout from "@/src/components/layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
-import { Badge } from "@/src/components/ui/badge"
-import { Button } from "@/src/components/ui/button"
-import { Input } from "@/src/components/ui/input"
+import { useState, useEffect } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
-import { Slider } from "@/src/components/ui/slider"
-import { RefreshCw, Info, Search, X, SlidersHorizontal, ArrowUp, ArrowDown } from "lucide-react"
-import Link from "next/link"
-import { SearchSuggestions } from "@/src/components/search-suggestions"
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
+import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { Search, X } from "lucide-react";
+import Link from "next/link";
+import Layout from "../../components/layout";
 
-interface Asset {
-  symbol: string
-  name: string
-  price: number
-  currencypair: string
-  assettype: string
-  
-}
-
-interface Crypto {
-  id: number
-  symbol: string
-  name: string
-  price: number
-}
-
-type SortField = "name" | "price" 
-type SortOrder = "asc" | "desc"
-type PriceRange = [number, number]
-type AssetType = "all" | "cryptocurrency" | "stock" | "forex" | "commodity"
-
-export default function MarketsPage() {
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-
-  // Search and filter states
-  const [searchTerm, setSearchTerm] = useState<string>("")
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("")
-  const [sortField, setSortField] = useState<SortField>("name")
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
-  const [priceRange, setPriceRange] = useState<PriceRange>([0, 100000])
-  const [debouncedPriceRange, setDebouncedPriceRange] = useState<PriceRange>([0, 100000])
-  const [assetType, setAssetType] = useState<AssetType>("all")
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [activeFilters, setActiveFilters] = useState<string[]>([])
-  const [maxPriceValue, setMaxPriceValue] = useState(100000)
-
-  const fetchAssets = async () => {
-    try {
-      setIsRefreshing(true)
-      const response = await fetch("/api/assets")
-      if (!response.ok) {
-        throw new Error("Network response was not ok")
-      }
-      const data = await response.json()
-
-      if (data.assets && Array.isArray(data.assets)) {
-        setAssets(data.assets)
-        setLastUpdated(new Date())
-
-        // Find the highest price for the slider max value
-        const highestPrice = Math.max(...data.assets.map((asset: Asset) => asset.price))
-        // Round up to the nearest power of 10 for a clean max value
-        const roundedMax = Math.pow(10, Math.ceil(Math.log10(highestPrice)))
-        setMaxPriceValue(roundedMax)
-        setPriceRange([0, roundedMax])
-        setDebouncedPriceRange([0, roundedMax])
-      } else {
-        setAssets([])
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error)
-      setError("Error fetching data. Please try again.")
-    } finally {
-      setIsLoading(false)
-      setIsRefreshing(false)
-    }
+export default function TradePage() {
+  interface Trade {
+    tradeid: string;
+    symbol: string;
+    name: string;
+    assettype: string;
+    price: number;
+    status: "Buy" | "Sold";
   }
+
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   useEffect(() => {
-    fetchAssets()
-  }, [])
+    fetch("/api/trade") // Fetch data from the API route
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setTrades(data.trades);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setError("Error fetching data");
+        setIsLoading(false);
+      });
+  }, []);
 
-  // Debounce search term
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchTerm])
-
-  // Debounce price range
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedPriceRange(priceRange)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [priceRange])
-
-  // Update active filters
-  useEffect(() => {
-    const newActiveFilters: string[] = []
-
-    if (sortField !== "name" || sortOrder !== "asc") {
-      newActiveFilters.push(getSortLabel(sortField, sortOrder))
-    }
-
-    if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < maxPriceValue) {
-      newActiveFilters.push(
-        `Price: $${formatNumber(debouncedPriceRange[0])} - $${debouncedPriceRange[1] === maxPriceValue ? "Max" : formatNumber(debouncedPriceRange[1])}`,
-      )
-    }
-
-    if (assetType !== "all") {
-      newActiveFilters.push(`Type: ${getAssetTypeLabel(assetType)}`)
-    }
-
-    setActiveFilters(newActiveFilters)
-  }, [sortField, sortOrder, debouncedPriceRange, assetType, maxPriceValue])
-
-  // Format the last updated time
-  const getLastUpdatedText = () => {
-    if (!lastUpdated) return "never"
-
-    // If it's less than a minute ago, show "just now"
-    const diffMs = Date.now() - lastUpdated.getTime()
-    if (diffMs < 60000) return "just now"
-
-    // Otherwise show the time
-    return lastUpdated.toLocaleTimeString()
-  }
-
-  // Helper function to format numbers with commas
-  function formatNumber(num: number): string {
-    return num.toLocaleString(undefined, {
-      maximumFractionDigits: 2,
-    })
-  }
-
-  // Helper function to get asset type label
-  function getAssetTypeLabel(type: AssetType): string {
-    const labels: Record<AssetType, string> = {
-      all: "All Types",
-      cryptocurrency: "Cryptocurrency",
-      stock: "Stock",
-      forex: "Forex",
-      commodity: "Commodity",
-    }
-    return labels[type]
-  }
-
-  // Helper function to get sort label
-  function getSortLabel(field: SortField, order: SortOrder): string {
-    const fieldLabels: Record<SortField, string> = {
-      name: "Name",
-      price: "Price",
-      
-    }
-
-    return `${fieldLabels[field]} (${order === "asc" ? "Low to High" : "High to Low"})`
-  }
-
-  // Handle sort toggle
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-    } else {
-      setSortField(field)
-      setSortOrder("desc") // Default to descending when changing fields
-    }
-  }
-
-  // Get sort icon
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return null
-    return sortOrder === "asc" ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />
-  }
-
-  // Clear a specific filter
-  const clearFilter = (filter: string) => {
-    if (filter.startsWith("Price:")) {
-      setPriceRange([0, maxPriceValue])
-    } else if (filter.startsWith("Type:")) {
-      setAssetType("all")
-    } else {
-      // It's a sort filter
-      setSortField("name")
-      setSortOrder("asc")
-    }
-  }
-
-  // Clear all filters
-  const clearAllFilters = () => {
-    setPriceRange([0, maxPriceValue])
-    setSortField("name")
-    setSortOrder("asc")
-    setAssetType("all")
-    setSearchTerm("")
-  }
-
-  // Handle search suggestion selection
-  const handleSuggestionSelect = (crypto: Crypto) => {
-    setSearchTerm(crypto.name)
-    setIsSearchOpen(false)
-  }
-
-  // Filter and sort assets
-  const filteredAndSortedAssets = useMemo(() => {
-    // First filter by search term, price range, and asset type
-    const filtered = assets.filter((asset) => {
-      const matchesSearch =
-        debouncedSearchTerm === "" ||
-        asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        asset.symbol.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-
-      const matchesPrice = asset.price >= debouncedPriceRange[0] && asset.price <= debouncedPriceRange[1]
-
-      const matchesType = assetType === "all" || asset.assettype === assetType
-
-      return matchesSearch && matchesPrice && matchesType
-    })
-
-    // Then sort
-    return [...filtered].sort((a, b) => {
-      const aValue = a[sortField]
-      const bValue = b[sortField]
-
-      // Special case for strings
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortOrder === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
-      }
-
-      // For numbers
-      return sortOrder === "asc" ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number)
-    })
-  }, [assets, debouncedSearchTerm, debouncedPriceRange, assetType, sortField, sortOrder])
+  const filteredTrades = trades.filter((trade) => {
+    return (
+      trade.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trade.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   if (isLoading) {
-    return (
-      <Layout>
-        <div className="container px-4 py-8 mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="w-12 h-12 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </Layout>
-    )
+    return <div>Loading...</div>;
   }
 
   if (error) {
     return (
       <Layout>
-        <div className="container px-4 py-8 mx-auto">
+        <div className="container mx-auto px-4 py-8">
           <Card className="border-red-500/30 bg-[#1a2b4b]">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-white">Error</CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">
+                Error
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-red-400">{error}</p>
-              <Button
-                variant="outline"
-                className="mt-4 text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
-                onClick={fetchAssets}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" /> Try Again
-              </Button>
             </CardContent>
           </Card>
         </div>
       </Layout>
-    )
+    );
   }
 
-  if (assets.length === 0) {
+  if (trades.length === 0) {
     return (
       <Layout>
-        <div className="container px-4 py-8 mx-auto">
+        <div className="container mx-auto px-4 py-8">
           <Card className="border-blue-500/30 bg-[#1a2b4b]">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-white">No Assets Found</CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">
+                No Trades Found
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-300">No assets are available.</p>
-              <Button
-                variant="outline"
-                className="mt-4 text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
-                onClick={fetchAssets}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" /> Refresh
-              </Button>
+              <p className="text-gray-300">No trades are available.</p>
             </CardContent>
           </Card>
         </div>
       </Layout>
-    )
+    );
   }
 
   return (
     <Layout>
-      <div className="container px-4 py-8 mx-auto">
+      <div className="container mx-auto px-4 py-8">
         <Card className="border-blue-500/30 bg-[#1a2b4b]">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-white">Digital Asset Markets</CardTitle>
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-gray-400">
-                  {filteredAndSortedAssets.length} of {assets.length} assets
-                </div>
-                <Link href="/trade">
-                  <Button variant="outline" className="text-white">
-                    Trade
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-blue-400 hover:text-blue-300 hover:bg-[#243860]"
-                  onClick={fetchAssets}
-                  disabled={isRefreshing}
-                >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              <CardTitle className="text-2xl font-bold text-white">
+                Trading
+              </CardTitle>
+              <Link href="/markets">
+                <Button variant="outline" className="text-white">
+                  Markets
                 </Button>
-              </div>
+              </Link>
             </div>
           </CardHeader>
           <CardContent>
-            {/* Enhanced Search Bar */}
+            {/* Search Bar */}
             <div className="mb-6">
               <div className="relative">
                 <div className="absolute inset-0 rounded-lg bg-blue-500/10 blur-md"></div>
@@ -352,14 +130,11 @@ export default function MarketsPage() {
                   <Search className="w-5 h-5 ml-4 text-blue-400" />
                   <Input
                     type="text"
-                    placeholder="Search by name or symbol..."
+                    placeholder="Search by symbol or name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    onFocus={() => setIsSearchOpen(true)}
-                    onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
                     className="flex-1 text-white bg-transparent border-0 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
-
                   {searchTerm && (
                     <Button
                       variant="ghost"
@@ -370,213 +145,73 @@ export default function MarketsPage() {
                       <X className="w-4 h-4" />
                     </Button>
                   )}
-
-                  <DropdownMenu open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="mr-1 text-blue-400 hover:text-blue-300 hover:bg-[#243860]"
-                      >
-                        <SlidersHorizontal className="w-5 h-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-64 bg-[#1a2b4b] border-gray-700 text-white">
-                      <DropdownMenuLabel>Advanced Filters</DropdownMenuLabel>
-                      <DropdownMenuSeparator className="bg-gray-700" />
-
-                      <DropdownMenuGroup>
-                        <DropdownMenuLabel className="text-xs text-gray-400">Asset Type</DropdownMenuLabel>
-                        <div className="px-3 py-2">
-                          <Select value={assetType} onValueChange={(value) => setAssetType(value as AssetType)}>
-                            <SelectTrigger className="bg-[#243860] text-white border-gray-700">
-                              <SelectValue placeholder="Asset Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Types</SelectItem>
-                              <SelectItem value="cryptocurrency">Cryptocurrency</SelectItem>
-                              <SelectItem value="stock">Stock</SelectItem>
-                              <SelectItem value="forex">Forex</SelectItem>
-                              <SelectItem value="commodity">Commodity</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </DropdownMenuGroup>
-
-                      <DropdownMenuSeparator className="bg-gray-700" />
-
-                      <DropdownMenuGroup>
-                        <DropdownMenuLabel className="text-xs text-gray-400">Price Range</DropdownMenuLabel>
-                        <div className="px-3 py-2">
-                          <div className="flex justify-between mb-2 text-sm">
-                            <span>${formatNumber(priceRange[0])}</span>
-                            <span>${priceRange[1] === maxPriceValue ? "Max" : formatNumber(priceRange[1])}</span>
-                          </div>
-                          <Slider
-                            value={priceRange}
-                            min={0}
-                            max={maxPriceValue}
-                            step={maxPriceValue / 100}
-                            onValueChange={(newValue) => {
-                              setPriceRange([newValue[0], newValue[1]])
-                            }}
-                            className="[&>span:first-child]:bg-blue-500 [&>span:first-child]:h-2 [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white"
-                          />
-                        </div>
-                      </DropdownMenuGroup>
-
-                      <DropdownMenuSeparator className="bg-gray-700" />
-
-                      <DropdownMenuGroup>
-                        <DropdownMenuLabel className="text-xs text-gray-400">Sort By</DropdownMenuLabel>
-                        <div className="grid grid-cols-2 gap-2 px-3 py-2">
-                          <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
-                            <SelectTrigger className="bg-[#243860] text-white border-gray-700">
-                              <SelectValue placeholder="Field" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="name">Name</SelectItem>
-                              <SelectItem value="price">Price</SelectItem>
-                              
-                            </SelectContent>
-                          </Select>
-
-                          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrder)}>
-                            <SelectTrigger className="bg-[#243860] text-white border-gray-700">
-                              <SelectValue placeholder="Order" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="asc">Ascending</SelectItem>
-                              <SelectItem value="desc">Descending</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </DropdownMenuGroup>
-
-                      <DropdownMenuSeparator className="bg-gray-700" />
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full mt-2 border-gray-700 text-white hover:bg-[#243860]"
-                        onClick={() => {
-                          clearAllFilters()
-                          setIsFilterOpen(false)
-                        }}
-                      >
-                        Reset All Filters
-                      </Button>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
-
-                {/* Search Suggestions */}
-                <SearchSuggestions
-                  searchTerm={searchTerm}
-                  onSelect={handleSuggestionSelect}
-                  isOpen={isSearchOpen && searchTerm.length >= 2}
-                />
               </div>
-
-              {/* Active filters */}
-              {activeFilters.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {activeFilters.map((filter) => (
-                    <Badge key={filter} variant="secondary" className="bg-[#243860] text-white hover:bg-[#2c4a7c]">
-                      {filter}
-                      <button className="ml-1 hover:text-blue-300" onClick={() => clearFilter(filter)}>
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-
-                  {activeFilters.length > 1 && (
-                    <Badge
-                      variant="outline"
-                      className="border-gray-700 text-gray-400 hover:bg-[#243860] cursor-pointer"
-                      onClick={clearAllFilters}
-                    >
-                      Clear All
-                    </Badge>
-                  )}
-                </div>
-              )}
             </div>
 
+            {/* Trade Table */}
             <div className="overflow-x-auto border rounded-md border-blue-500/20">
               <Table>
                 <TableHeader className="bg-[#0d1829]/70">
-                  <TableRow className="hover:bg-[#0d1829] border-b border-blue-500/20">
-                    <TableHead className="text-white cursor-pointer" onClick={() => handleSort("name")}>
-                      <div className="flex items-center">Asset {getSortIcon("name")}</div>
+                  <TableRow>
+                    <TableHead className="text-white">Symbol</TableHead>
+                    <TableHead className="text-white">Name</TableHead>
+                    <TableHead className="text-white">Asset Type</TableHead>
+                    <TableHead className="text-right text-white">
+                      Price (ETH)
                     </TableHead>
-                    <TableHead className="text-right text-white cursor-pointer" onClick={() => handleSort("price")}>
-                      <div className="flex items-center justify-end">Price (USD) {getSortIcon("price")}</div>
+                    <TableHead className="text-right text-white">
+                      Status
                     </TableHead>
-                    <TableHead className="text-right text-white">Currency Pair</TableHead>
-                    <TableHead className="text-right text-white">Asset Type</TableHead>
-                    
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAndSortedAssets.length === 0 ? (
+                  {filteredTrades.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="py-8 text-center text-gray-400">
-                        No assets found matching your criteria
+                        No trades found matching your criteria.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredAndSortedAssets.map((asset) => (
+                    filteredTrades.map((trade) => (
                       <TableRow
-                        key={asset.symbol}
-                        className="transition-colors border-b border-blue-500/10 hover:bg-[#0d1829]"
+                        key={trade.tradeid}
+                        className="transition-colors hover:bg-[#0d1829]"
                       >
                         <TableCell className="font-medium text-white">
                           <div className="flex items-center">
-                            <Badge variant="outline" className="mr-2 border-blue-500/30">
-                              {asset.symbol.toUpperCase()}
+                            <Badge variant="outline" className="mr-2">
+                              {trade.symbol.toUpperCase()}
                             </Badge>
-                            {asset.name}
+                            {trade.name}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right text-white">
-                          $
-                          {asset.price.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                        <TableCell className="text-white">
+                          {trade.name}
                         </TableCell>
-                        <TableCell className="text-right text-white">{asset.currencypair}</TableCell>
-                        <TableCell className="text-right text-white">{asset.assettype}</TableCell>
-                        
+                        <TableCell className="text-white">
+                          {trade.assettype}
+                        </TableCell>
+                        <TableCell className="text-right text-white">
+                          {trade.price.toFixed(2)} ETH
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={trade.status === "Buy" ? "default" : "secondary"}
+                            className="text-black"
+                          >
+                            {trade.status}
+                          </Badge>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
                 </TableBody>
               </Table>
             </div>
-
-            {/* Market info footer */}
-            <div className="flex items-center justify-between mt-6 text-sm text-gray-400">
-              <div className="flex items-center">
-                <Info className="w-4 h-4 mr-2 text-blue-400" />
-                Data refreshed {isRefreshing ? "now" : getLastUpdatedText()}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
-                onClick={fetchAssets}
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-                {isRefreshing ? "Refreshing..." : "Refresh Data"}
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>
     </Layout>
-  )
+  );
 }
-

@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Driver } from "neo4j-driver";
-import { getDbDriver } from "@/src/pages/api/neo4j/database-connection";
+import { getDbDriver } from "@/src/pages/api/neo4j/2nd-database-connection";
 
 export default async function handler(
   req: NextApiRequest,

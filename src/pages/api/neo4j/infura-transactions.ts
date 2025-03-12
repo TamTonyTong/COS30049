@@ -1,5 +1,5 @@
 // src/pages/api/neo4j/infura-transactions.ts
-import { runQuery } from "./database-connection"; // Reuse your existing Neo4j client
+import { runQuery } from "./2nd-database-connection"; // Reuse your existing Neo4j client
 import { Transaction } from "@/src/components/transactionexplorer/type";
 
 export async function storeInfuraTransactions(

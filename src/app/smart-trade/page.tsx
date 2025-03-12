@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 import { isAddress } from "ethers";
 import TradingContractABI from "../../../contracts/TradingContract.json";
 
-const TRADING_CONTRACT_ADDRESS = "0x854B72a58D199f7A3a3a3642aF5C98fbCbbeA8e7";
+const TRADING_CONTRACT_ADDRESS = "0xa67e85D0dE9f30Da3C531Ce2aC16003711a5Fdac";
 
 export default function SmartTrade() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
@@ -13,7 +13,7 @@ export default function SmartTrade() {
   const [account, setAccount] = useState<string | null>(null);
   const [tradingContract, setTradingContract] = useState<ethers.Contract | null>(null);
   const [ethBalance, setEthBalance] = useState<string>("0");
-  const [contractAddress, setContractAddress] = useState<string>("");
+
   const [initiateRecipient, setInitiateRecipient] = useState<string>("");
   const [initiateAmount, setInitiateAmount] = useState<string>("");
   const [acceptSender, setAcceptSender] = useState<string>("");
@@ -22,19 +22,12 @@ export default function SmartTrade() {
   const connectWallet = async () => {
     if (typeof window !== "undefined" && window.ethereum) {
       try {
-        const storedAccount = localStorage.getItem("walletid");
-        if (!storedAccount) {
-          throw new Error("No wallet ID found in localStorage");
-        }
-
-
-        const provider = new ethers.BrowserProvider(window.ethereum, "any");
+        const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-
         setProvider(provider);
         setSigner(signer);
-        setAccount(storedAccount);
+        setAccount(accounts[0]);
 
         const contract = new ethers.Contract(
           TRADING_CONTRACT_ADDRESS,
@@ -43,7 +36,7 @@ export default function SmartTrade() {
         );
         setTradingContract(contract);
 
-        await updateBalances(provider, storedAccount);
+        await updateBalances(provider, accounts[0]);
       } catch (error) {
         console.error("Failed to connect wallet:", error);
         alert("Failed to connect wallet. Check console for details.");

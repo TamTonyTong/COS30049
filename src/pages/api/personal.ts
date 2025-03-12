@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Fetch the user's data from the User table
       const { data: userData, error: userError } = await supabase
         .from('User')
-        .select('userid, publicaddress, balance')
+        .select('userid, balance')
         .eq('userid', userId) // Filter by the logged-in user's ID
         .single();
 
@@ -70,7 +70,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Prepare response
       const responseData = {
-        publicaddress: userData.publicaddress,
         balance: userData.balance,
         assets: assets,
         transactions: transactionData,

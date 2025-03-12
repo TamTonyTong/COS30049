@@ -163,13 +163,13 @@ export default function HomePage() {
           <CardContent>
             {/* Address */}
             <div className="mb-6">
-              <h2 className="text-xl text-white">Address: {address}</h2>
+              <h2 className="text-xl text-white">UserID: {userId}</h2>
             </div>
 
             {/* Balance */}
             <div className="mb-6">
               <h2 className="mb-4 flex items-center text-2xl font-medium text-white">
-                <Activity className="mr-2" /> Balance (USD)
+                <Activity className="mr-2" /> Balance (ETH)
               </h2>
               <div className="rounded-lg bg-[#0d1829] p-6">
                 <span className="text-4xl font-bold text-green-400">
@@ -213,7 +213,7 @@ export default function HomePage() {
                   <tr className="bg-[#1a2b4b]">
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Cryptocurrency</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Amount</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-white">Price (USD)</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Price (ETH)</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Total Value</th>
                   </tr>
                 </thead>
@@ -222,8 +222,8 @@ export default function HomePage() {
                     <tr key={index} className="hover:bg-[#1a2b4b]">
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.name}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.quantity}</td>
-                      <td className="py-2 px-4 border-b border-gray-700 text-white">${asset.price.toFixed(2)}</td>
-                      <td className="py-2 px-4 border-b border-gray-700 text-white">${asset.totalValue.toFixed(2)}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.price.toFixed(2)}</td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.totalValue.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>

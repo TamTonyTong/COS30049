@@ -30,7 +30,7 @@ interface Asset {
   price: number
   currencypair: string
   assettype: string
-  volume: number
+  
 }
 
 interface Crypto {
@@ -40,7 +40,7 @@ interface Crypto {
   price: number
 }
 
-type SortField = "name" | "price" | "volume"
+type SortField = "name" | "price" 
 type SortOrder = "asc" | "desc"
 type PriceRange = [number, number]
 type AssetType = "all" | "cryptocurrency" | "stock" | "forex" | "commodity"
@@ -174,7 +174,7 @@ export default function MarketsPage() {
     const fieldLabels: Record<SortField, string> = {
       name: "Name",
       price: "Price",
-      volume: "Volume",
+      
     }
 
     return `${fieldLabels[field]} (${order === "asc" ? "Low to High" : "High to Low"})`
@@ -437,7 +437,7 @@ export default function MarketsPage() {
                             <SelectContent>
                               <SelectItem value="name">Name</SelectItem>
                               <SelectItem value="price">Price</SelectItem>
-                              <SelectItem value="volume">Volume</SelectItem>
+                              
                             </SelectContent>
                           </Select>
 
@@ -515,9 +515,7 @@ export default function MarketsPage() {
                     </TableHead>
                     <TableHead className="text-right text-white">Currency Pair</TableHead>
                     <TableHead className="text-right text-white">Asset Type</TableHead>
-                    <TableHead className="text-right text-white cursor-pointer" onClick={() => handleSort("volume")}>
-                      <div className="flex items-center justify-end">Volume {getSortIcon("volume")}</div>
-                    </TableHead>
+                    
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -550,7 +548,7 @@ export default function MarketsPage() {
                         </TableCell>
                         <TableCell className="text-right text-white">{asset.currencypair}</TableCell>
                         <TableCell className="text-right text-white">{asset.assettype}</TableCell>
-                        <TableCell className="text-right text-gray-300">${formatNumber(asset.volume)}</TableCell>
+                        
                       </TableRow>
                     ))
                   )}

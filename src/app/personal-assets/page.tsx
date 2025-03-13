@@ -13,7 +13,8 @@ import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import Link from "next/link";
 import { DollarSign, Activity } from "lucide-react";
-import { supabase } from "../../../lib/supabaseClient"; // Adjust the import path as needed
+import { supabase } from "../../../lib/supabaseClient";
+import { useRouter } from "next/navigation"; // Import useRouter
 
 // Define Asset and Transaction types
 type Asset = {
@@ -44,14 +45,19 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [listedAssetIds, setListedAssetIds] = useState<string[]>([]); // Track listed asset IDs
+  const router = useRouter(); // Initialize useRouter
 
-  // Fetch userId from localStorage (client-side only)
+  // Fetch userId from localStorage (client-side only) and redirect if not logged in
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const userId = localStorage.getItem("userid");
-      setUserId(userId);
+      const storedUserId = localStorage.getItem("userid");
+      if (storedUserId) {
+        setUserId(storedUserId);
+      } else {
+        router.push("/login"); // Redirect to login page if no userId
+      }
     }
-  }, []);
+  }, [router]);
 
   // Fetch listed trades to determine which assets are being sold
   useEffect(() => {
@@ -182,6 +188,29 @@ export default function HomePage() {
     );
   }
 
+  if (!userId) {
+    // This should not be reached due to the redirect in useEffect, but added as a fallback
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <Card className="border-red-500/30 bg-[#1a2b4b]">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold text-white">
+                Authentication Required
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-400">Please log in to view your assets.</p>
+              <Link href="/login">
+                <Button className="mt-4">Go to Login</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
@@ -248,7 +277,7 @@ export default function HomePage() {
                   {assets.map((asset, index) => (
                     <tr key={index} className="hover:bg-[#1a2b4b]">
                       <td className="font-medium text-white">
-                        <div className="flex items-center justify-center"> {/* Added justify-center */}
+                        <div className="flex items-center justify-center">
                           <Badge
                             variant="outline"
                             className="mr-2 border-blue-500/30"

@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from 'next/navigation';
 import Layout from "../../../components/layout";
 
-const TRADING_CONTRACT_ADDRESS = "0xF2f084A2f4fB8D836d47b176726e6aD01a2B7143";
+//const TRADING_CONTRACT_ADDRESS = "0xF2f084A2f4fB8D836d47b176726e6aD01a2B7143";
 
 export default function SecureTradingInterface() {
     const searchParams = useSearchParams();
@@ -110,7 +110,8 @@ export default function SecureTradingInterface() {
             updateBalances(provider, accounts[0]);
 
             const contract = new ethers.Contract(
-                TRADING_CONTRACT_ADDRESS,
+                //TRADING_CONTRACT_ADDRESS,
+                recipient,
                 TradingContractABI,
                 signer
             );

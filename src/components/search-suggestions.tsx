@@ -20,7 +20,24 @@ interface SearchSuggestionsProps {
 export function SearchSuggestions({ searchTerm, onSelect, isOpen }: SearchSuggestionsProps) {
   const [suggestions, setSuggestions] = useState<Crypto[]>([])
   const [loading, setLoading] = useState(false)
+  const [ethPrice, setEthPrice] = useState<number>(2500) // Default ETH price in USD
 
+  // Fetch ETH price on component mount
+  useEffect(() => {
+    const fetchEthPrice = async () => {
+      try {
+        // In a real app, you would fetch the current ETH price from an API
+        // For this example, we'll use a hardcoded value
+        setEthPrice(2500)
+      } catch (error) {
+        console.error("Error fetching ETH price:", error)
+      }
+    }
+
+    fetchEthPrice()
+  }, [])
+
+  // Fetch search suggestions when search term changes
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!searchTerm || searchTerm.length < 2) {
@@ -44,6 +61,20 @@ export function SearchSuggestions({ searchTerm, onSelect, isOpen }: SearchSugges
     const debounceTimer = setTimeout(fetchSuggestions, 300)
     return () => clearTimeout(debounceTimer)
   }, [searchTerm])
+
+  // Convert USD price to ETH
+  const convertToEth = (usdPrice: number): number => {
+    if (ethPrice <= 0) return 0
+    return usdPrice / ethPrice
+  }
+
+  // Format ETH price with 6 decimal places
+  const formatEthPrice = (ethValue: number): string => {
+    return ethValue.toLocaleString(undefined, {
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 6,
+    })
+  }
 
   if (!isOpen) return null
 
@@ -77,9 +108,7 @@ export function SearchSuggestions({ searchTerm, onSelect, isOpen }: SearchSugges
                     <div className="text-sm text-gray-400">{crypto.symbol}</div>
                   </div>
                 </div>
-                <div className="text-right text-white">
-                  ${crypto.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
+                <div className="text-right text-white">{formatEthPrice(convertToEth(crypto.price))} ETH</div>
               </CommandItem>
             ))}
           </CommandGroup>

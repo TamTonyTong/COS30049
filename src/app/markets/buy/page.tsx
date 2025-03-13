@@ -9,37 +9,49 @@ import { useRouter } from 'next/navigation';
 export default function SecureTradingInterface() {
     const searchParams = useSearchParams();
     const tradeid = searchParams?.get("tradeid") || "";
-    const walletid = searchParams?.get("walletid") || ""; // Recipient address
+    const metawallet = searchParams?.get("metawallet") || ""; // Recipient address
     const price = searchParams?.get("price") || "0"; // Buy amount
+    const walletid = searchParams?.get("walletid") || "0";
     const router = useRouter();
     const [account, setAccount] = useState<string | null>(null);
     const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
     const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
     const [error, setError] = useState<string>("");
     const [ethBalance, setEthBalance] = useState<string>("0");
-    const [recipient, setRecipient] = useState<string>(walletid); // Set from query param
+    const [recipient, setRecipient] = useState<string>(metawallet); // Set from query param
     const [amount, setAmount] = useState<string>(price); // Set from query param
     const [loading, setLoading] = useState(false); // No need to fetch trade details
 
     // Remove the fetchTradeDetails useEffect since we're getting data from query params
     useEffect(() => {
-        if (!walletid || !isAddress(walletid)) {
+        if (!metawallet || !isAddress(metawallet)) {
             setError("Invalid or missing recipient wallet address");
         }
         if (!price || isNaN(Number(price)) || Number(price) <= 0) {
             setError("Invalid or missing price amount");
         }
-        setRecipient(walletid);
+        setRecipient(metawallet);
         setAmount(price);
-    }, [walletid, price]);
+    }, [metawallet, price]);
 
     const getStoredAddress = () => {
         try {
-            const stored = localStorage.getItem("walletid");
+            const stored = localStorage.getItem("metawallet");
             if (!stored) throw new Error("No wallet stored");
             return stored.trim().toLowerCase();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Wallet error");
+            throw err;
+        }
+    };
+
+    const getUserID = () => {
+        try {
+            const stored = localStorage.getItem("userid");
+            if (!stored) throw new Error("No UserID found");
+            return stored.trim().toLowerCase();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "User error");
             throw err;
         }
     };
@@ -92,15 +104,26 @@ export default function SecureTradingInterface() {
             await tx.wait();
             updateBalances(provider, account!);
 
-            // Update the trade status to "Sold" in Supabase
-            const { error: updateError } = await supabase
+            // Update the trade status to "Sold" and change ownership in Supabase
+            const { error: tradeError } = await supabase
                 .from("Trade")
                 .update({ status: "Sold" })
                 .eq("tradeid", tradeid);
 
-            if (updateError) {
-                console.error("Failed to update trade status:", updateError.message);
+            if (tradeError) {
+                console.error("Failed to update trade status:", tradeError.message);
                 setError("Failed to update trade status.");
+                return;
+            }
+
+            const { error: walletError } = await supabase
+                .from("Wallet")
+                .update({ userid: getUserID() })
+                .eq("walletid", walletid);
+
+            if (walletError) {
+                console.error("Failed to update wallet ownership:", walletError.message);
+                setError(getUserID());
                 return;
             }
 

@@ -32,8 +32,9 @@ export default function TradePage() {
     price: number;
     status: "Buy" | "Sold";
     userid: string;
-    walletid: string;
+    metawallet: string;
     pricehistoryid: string;
+    walletid: string;
   }
   const router = useRouter();
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -184,7 +185,7 @@ export default function TradePage() {
                             <Button
                               onClick={() =>
                                 router.push(
-                                  `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&walletid=${trade.walletid}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}`
+                                  `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`
                                 )
                               }
                               variant="outline"

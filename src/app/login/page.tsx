@@ -60,7 +60,7 @@ export default function LoginPage() {
         // Use Supabase authentication
         const { data, error } = await supabase
           .from("User") // Table user
-          .select("userid, email, passwordhash, salt, phone, walletid")
+          .select("userid, email, passwordhash, salt, phone, metawallet")
           .eq("email", formData.email)
           .single();
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
           throw new Error("Invalid email");
         }
 
-        const { userid, email, passwordhash, salt, phone, walletid } = data;
+        const { userid, email, passwordhash, salt, phone, metawallet } = data;
 
         // Hash the input password using the stored salt
         const hashedInputPassword = CryptoJS.SHA256(
@@ -91,7 +91,7 @@ export default function LoginPage() {
         localStorage.setItem("userid", userid);
         localStorage.setItem("email", email);
         localStorage.setItem("phone", phone);
-        localStorage.setItem("walletid", walletid);
+        localStorage.setItem("metawallet", metawallet);
 
         // Login successful
         router.push("/personal-assets");

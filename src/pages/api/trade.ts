@@ -12,8 +12,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           pricehistoryid,
           status,
           Asset (symbol, name, assettype),
-          User (walletid),
-          PriceHistory (price)
+          User (metawallet),
+          PriceHistory (price), 
+          walletid
         `)
         .order('pricehistoryid', { ascending: false });
 
@@ -27,8 +28,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         price: trade.PriceHistory?.price || 0,
         status: trade.status,
         userid: trade.userid,
-        walletid: trade.User?.walletid || '',
-        pricehistoryid: trade.pricehistoryid
+        metawallet: trade.User?.metawallet || '',
+        pricehistoryid: trade.pricehistoryid,
+        walletid: trade.walletid
       }));
 
       res.status(200).json({ trades });

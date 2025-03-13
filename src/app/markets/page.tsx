@@ -19,6 +19,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Search, X } from "lucide-react";
+import { useRouter } from 'next/navigation';
 import Link from "next/link";
 import Layout from "../../components/layout";
 
@@ -30,15 +31,18 @@ export default function TradePage() {
     assettype: string;
     price: number;
     status: "Buy" | "Sold";
+    userid: string;
+    walletid: string;
+    pricehistoryid: string;
   }
-
+  const router = useRouter();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   useEffect(() => {
-    fetch("/api/trade") // Fetch data from the API route
+    fetch("/api/trade")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -63,9 +67,7 @@ export default function TradePage() {
     );
   });
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  if (isLoading) return <div>Loading...</div>;
 
   if (error) {
     return (
@@ -73,9 +75,7 @@ export default function TradePage() {
         <div className="container mx-auto px-4 py-8">
           <Card className="border-red-500/30 bg-[#1a2b4b]">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-white">
-                Error
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">Error</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-red-400">{error}</p>
@@ -92,9 +92,7 @@ export default function TradePage() {
         <div className="container mx-auto px-4 py-8">
           <Card className="border-blue-500/30 bg-[#1a2b4b]">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-white">
-                No Trades Found
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">No Trades Found</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-300">No trades are available.</p>
@@ -111,18 +109,13 @@ export default function TradePage() {
         <Card className="border-blue-500/30 bg-[#1a2b4b]">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-white">
-                Trading
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">Trading</CardTitle>
               <Link href="/markets">
-                <Button variant="outline" className="text-white">
-                  Markets
-                </Button>
+                <Button variant="outline" className="text-white">Markets</Button>
               </Link>
             </div>
           </CardHeader>
           <CardContent>
-            {/* Search Bar */}
             <div className="mb-6">
               <div className="relative">
                 <div className="absolute inset-0 rounded-lg bg-blue-500/10 blur-md"></div>
@@ -149,7 +142,6 @@ export default function TradePage() {
               </div>
             </div>
 
-            {/* Trade Table */}
             <div className="overflow-x-auto border rounded-md border-blue-500/20">
               <Table>
                 <TableHeader className="bg-[#0d1829]/70">
@@ -157,12 +149,9 @@ export default function TradePage() {
                     <TableHead className="text-white">Symbol</TableHead>
                     <TableHead className="text-white">Name</TableHead>
                     <TableHead className="text-white">Asset Type</TableHead>
-                    <TableHead className="text-right text-white">
-                      Price (ETH)
-                    </TableHead>
-                    <TableHead className="text-right text-white">
-                      Status
-                    </TableHead>
+                    <TableHead className="text-right text-white">Price (ETH)</TableHead>
+                    <TableHead className="text-right text-white">Status</TableHead>
+                    <TableHead className="text-right text-white">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -174,10 +163,7 @@ export default function TradePage() {
                     </TableRow>
                   ) : (
                     filteredTrades.map((trade) => (
-                      <TableRow
-                        key={trade.tradeid}
-                        className="transition-colors hover:bg-[#0d1829]"
-                      >
+                      <TableRow key={trade.tradeid} className="transition-colors hover:bg-[#0d1829]">
                         <TableCell className="font-medium text-white">
                           <div className="flex items-center">
                             <Badge variant="outline" className="mr-2">
@@ -186,12 +172,8 @@ export default function TradePage() {
                             {trade.name}
                           </div>
                         </TableCell>
-                        <TableCell className="text-white">
-                          {trade.name}
-                        </TableCell>
-                        <TableCell className="text-white">
-                          {trade.assettype}
-                        </TableCell>
+                        <TableCell className="text-white">{trade.name}</TableCell>
+                        <TableCell className="text-white">{trade.assettype}</TableCell>
                         <TableCell className="text-right text-white">
                           {trade.price.toFixed(2)} ETH
                         </TableCell>
@@ -202,6 +184,19 @@ export default function TradePage() {
                           >
                             {trade.status}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {trade.status === "Buy" && (
+                            <Button
+                              onClick={() => router.push(
+                                `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&walletid=${trade.walletid}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}`
+                              )}
+                              variant="outline"
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              Buy
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))

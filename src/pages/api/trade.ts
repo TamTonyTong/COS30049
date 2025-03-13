@@ -4,32 +4,35 @@ import { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
-      // Fetch data from Supabase by joining Asset, PriceHistory, and Trade tables
       const { data, error } = await supabase
         .from('Trade')
         .select(`
           tradeid,
+          userid,
+          pricehistoryid,
           status,
           Asset (symbol, name, assettype),
-          PriceHistory!inner (price)
+          User (metawallet),
+          PriceHistory (price), 
+          walletid
         `)
-        .order('timestamp', { foreignTable: 'PriceHistory', ascending: false });
+        .order('pricehistoryid', { ascending: false });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      // Map the fetched data to the desired structure
       const trades = data.map((trade: any) => ({
         tradeid: trade.tradeid,
         symbol: trade.Asset.symbol,
         name: trade.Asset.name,
         assettype: trade.Asset.assettype,
-        price: trade.PriceHistory.price || 0, // Access price directly from the object
+        price: trade.PriceHistory?.price || 0,
         status: trade.status,
+        userid: trade.userid,
+        metawallet: trade.User?.metawallet || '',
+        pricehistoryid: trade.pricehistoryid,
+        walletid: trade.walletid
       }));
 
-      // Return the mapped data
       res.status(200).json({ trades });
     } catch (error) {
       console.error('Error:', error);

@@ -5,6 +5,7 @@ import { isAddress } from "ethers";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from 'next/navigation';
+import Layout from "../../../components/layout";
 
 export default function SecureTradingInterface() {
     const searchParams = useSearchParams();
@@ -20,10 +21,9 @@ export default function SecureTradingInterface() {
     const [ethBalance, setEthBalance] = useState<string>("0");
     const [recipient, setRecipient] = useState<string>(metawallet); // Set from query param
     const [amount, setAmount] = useState<string>(price); // Set from query param
-    const [loading, setLoading] = useState(false); // No need to fetch trade details
 
-    // Remove the fetchTradeDetails useEffect since we're getting data from query params
     useEffect(() => {
+        //Set data
         if (!metawallet || !isAddress(metawallet)) {
             setError("Invalid or missing recipient wallet address");
         }
@@ -32,7 +32,9 @@ export default function SecureTradingInterface() {
         }
         setRecipient(metawallet);
         setAmount(price);
-    }, [metawallet, price]);
+    }, [metawallet, price, router]);
+
+
 
     const getStoredAddress = () => {
         try {
@@ -137,55 +139,57 @@ export default function SecureTradingInterface() {
     };
 
     return (
-        <div className="p-4 max-w-md mx-auto">
-            <h1 className="text-2xl font-bold mb-4">Complete Your Purchase</h1>
+        <Layout>
+            <div className="p-4 max-w-md mx-auto">
+                <h1 className="text-2xl font-bold mb-4">Complete Your Purchase</h1>
 
-            <div className="mb-4 space-y-2">
-                <p className="text-sm">
-                    <span className="font-semibold">Recipient:</span>
-                    <span className="ml-2 font-mono">{recipient || "Not provided"}</span>
-                </p>
-                <p className="text-sm">
-                    <span className="font-semibold">Amount:</span>
-                    <span className="ml-2">{amount} ETH</span>
-                </p>
-                {tradeid && (
+                <div className="mb-4 space-y-2">
                     <p className="text-sm">
-                        <span className="font-semibold">Trade ID:</span>
-                        <span className="ml-2">{tradeid}</span>
+                        <span className="font-semibold">Recipient:</span>
+                        <span className="ml-2 font-mono">{recipient || "Not provided"}</span>
                     </p>
+                    <p className="text-sm">
+                        <span className="font-semibold">Amount:</span>
+                        <span className="ml-2">{amount} ETH</span>
+                    </p>
+                    {tradeid && (
+                        <p className="text-sm">
+                            <span className="font-semibold">Trade ID:</span>
+                            <span className="ml-2">{tradeid}</span>
+                        </p>
+                    )}
+                </div>
+
+                {!signer ? (
+                    <button
+                        onClick={connectWallet}
+                        className="bg-blue-500 text-black p-3 rounded w-full hover:bg-blue-600"
+                    >
+                        Connect Wallet to Pay
+                    </button>
+                ) : (
+                    <div className="mt-4 space-y-4">
+                        <div className="p-4 text-black bg-gray-50 rounded">
+                            <p className="text-sm">Connected Wallet: {account}</p>
+                            <p className="text-sm mt-2">ETH Balance: {ethBalance}</p>
+                        </div>
+
+                        <button
+                            onClick={executeTrade}
+                            className="bg-green-500 text-black p-3 rounded w-full hover:bg-green-600"
+                            disabled={!recipient || !amount || Number(amount) <= 0}
+                        >
+                            Confirm Payment
+                        </button>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
+                        {error}
+                    </div>
                 )}
             </div>
-
-            {!signer ? (
-                <button
-                    onClick={connectWallet}
-                    className="bg-blue-500 text-black p-3 rounded w-full hover:bg-blue-600"
-                >
-                    Connect Wallet to Pay
-                </button>
-            ) : (
-                <div className="mt-4 space-y-4">
-                    <div className="p-4 text-black bg-gray-50 rounded">
-                        <p className="text-sm">Connected Wallet: {account}</p>
-                        <p className="text-sm mt-2">ETH Balance: {ethBalance}</p>
-                    </div>
-
-                    <button
-                        onClick={executeTrade}
-                        className="bg-green-500 text-black p-3 rounded w-full hover:bg-green-600"
-                        disabled={!recipient || !amount || Number(amount) <= 0}
-                    >
-                        Confirm Payment
-                    </button>
-                </div>
-            )}
-
-            {error && (
-                <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
-                    {error}
-                </div>
-            )}
-        </div>
+        </Layout>
     );
 }

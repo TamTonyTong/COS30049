@@ -113,8 +113,8 @@ export default function LoginPage() {
           Login to TradePro
         </h1>
         <p className="text-center font-bold">Example Account</p>
-        <p className="text-center">user1@example.com</p>
-        <p className="text-center">a1b2c3d4e5</p>
+        <p className="text-center">Seller: user1@example.com / a1b2c3d4e5 </p>
+        <p className="text-center">Buyer: user3@example.com / 12345678</p>
         <br />
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

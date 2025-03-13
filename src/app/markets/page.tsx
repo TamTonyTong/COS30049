@@ -20,7 +20,6 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Search, X } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import Link from "next/link";
 import Layout from "../../components/layout";
 
 export default function TradePage() {
@@ -180,11 +179,15 @@ export default function TradePage() {
                             </Badge>
                           ) : (
                             <Button
-                              onClick={() =>
-                                router.push(
-                                  `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`
-                                )
-                              }
+                              onClick={() => {
+                                if (localStorage.getItem("isLoggedIn") === "false") {
+                                  router.push("/login");
+                                } else {
+                                  router.push(
+                                    `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`
+                                  );
+                                }
+                              }}
                               variant="outline"
                               className="bg-blue-600 hover:bg-blue-700 text-white"
                             >

@@ -110,10 +110,7 @@ export default function TradePage() {
         <Card className="border-blue-500/30 bg-[#1a2b4b]">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-white">Trading</CardTitle>
-              <Link href="/markets">
-                <Button variant="outline" className="text-white">Markets</Button>
-              </Link>
+              <CardTitle className="text-2xl font-bold text-white">Markets</CardTitle>
             </div>
           </CardHeader>
           <CardContent>

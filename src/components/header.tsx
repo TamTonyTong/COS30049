@@ -1,26 +1,26 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useRouter, usePathname } from "next/navigation"
-import { Button } from "@/src/components/ui/button"
-import { UserNav } from "./user-nav"
-import { useEffect, useState } from "react"
-import { TrendingUp, ChevronDown, Menu, X } from "lucide-react"
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { Button } from "@/src/components/ui/button";
+import { UserNav } from "./user-nav";
+import { useEffect, useState } from "react";
+import { TrendingUp, ChevronDown, Menu, X } from "lucide-react";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu"
-import { motion, AnimatePresence } from "framer-motion"
+} from "@/src/components/ui/dropdown-menu";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const router = useRouter()
-  const pathname = usePathname()
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // Check login state on component mount
@@ -31,38 +31,35 @@ export default function Header() {
       setIsLoggedIn(false);
     }
   }, []);
-  
+
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
+      setIsScrolled(window.scrollY > 10);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Navigation items
   const navItems = [
-    { name: "Markets", href: "/markets" },
+    { name: "Market", href: "/markets" },
     { name: "Stocks", href: "/popular-stocks" },
     { name: "News", href: "/news" },
-  ]
-
-  // Conditional nav items for logged in users
-  const loggedInNavItems = [{ name: "Trade", href: "/trade" }]
+  ];
 
   return (
     <motion.header
       className={`sticky top-0 z-50 py-4 px-6 transition-all duration-300 ${
-        isScrolled ? "bg-[#0d1829]/95 backdrop-blur-md shadow-lg" : " shadow-blue-500/20 transition duration-300 hover:shadow-blue-400/30"
+        isScrolled ? "bg-[#0d1829]/95 backdrop-blur-md shadow-lg" : "shadow-blue-500/20 transition duration-300 hover:shadow-blue-400/30"
       }`}
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
       <nav className="relative flex items-center justify-between mx-auto max-w-7xl">
-        <div className="z-20 flex items-center ">
+        <div className="z-20 flex items-center">
           <Link href="/" className="flex items-center gap-2 group">
             <motion.div
               className="flex items-center justify-center w-10 h-10 text-white rounded-lg bg-gradient-to-br from-blue-500 to-cyan-300"
@@ -152,59 +149,34 @@ export default function Header() {
 
               {/* Check if user is logged in */}
               {isLoggedIn && (
-                <>
-                  {loggedInNavItems.map((item, index) => (
-                    <motion.li
-                      key={item.name}
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 + 0.1 * index }}
-                    >
-                      <Link
-                        href={item.href}
-                        className={`hover:text-white transition-colors relative ${
-                          pathname === item.href ? "text-white" : ""
-                        }`}
-                      >
-                        {item.name}
-                        {pathname === item.href && (
-                          <motion.div
-                            className="absolute -bottom-1 left-0 right-0 h-0.5 bg-blue-500"
-                            layoutId="navbar-indicator"
-                          />
-                        )}
-                      </Link>
-                    </motion.li>
-                  ))}
-                  <motion.li
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="flex items-center transition-colors hover:text-white">
-                        More <ChevronDown className="w-4 h-4 ml-1" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem>
-                          <Link href="/walletscan" className="w-full">
-                            Wallet Tracking
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/transactiondb" className="w-full">
-                            Transactions Graph
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/transaction_explorer" className="w-full">
-                            Transactions Graph Real
-                          </Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </motion.li>
-                </>
+                <motion.li
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="flex items-center transition-colors hover:text-white">
+                      More <ChevronDown className="w-4 h-4 ml-1" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem>
+                        <Link href="/walletscan" className="w-full">
+                          Wallet Tracking
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href="/transactiondb" className="w-full">
+                          Transactions Graph
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href="/transaction_explorer" className="w-full">
+                          Transactions Graph Real
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </motion.li>
               )}
             </ul>
           </motion.div>
@@ -285,24 +257,6 @@ export default function Header() {
 
                 {isLoggedIn && (
                   <>
-                    {loggedInNavItems.map((item, index) => (
-                      <motion.li
-                        key={item.name}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + 0.1 * index }}
-                      >
-                        <Link
-                          href={item.href}
-                          className={`block py-2 hover:text-white transition-colors ${
-                            pathname === item.href ? "text-white font-medium" : ""
-                          }`}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          {item.name}
-                        </Link>
-                      </motion.li>
-                    ))}
                     <motion.li
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -356,6 +310,5 @@ export default function Header() {
         )}
       </AnimatePresence>
     </motion.header>
-  )
+  );
 }
-

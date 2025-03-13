@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/src/components/ui/slider"
 import { RefreshCw, Info, Search, X, SlidersHorizontal, ArrowUp, ArrowDown } from "lucide-react"
 import Link from "next/link"
-import { SearchSuggestions } from "@/src/components/search-suggestions"
+
 
 interface Asset {
   symbol: string
@@ -327,7 +327,7 @@ export default function MarketsPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-bold text-white">Digital Asset Markets</CardTitle>
               <div className="flex items-center gap-3">
-                <Link href="/trade">
+                <Link href="/markets">
                   <Button variant="outline" className="text-white">
                     Trade
                   </Button>
@@ -470,12 +470,7 @@ export default function MarketsPage() {
                   </DropdownMenu>
                 </div>
 
-                {/* Search Suggestions */}
-                <SearchSuggestions
-                  searchTerm={searchTerm}
-                  onSelect={handleSuggestionSelect}
-                  isOpen={isSearchOpen && searchTerm.length >= 2}
-                />
+                
               </div>
 
               {/* Active filters */}

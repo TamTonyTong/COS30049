@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Badge } from "@/src/components/ui/badge";
 import Layout from "@/src/components/layout";
 import {
   Card,
@@ -18,10 +19,11 @@ import { supabase } from "../../../lib/supabaseClient"; // Adjust the import pat
 type Asset = {
   tradeid: string;
   name: string;
+  symbol: string; // Add symbol to the interface
   quantity: number;
   price: number;
   totalValue: number;
-  assetid: string; // Add assetid to the interface
+  assetid: string;
 };
 
 type Transaction = {
@@ -231,16 +233,11 @@ export default function HomePage() {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-medium text-white">Assets</h2>
-                <Link href="/trade">
-                  <Button variant="outline" className="text-white">
-                    Trade
-                  </Button>
-                </Link>
               </div>
               <table className="min-w-full bg-[#0d1829] border border-gray-700 text-center">
                 <thead>
                   <tr className="bg-[#1a2b4b]">
-                    <th className="py-2 px-4 border-b border-gray-700 text-white">Cryptocurrency</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Asset</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Amount</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Price (ETH)</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Total Value</th>
@@ -250,7 +247,17 @@ export default function HomePage() {
                 <tbody>
                   {assets.map((asset, index) => (
                     <tr key={index} className="hover:bg-[#1a2b4b]">
-                      <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.name}</td>
+                      <td className="font-medium text-white">
+                        <div className="flex items-center justify-center"> {/* Added justify-center */}
+                          <Badge
+                            variant="outline"
+                            className="mr-2 border-blue-500/30"
+                          >
+                            {asset.symbol.toUpperCase()}
+                          </Badge>
+                          {asset.name}
+                        </div>
+                      </td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.quantity}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.price.toFixed(2)}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.totalValue.toFixed(2)}</td>

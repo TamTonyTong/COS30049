@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
@@ -24,7 +24,31 @@ export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false) // Add state for password visibility
   const [showConfirmPassword, setShowConfirmPassword] = useState(false) // Add state for confirm password visibility
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter()
+
+  //useEffect checking Log in state
+  useEffect(() => {
+    // Check authentication status when component mounts
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+    if (isLoggedIn) {
+      setTimeout(() => router.push("/personal-assets"), 3000);
+    } else {
+      setIsCheckingAuth(false);
+    }
+  }, [router]);
+
+  // Render Visual
+  if (isCheckingAuth) {
+    return (
+      <Layout>
+        <div className="mx-auto mt-8 max-w-md rounded-lg bg-[#1a2b4b] p-6 text-center text-white">
+          Checking authentication status...
+        </div>
+      </Layout>
+    );
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target

@@ -31,6 +31,10 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
   const handleLogout = () => {
     // Implement logout logic here
     localStorage.setItem("isLoggedIn", "false");
+    localStorage.setItem("userid", "");
+    localStorage.setItem("email", "");
+    localStorage.setItem("phone", "");
+    localStorage.setItem("metawallet", "");
     console.log("Logging out...");
     router.push("/");
   };
@@ -67,15 +71,15 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
           <DropdownMenuItem>
             <Link href="personal-assets">Account</Link>
           </DropdownMenuItem>
-         
+
           <DropdownMenuItem>
-          <Link href="create">Create Asset</Link>
+            <Link href="create">Create Asset</Link>
           </DropdownMenuItem>
-          
+
           <DropdownMenuItem>
-          <Link href="settings">Settings</Link>
+            <Link href="settings">Settings</Link>
           </DropdownMenuItem>
-          
+
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

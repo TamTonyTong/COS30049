@@ -1,7 +1,9 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { isAddress } from "ethers";
+import TradingContractABI from "../../../../contracts/TradingContract.json";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from 'next/navigation';
@@ -17,6 +19,7 @@ export default function SecureTradingInterface() {
     const [account, setAccount] = useState<string | null>(null);
     const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
     const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
+    const [tradingContract, setTradingContract] = useState<ethers.Contract | null>(null);
     const [error, setError] = useState<string>("");
     const [ethBalance, setEthBalance] = useState<string>("0");
     const [recipient, setRecipient] = useState<string>(metawallet); // Set from query param
@@ -103,6 +106,14 @@ export default function SecureTradingInterface() {
             setSigner(signer);
             setAccount(accounts[0]);
             updateBalances(provider, accounts[0]);
+
+            const contract = new ethers.Contract(
+                "YOUR_CONTRACT_ADDRESS_HERE",
+                TradingContractABI,
+                signer
+            );
+            setTradingContract(contract);
+
         } catch (err) {
             console.error(err);
             setError(err instanceof Error ? err.message : "Connection failed");
@@ -119,14 +130,13 @@ export default function SecureTradingInterface() {
     };
 
     const executeTrade = async () => {
-        if (!provider || !signer) return;
+        if (!provider || !signer || !tradingContract) return;
 
         try {
             if (!isAddress(recipient)) throw new Error("Invalid recipient address");
             if (isNaN(Number(amount)) || Number(amount) <= 0) throw new Error("Invalid amount");
 
-            const tx = await signer.sendTransaction({
-                to: recipient,
+            const tx = await tradingContract.executeTrade(recipient, {
                 value: ethers.parseEther(amount)
             });
 

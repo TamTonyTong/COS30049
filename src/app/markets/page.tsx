@@ -151,7 +151,6 @@ export default function TradePage() {
                     <TableHead className="text-white">Asset Type</TableHead>
                     <TableHead className="text-right text-white">Price (ETH)</TableHead>
                     <TableHead className="text-right text-white">Status</TableHead>
-                    <TableHead className="text-right text-white">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -169,7 +168,6 @@ export default function TradePage() {
                             <Badge variant="outline" className="mr-2">
                               {trade.symbol.toUpperCase()}
                             </Badge>
-                            {trade.name}
                           </div>
                         </TableCell>
                         <TableCell className="text-white">{trade.name}</TableCell>
@@ -177,20 +175,18 @@ export default function TradePage() {
                         <TableCell className="text-right text-white">
                           {trade.price.toFixed(2)} ETH
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Badge
-                            variant={trade.status === "Buy" ? "default" : "secondary"}
-                            className="text-black"
-                          >
-                            {trade.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {trade.status === "Buy" && (
+                        <TableCell className="text-right align-middle">
+                          {trade.status === "Sold" ? (
+                            <Badge variant="secondary" className="bg-gray-200 text-black px-2 py-1 rounded">
+                              Sold
+                            </Badge>
+                          ) : (
                             <Button
-                              onClick={() => router.push(
-                                `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&walletid=${trade.walletid}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}`
-                              )}
+                              onClick={() =>
+                                router.push(
+                                  `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&walletid=${trade.walletid}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}`
+                                )
+                              }
                               variant="outline"
                               className="bg-blue-600 hover:bg-blue-700 text-white"
                             >

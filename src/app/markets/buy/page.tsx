@@ -3,13 +3,15 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { isAddress } from "ethers";
 import { useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from 'next/navigation';
 
 export default function SecureTradingInterface() {
     const searchParams = useSearchParams();
     const tradeid = searchParams?.get("tradeid") || "";
     const walletid = searchParams?.get("walletid") || ""; // Recipient address
     const price = searchParams?.get("price") || "0"; // Buy amount
-
+    const router = useRouter();
     const [account, setAccount] = useState<string | null>(null);
     const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
     const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
@@ -89,7 +91,22 @@ export default function SecureTradingInterface() {
 
             await tx.wait();
             updateBalances(provider, account!);
-            setError("Payment successful! Transaction hash: " + tx.hash);
+
+            // Update the trade status to "Sold" in Supabase
+            const { error: updateError } = await supabase
+                .from("Trade")
+                .update({ status: "Sold" })
+                .eq("tradeid", tradeid);
+
+            if (updateError) {
+                console.error("Failed to update trade status:", updateError.message);
+                setError("Failed to update trade status.");
+                return;
+            }
+
+            // Redirect to markets page after successful transaction and update
+            router.push("/markets");
+
         } catch (err) {
             console.error(err);
             setError(err instanceof Error ? err.message : "Transaction failed");

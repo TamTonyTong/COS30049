@@ -15,6 +15,7 @@ import { DollarSign, Activity } from "lucide-react";
 
 // Define Asset and Transaction types
 type Asset = {
+  tradeid: string;
   name: string;
   quantity: number;
   price: number;
@@ -115,30 +116,6 @@ export default function HomePage() {
     }
   };
 
-  // Handle Sell
-  const handleSell = async (assetName: string) => {
-    try {
-      const response = await fetch('/api/sell', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'user-id': userId || "", // Pass userId in the headers
-        },
-        body: JSON.stringify({ assetName }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to sell asset");
-      }
-
-      const data = await response.json();
-      setBalance(data.balance); // Update the balance in the state
-      setAssets(data.assets); // Update the assets in the state
-    } catch (error) {
-      setError('Error selling asset');
-    }
-  };
-
   if (loading) {
     return (
       <Layout>
@@ -197,7 +174,7 @@ export default function HomePage() {
               </h2>
               <div className="rounded-lg bg-[#0d1829] p-6">
                 <span className="text-4xl font-bold text-green-400">
-                  {balance.toFixed(2)}
+                  {balance.toFixed(2)} ETH
                 </span>
               </div>
             </div>
@@ -250,9 +227,16 @@ export default function HomePage() {
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.price.toFixed(2)}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.totalValue.toFixed(2)}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">
-                        <Button variant="outline" className="text-white" onClick={() => handleSell(asset.name)}>
-                          Sell
-                        </Button>
+                        <Link
+                          href={{
+                            pathname: '/markets/sell',
+                            query: { name: asset.name, price: asset.price.toFixed(2), userId }, // Add userId to query
+                          }}
+                        >
+                          <Button variant="outline" className="text-white">
+                            Sell
+                          </Button>
+                        </Link>
                       </td>
                     </tr>
                   ))}

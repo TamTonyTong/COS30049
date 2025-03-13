@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const assetIds = walletData.map((wallet) => wallet.assetid);
       const { data: assetData, error: assetError } = await supabase
         .from('Asset')
-        .select('assetid, symbol')
+        .select('assetid, symbol, name') // Add 'name' to the select statement
         .in('assetid', assetIds);
 
       if (assetError) throw assetError;
@@ -65,7 +65,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const asset = assetData.find((a) => a.assetid === wallet.assetid);
         const price = priceHistoryData.find((p) => p.assetid === wallet.assetid)?.price || 0;
         return {
-          name: asset?.symbol || "Unknown",
+          name: asset?.name || "Unknown", // Use the actual name from Asset table
+          symbol: asset?.symbol || "N/A", // Keep symbol separate
           quantity: wallet.quantity,
           price: price,
           totalValue: wallet.quantity * price,

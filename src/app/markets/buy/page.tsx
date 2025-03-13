@@ -1,11 +1,15 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { isAddress } from "ethers";
+import TradingContractABI from "../../../../contracts/TradingContract.json";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from 'next/navigation';
 import Layout from "../../../components/layout";
+
+//const TRADING_CONTRACT_ADDRESS = "0xF2f084A2f4fB8D836d47b176726e6aD01a2B7143";
 
 export default function SecureTradingInterface() {
     const searchParams = useSearchParams();
@@ -17,6 +21,7 @@ export default function SecureTradingInterface() {
     const [account, setAccount] = useState<string | null>(null);
     const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
     const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
+    const [tradingContract, setTradingContract] = useState<ethers.Contract | null>(null);
     const [error, setError] = useState<string>("");
     const [ethBalance, setEthBalance] = useState<string>("0");
     const [recipient, setRecipient] = useState<string>(metawallet); // Set from query param
@@ -103,6 +108,15 @@ export default function SecureTradingInterface() {
             setSigner(signer);
             setAccount(accounts[0]);
             updateBalances(provider, accounts[0]);
+
+            const contract = new ethers.Contract(
+                //TRADING_CONTRACT_ADDRESS,
+                recipient,
+                TradingContractABI,
+                signer
+            );
+            setTradingContract(contract);
+
         } catch (err) {
             console.error(err);
             setError(err instanceof Error ? err.message : "Connection failed");
@@ -119,18 +133,19 @@ export default function SecureTradingInterface() {
     };
 
     const executeTrade = async () => {
-        if (!provider || !signer) return;
+        if (!provider || !signer || !tradingContract) return;
 
         try {
             if (!isAddress(recipient)) throw new Error("Invalid recipient address");
             if (isNaN(Number(amount)) || Number(amount) <= 0) throw new Error("Invalid amount");
 
-            const tx = await signer.sendTransaction({
-                to: recipient,
-                value: ethers.parseEther(amount)
-            });
+            // Convert amount to wei
+            const weiAmount = ethers.parseEther(amount);
+
+            const tx = await tradingContract.initiateTrade(recipient, weiAmount, { value: weiAmount });
 
             await tx.wait();
+
             updateBalances(provider, account!);
 
             // Update the trade status to "Sold" and change ownership in Supabase
@@ -152,7 +167,7 @@ export default function SecureTradingInterface() {
 
             if (walletError) {
                 console.error("Failed to update wallet ownership:", walletError.message);
-                setError(getUserID());
+                setError(walletid);
                 return;
             }
 

@@ -8,16 +8,37 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabaseClient';
 import { validate } from 'uuid';
 
-// Utility function to fetch wallet data
-const fetchWalletData = async (userId: string) => {
+// Utility function to fetch or create wallet data
+const fetchOrCreateWalletData = async (userId: string, assetid: string) => {
   const { data, error } = await supabase
     .from('Wallet')
-    .select('walletid, assetid')
+    .select('walletid, assetid, quantity')
     .eq('userid', userId)
+    .eq('assetid', assetid)
     .single();
 
-  if (error || !data) {
-    throw new Error('Wallet not found for user');
+  if (error && error.code === 'PGRST116') { // No rows returned
+    console.log(`No wallet found for user ${userId} and asset ${assetid}. Creating new wallet entry...`);
+    const { data: newWalletData, error: newWalletError } = await supabase
+      .from('Wallet')
+      .insert({
+        userid: userId,
+        assetid: assetid,
+        address: `addr_${userId}_${assetid}`, // Example address; adjust as needed
+        nonce: 0, // Default nonce
+        quantity: 1, // Default quantity
+        lockedbalance: 0, // Default locked balance
+        lastupdated: new Date().toISOString(), // Current timestamp
+      })
+      .select('walletid, assetid, quantity')
+      .single();
+
+    if (newWalletError) {
+      throw new Error(`Failed to create wallet: ${newWalletError.message}`);
+    }
+    return newWalletData;
+  } else if (error) {
+    throw new Error(`Wallet fetch error: ${error.message}`);
   }
   return data;
 };
@@ -90,19 +111,18 @@ function SellConfirmPage() {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Fetch userId from localStorage (consistent with personal-assets/page.tsx)
+  // Fetch userId from localStorage or Supabase session
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUserId = localStorage.getItem("userid");
       if (storedUserId) {
         setUserId(storedUserId);
       } else {
-        // Optionally, check Supabase session as a fallback
         const fetchUser = async () => {
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             setUserId(session.user.id);
-            localStorage.setItem("userid", session.user.id); // Store in localStorage for consistency
+            localStorage.setItem("userid", session.user.id);
           } else {
             setError('Please log in to continue.');
           }
@@ -132,14 +152,27 @@ function SellConfirmPage() {
         throw new Error('Missing asset name or price.');
       }
 
-      // Fetch wallet data
-      const walletData = await fetchWalletData(userId);
-      console.log('Fetched wallet data:', walletData);
-      const { assetid, walletid } = walletData;
+      // Fetch the assetid based on the name
+      const { data: assetData, error: assetError } = await supabase
+        .from('Asset')
+        .select('assetid, symbol')
+        .eq('name', name)
+        .eq('isactive', true)
+        .single();
 
-      // Verify the asset
-      const assetData = await verifyAsset(assetid, name);
-      console.log('Verified asset:', assetData);
+      if (assetError || !assetData) {
+        throw new Error('Asset not found for the given name');
+      }
+      const { assetid, symbol } = assetData;
+
+      // Fetch or create wallet data for the specific asset
+      const walletData = await fetchOrCreateWalletData(userId, assetid);
+      console.log('Fetched or created wallet data:', walletData);
+      const { walletid } = walletData;
+
+      // Verify the asset (using symbol instead of name for better matching)
+      await verifyAsset(assetid, symbol);
+      console.log('Verified asset with assetid:', assetid);
 
       // Fetch the latest price history
       const priceHistoryData = await fetchPriceHistory(assetid);
@@ -217,7 +250,7 @@ function SellConfirmPage() {
         </CardHeader>
         <CardContent>
           <p className="text-white mb-4 text-center">
-            Do you want to list {name} for sale at {parseFloat(price).toFixed(2)} ETH?
+            Do you want to sell {name} for {parseFloat(price).toFixed(2)} ETH?
           </p>
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
           <div className="flex justify-between">

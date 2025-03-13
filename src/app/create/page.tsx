@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/src/components/layout";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -11,7 +11,28 @@ import { v4 as uuidv4 } from "uuid"; // For generating UUIDs
 export default function CreateCurrencyPage() {
   const [formData, setFormData] = useState({ symbol: "", name: "", price: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false); // Add loading state
   const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Fetch userId from localStorage or Supabase session
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUserId = localStorage.getItem("userid");
+      if (storedUserId) {
+        setUserId(storedUserId);
+      } else {
+        const fetchUser = async () => {
+          const { data: { session } } = await fetch("/api/auth/session").then((res) => res.json());
+          if (session) {
+            setUserId(session.user.id);
+            localStorage.setItem("userid", session.user.id);
+          }
+        };
+        fetchUser();
+      }
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -33,7 +54,10 @@ export default function CreateCurrencyPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (validateForm()) {
+    if (validateForm() && userId) {
+      setLoading(true); // Disable button and prevent further clicks
+      setErrors({}); // Clear previous errors
+
       try {
         const assetId = uuidv4(); // Generate a unique ID for the asset
         const priceHistoryId = uuidv4(); // Generate a unique ID for the price history
@@ -41,15 +65,17 @@ export default function CreateCurrencyPage() {
         // Insert into Asset table
         const assetResponse = await fetch("/api/create", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "user-id": userId, // Pass userId in headers
+          },
           body: JSON.stringify({
             table: "Asset",
             data: {
               assetid: assetId,
               symbol: formData.symbol,
               name: formData.name,
-              assettype: "cryptocurrency",
-              volume: 0,
+              assettype: "NFT", // Changed from "cryptocurrency" to "NFT"
               createdat: new Date().toISOString(),
               isactive: true,
             },
@@ -57,13 +83,17 @@ export default function CreateCurrencyPage() {
         });
 
         if (!assetResponse.ok) {
-          throw new Error("Failed to insert into Asset table");
+          const errorData = await assetResponse.json();
+          throw new Error(errorData.error || "Failed to insert into Asset table");
         }
 
         // Insert into PriceHistory table
         const priceHistoryResponse = await fetch("/api/create", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "user-id": userId, // Pass userId in headers
+          },
           body: JSON.stringify({
             table: "PriceHistory",
             data: {
@@ -78,16 +108,23 @@ export default function CreateCurrencyPage() {
         });
 
         if (!priceHistoryResponse.ok) {
-          throw new Error("Failed to insert into PriceHistory table");
+          const errorData = await priceHistoryResponse.json();
+          throw new Error(errorData.error || "Failed to insert into PriceHistory table");
         }
 
         // Redirect to the personal-assets page
         router.push("/personal-assets");
       } catch (error) {
         setErrors({
-          general: "An unexpected error occurred. Please try again.",
+          general: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
         });
+      } finally {
+        setLoading(false); // Re-enable button after operation completes
       }
+    } else if (!userId) {
+      setErrors({
+        general: "Please log in to create a currency.",
+      });
     }
   };
 
@@ -110,6 +147,7 @@ export default function CreateCurrencyPage() {
                 value={formData.symbol}
                 onChange={handleChange}
                 maxLength={3}
+                disabled={loading} // Disable input while loading
               />
               {errors.symbol && (
                 <p className="mt-1 text-sm text-red-500">{errors.symbol}</p>
@@ -127,6 +165,7 @@ export default function CreateCurrencyPage() {
                 className="mt-1"
                 value={formData.name}
                 onChange={handleChange}
+                disabled={loading} // Disable input while loading
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-500">{errors.name}</p>
@@ -144,6 +183,7 @@ export default function CreateCurrencyPage() {
                 className="mt-1"
                 value={formData.price}
                 onChange={handleChange}
+                disabled={loading} // Disable input while loading
               />
               {errors.price && (
                 <p className="mt-1 text-sm text-red-500">{errors.price}</p>
@@ -155,8 +195,9 @@ export default function CreateCurrencyPage() {
             <Button
               type="submit"
               className="w-full bg-blue-500 text-white hover:bg-blue-600"
+              disabled={loading || !formData.symbol || !formData.name || !formData.price} // Disable if loading or fields are empty
             >
-              Create Currency
+              {loading ? "Creating..." : "Create Currency"}
             </Button>
           </form>
         </div>

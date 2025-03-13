@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data: userData, error: userError } = await supabase
         .from('User')
         .select('userid, balance')
-        .eq('userid', userId) // Filter by the logged-in user's ID
+        .eq('userid', userId)
         .single();
 
       if (userError) throw userError;
@@ -48,7 +48,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (priceHistoryError) throw priceHistoryError;
 
-      // Combine wallet, asset, and price data
+      // Fetch trades to determine which assets are listed for sale
+      const { data: tradeData, error: tradeError } = await supabase
+        .from('Trade')
+        .select('assetid')
+        .eq('userid', userId)
+        .eq('status', 'Buy');
+
+      if (tradeError) throw tradeError;
+
+      // Create a set of asset IDs that are currently listed for sale
+      const listedAssetIds = new Set(tradeData.map((trade) => trade.assetid));
+
+      // Combine wallet, asset, and price data with selling status
       const assets = walletData.map((wallet) => {
         const asset = assetData.find((a) => a.assetid === wallet.assetid);
         const price = priceHistoryData.find((p) => p.assetid === wallet.assetid)?.price || 0;
@@ -57,6 +69,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           quantity: wallet.quantity,
           price: price,
           totalValue: wallet.quantity * price,
+          assetid: wallet.assetid, // Include assetid in the response
+          isSelling: listedAssetIds.has(wallet.assetid), // Add isSelling flag
         };
       });
 
@@ -70,6 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Prepare response
       const responseData = {
+        publicaddress: userData.userid, // Assuming publicaddress is the userid for now
         balance: userData.balance,
         assets: assets,
         transactions: transactionData,
@@ -81,13 +96,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Handle POST request (deposit)
     if (req.method === 'POST') {
-      const { amount } = req.body; // Extract deposit amount from request body
+      const { amount } = req.body;
 
       // Fetch the user's data from the User table
       const { data: userData, error: userError } = await supabase
         .from('User')
         .select('userid, balance')
-        .eq('userid', userId) // Filter by the logged-in user's ID
+        .eq('userid', userId)
         .single();
 
       if (userError) throw userError;

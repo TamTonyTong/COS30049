@@ -12,6 +12,7 @@ import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import Link from "next/link";
 import { DollarSign, Activity } from "lucide-react";
+import { supabase } from "../../../lib/supabaseClient"; // Adjust the import path as needed
 
 // Define Asset and Transaction types
 type Asset = {
@@ -20,6 +21,7 @@ type Asset = {
   quantity: number;
   price: number;
   totalValue: number;
+  assetid: string; // Add assetid to the interface
 };
 
 type Transaction = {
@@ -38,7 +40,8 @@ export default function HomePage() {
   const [depositAmount, setDepositAmount] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null); // Store userId in state
+  const [userId, setUserId] = useState<string | null>(null);
+  const [listedAssetIds, setListedAssetIds] = useState<string[]>([]); // Track listed asset IDs
 
   // Fetch userId from localStorage (client-side only)
   useEffect(() => {
@@ -48,15 +51,40 @@ export default function HomePage() {
     }
   }, []);
 
+  // Fetch listed trades to determine which assets are being sold
+  useEffect(() => {
+    const fetchListedTrades = async () => {
+      if (!userId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('Trade')
+          .select('assetid')
+          .eq('userid', userId)
+          .eq('status', 'Buy'); // Fetch trades with status 'Buy'
+
+        if (error) throw error;
+
+        // Extract asset IDs that are currently listed
+        const assetIds = data.map((trade) => trade.assetid);
+        setListedAssetIds(assetIds);
+      } catch (error) {
+        console.error('Error fetching listed trades:', error);
+      }
+    };
+
+    fetchListedTrades();
+  }, [userId]);
+
   // Fetch data from the API route
   useEffect(() => {
-    if (!userId) return; // Don't fetch data if userId is not available
+    if (!userId) return;
 
     const fetchData = async () => {
       try {
         const response = await fetch('/api/personal', {
           headers: {
-            'user-id': userId, // Pass userId in the headers
+            'user-id': userId,
           },
         });
         if (!response.ok) {
@@ -85,7 +113,7 @@ export default function HomePage() {
     };
 
     fetchData();
-  }, [userId]); // Re-fetch data when userId changes
+  }, [userId]);
 
   // Handle Deposit
   const handleDepositUSD = async () => {
@@ -99,7 +127,7 @@ export default function HomePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'user-id': userId || "", // Pass userId in the headers
+          'user-id': userId || "",
         },
         body: JSON.stringify({ amount: Number(depositAmount) }),
       });
@@ -109,8 +137,8 @@ export default function HomePage() {
       }
 
       const data = await response.json();
-      setBalance(data.balance); // Update the balance in the state
-      setDepositAmount(""); // Clear the deposit input
+      setBalance(data.balance);
+      setDepositAmount("");
     } catch (error) {
       setError('Error updating balance');
     }
@@ -203,7 +231,7 @@ export default function HomePage() {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-medium text-white">Assets</h2>
-                <Link href="/trade"> {/* Link to the trading page */}
+                <Link href="/trade">
                   <Button variant="outline" className="text-white">
                     Trade
                   </Button>
@@ -227,16 +255,20 @@ export default function HomePage() {
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.price.toFixed(2)}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{asset.totalValue.toFixed(2)}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">
-                        <Link
-                          href={{
-                            pathname: '/markets/sell',
-                            query: { name: asset.name, price: asset.price.toFixed(2), userId }, // Add userId to query
-                          }}
-                        >
-                          <Button variant="outline" className="text-white">
-                            Sell
-                          </Button>
-                        </Link>
+                        {listedAssetIds.includes(asset.assetid) ? (
+                          <span className="text-yellow-400">Selling</span>
+                        ) : (
+                          <Link
+                            href={{
+                              pathname: '/markets/sell',
+                              query: { name: asset.name, price: asset.price.toFixed(2) },
+                            }}
+                          >
+                            <Button variant="outline" className="text-white">
+                              Sell
+                            </Button>
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   ))}

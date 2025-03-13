@@ -138,11 +138,13 @@ export default function SecureTradingInterface() {
             if (!isAddress(recipient)) throw new Error("Invalid recipient address");
             if (isNaN(Number(amount)) || Number(amount) <= 0) throw new Error("Invalid amount");
 
-            const tx = await tradingContract.executeTrade(recipient, {
-                value: ethers.parseEther(amount)
-            });
+            // Convert amount to wei
+            const weiAmount = ethers.parseEther(amount);
+
+            const tx = await tradingContract.initiateTrade(recipient, weiAmount, { value: weiAmount });
 
             await tx.wait();
+
             updateBalances(provider, account!);
 
             // Update the trade status to "Sold" and change ownership in Supabase
@@ -164,7 +166,7 @@ export default function SecureTradingInterface() {
 
             if (walletError) {
                 console.error("Failed to update wallet ownership:", walletError.message);
-                setError(getUserID());
+                setError(walletid);
                 return;
             }
 

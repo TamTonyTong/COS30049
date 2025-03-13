@@ -21,8 +21,24 @@ export default function SecureTradingInterface() {
     const [ethBalance, setEthBalance] = useState<string>("0");
     const [recipient, setRecipient] = useState<string>(metawallet); // Set from query param
     const [amount, setAmount] = useState<string>(price); // Set from query param
+    const [isInvalid, setIsInvalid] = useState(false);
 
     useEffect(() => {
+        // Validate all query parameters
+        const validation =
+            !tradeid ||
+            !metawallet ||
+            !walletid ||
+            !isAddress(metawallet) ||
+            tradeid.trim() === "" ||
+            walletid.trim() === "";
+
+        if (validation) {
+            setIsInvalid(true)
+            setTimeout(() => router.push("/markets"), 3000);
+            return;
+        }
+
         //Set data
         if (!metawallet || !isAddress(metawallet)) {
             setError("Invalid or missing recipient wallet address");
@@ -34,7 +50,18 @@ export default function SecureTradingInterface() {
         setAmount(price);
     }, [metawallet, price, router]);
 
-
+    if (isInvalid) {
+        return (
+            <Layout>
+                <div className="p-4 max-w-md mx-auto text-center">
+                    <p className="text-red-500 font-medium">
+                        Cannot resolve a direct connection to the page!
+                    </p>
+                    <p className="mt-2">Redirecting to Market...</p>
+                </div>
+            </Layout>
+        );
+    }
 
     const getStoredAddress = () => {
         try {

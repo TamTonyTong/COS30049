@@ -30,7 +30,6 @@ interface Asset {
   price: number
   currencypair: string
   assettype: string
-  
 }
 
 interface Crypto {
@@ -40,7 +39,7 @@ interface Crypto {
   price: number
 }
 
-type SortField = "name" | "price" 
+type SortField = "name" | "price"
 type SortOrder = "asc" | "desc"
 type PriceRange = [number, number]
 type AssetType = "all" | "cryptocurrency" | "stock" | "forex" | "commodity"
@@ -57,34 +56,51 @@ export default function MarketsPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("")
   const [sortField, setSortField] = useState<SortField>("name")
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
-  const [priceRange, setPriceRange] = useState<PriceRange>([0, 100000])
-  const [debouncedPriceRange, setDebouncedPriceRange] = useState<PriceRange>([0, 100000])
+  const [priceRange, setPriceRange] = useState<PriceRange>([0, 10]) // Default ETH range
+  const [debouncedPriceRange, setDebouncedPriceRange] = useState<PriceRange>([0, 40])
   const [assetType, setAssetType] = useState<AssetType>("all")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
-  const [maxPriceValue, setMaxPriceValue] = useState(100000)
+  const [maxPriceValue, setMaxPriceValue] = useState(10) // Default max ETH value
+
+  // Helper function to get sort label
+  const getSortLabel = (field: SortField, order: SortOrder): string => {
+    const fieldLabels: Record<SortField, string> = {
+      name: "Name",
+      price: "Price",
+    }
+    return `${fieldLabels[field]} (${order === "asc" ? "Low to High" : "High to Low"})`
+  }
+
+  // Helper function to get asset type label
+  const getAssetTypeLabel = (type: AssetType): string => {
+    const labels: Record<AssetType, string> = {
+      all: "All Types",
+      cryptocurrency: "Cryptocurrency",
+      stock: "Stock",
+      forex: "Forex",
+      commodity: "Commodity",
+    }
+    return labels[type]
+  }
 
   const fetchAssets = async () => {
     try {
       setIsRefreshing(true)
-      const response = await fetch("/api/assets")
-      if (!response.ok) {
-        throw new Error("Network response was not ok")
-      }
-      const data = await response.json()
+      const response = await fetch("/api/assets") // Ensure API returns ETH prices only
+      if (!response.ok) throw new Error("Network response was not ok")
 
+      const data = await response.json()
       if (data.assets && Array.isArray(data.assets)) {
         setAssets(data.assets)
         setLastUpdated(new Date())
 
-        // Find the highest price for the slider max value
-        const highestPrice = Math.max(...data.assets.map((asset: Asset) => asset.price))
-        // Round up to the nearest power of 10 for a clean max value
-        const roundedMax = Math.pow(10, Math.ceil(Math.log10(highestPrice)))
-        setMaxPriceValue(roundedMax)
-        setPriceRange([0, roundedMax])
-        setDebouncedPriceRange([0, roundedMax])
+        // Find the highest ETH price for filter range
+        const highestPriceEth = Math.ceil(Math.max(...data.assets.map((a: Asset) => a.price)) * 1.2)
+        setMaxPriceValue(highestPriceEth)
+        setPriceRange([0, highestPriceEth])
+        setDebouncedPriceRange([0, highestPriceEth])
       } else {
         setAssets([])
       }
@@ -127,7 +143,7 @@ export default function MarketsPage() {
 
     if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < maxPriceValue) {
       newActiveFilters.push(
-        `Price: $${formatNumber(debouncedPriceRange[0])} - $${debouncedPriceRange[1] === maxPriceValue ? "Max" : formatNumber(debouncedPriceRange[1])}`,
+        `Price: ${formatEthNumber(debouncedPriceRange[0])} - ${debouncedPriceRange[1] === maxPriceValue ? "Max" : formatEthNumber(debouncedPriceRange[1])} ETH`,
       )
     }
 
@@ -157,27 +173,17 @@ export default function MarketsPage() {
     })
   }
 
-  // Helper function to get asset type label
-  function getAssetTypeLabel(type: AssetType): string {
-    const labels: Record<AssetType, string> = {
-      all: "All Types",
-      cryptocurrency: "Cryptocurrency",
-      stock: "Stock",
-      forex: "Forex",
-      commodity: "Commodity",
-    }
-    return labels[type]
+  // Helper function to format ETH numbers with 2 decimal
+  function formatEthNumber(num: number): string {
+    return num.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
   }
 
-  // Helper function to get sort label
-  function getSortLabel(field: SortField, order: SortOrder): string {
-    const fieldLabels: Record<SortField, string> = {
-      name: "Name",
-      price: "Price",
-      
-    }
-
-    return `${fieldLabels[field]} (${order === "asc" ? "Low to High" : "High to Low"})`
+  // Format ETH price display
+  const formatPrice = (ethPrice: number): string => {
+    return `${ethPrice.toFixed(2)} ETH`
   }
 
   // Handle sort toggle
@@ -233,25 +239,23 @@ export default function MarketsPage() {
         asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         asset.symbol.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
 
-      const matchesPrice = asset.price >= debouncedPriceRange[0] && asset.price <= debouncedPriceRange[1]
+      const matchesPrice =
+        asset.price >= debouncedPriceRange[0] && asset.price <= debouncedPriceRange[1]
 
       const matchesType = assetType === "all" || asset.assettype === assetType
 
       return matchesSearch && matchesPrice && matchesType
     })
 
-    // Then sort
-    return [...filtered].sort((a, b) => {
-      const aValue = a[sortField]
-      const bValue = b[sortField]
-
-      // Special case for strings
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortOrder === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
+    // Then sort the filtered assets
+    return filtered.sort((a, b) => {
+      if (sortField === "name") {
+        return sortOrder === "asc"
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name)
+      } else {
+        return sortOrder === "asc" ? a.price - b.price : b.price - a.price
       }
-
-      // For numbers
-      return sortOrder === "asc" ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number)
     })
   }, [assets, debouncedSearchTerm, debouncedPriceRange, assetType, sortField, sortOrder])
 
@@ -323,9 +327,6 @@ export default function MarketsPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-bold text-white">Digital Asset Markets</CardTitle>
               <div className="flex items-center gap-3">
-                <div className="text-sm text-gray-400">
-                  {filteredAndSortedAssets.length} of {assets.length} assets
-                </div>
                 <Link href="/trade">
                   <Button variant="outline" className="text-white">
                     Trade
@@ -406,11 +407,11 @@ export default function MarketsPage() {
                       <DropdownMenuSeparator className="bg-gray-700" />
 
                       <DropdownMenuGroup>
-                        <DropdownMenuLabel className="text-xs text-gray-400">Price Range</DropdownMenuLabel>
+                        <DropdownMenuLabel className="text-xs text-gray-400">Price Range (ETH)</DropdownMenuLabel>
                         <div className="px-3 py-2">
                           <div className="flex justify-between mb-2 text-sm">
-                            <span>${formatNumber(priceRange[0])}</span>
-                            <span>${priceRange[1] === maxPriceValue ? "Max" : formatNumber(priceRange[1])}</span>
+                            <span>{formatEthNumber(priceRange[0])} ETH</span>
+                            <span>{priceRange[1] === maxPriceValue ? "Max" : formatEthNumber(priceRange[1])} ETH</span>
                           </div>
                           <Slider
                             value={priceRange}
@@ -437,7 +438,6 @@ export default function MarketsPage() {
                             <SelectContent>
                               <SelectItem value="name">Name</SelectItem>
                               <SelectItem value="price">Price</SelectItem>
-                              
                             </SelectContent>
                           </Select>
 
@@ -511,11 +511,10 @@ export default function MarketsPage() {
                       <div className="flex items-center">Asset {getSortIcon("name")}</div>
                     </TableHead>
                     <TableHead className="text-right text-white cursor-pointer" onClick={() => handleSort("price")}>
-                      <div className="flex items-center justify-end">Price (USD) {getSortIcon("price")}</div>
+                      <div className="flex items-center justify-end">Price (ETH) {getSortIcon("price")}</div>
                     </TableHead>
                     <TableHead className="text-right text-white">Currency Pair</TableHead>
                     <TableHead className="text-right text-white">Asset Type</TableHead>
-                    
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -539,16 +538,9 @@ export default function MarketsPage() {
                             {asset.name}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right text-white">
-                          $
-                          {asset.price.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </TableCell>
+                        <TableCell className="text-right text-white">{formatPrice(asset.price)}</TableCell>
                         <TableCell className="text-right text-white">{asset.currencypair}</TableCell>
                         <TableCell className="text-right text-white">{asset.assettype}</TableCell>
-                        
                       </TableRow>
                     ))
                   )}
@@ -579,4 +571,3 @@ export default function MarketsPage() {
     </Layout>
   )
 }
-

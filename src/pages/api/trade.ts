@@ -11,9 +11,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userid,
           pricehistoryid,
           status,
+          txid,
           Asset (symbol, name, assettype),
           User (metawallet),
-          PriceHistory (price), 
+          PriceHistory (price),
           walletid
         `)
         .order('pricehistoryid', { ascending: false });
@@ -30,13 +31,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         userid: trade.userid,
         metawallet: trade.User?.metawallet || '',
         pricehistoryid: trade.pricehistoryid,
-        walletid: trade.walletid
+        walletid: trade.walletid,
+        txid: trade.txid,  // Include txid in the response
       }));
 
       res.status(200).json({ trades });
     } catch (error) {
       console.error('Error:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   } else {
     res.status(405).json({ message: 'Method not allowed' });

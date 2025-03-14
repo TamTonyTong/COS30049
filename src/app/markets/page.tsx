@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import {
   Card,
   CardContent,
@@ -19,7 +20,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Search, X } from "lucide-react";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import Layout from "../../components/layout";
 
 export default function TradePage() {
@@ -34,7 +35,9 @@ export default function TradePage() {
     metawallet: string;
     pricehistoryid: string;
     walletid: string;
+    txid: string | null; // Added to link to Transaction table
   }
+
   const router = useRouter();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,23 +45,145 @@ export default function TradePage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   useEffect(() => {
-    fetch("/api/trade")
-      .then((response) => {
+    const fetchTrades = async () => {
+      try {
+        const response = await fetch("/api/trade");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
-        return response.json();
-      })
-      .then((data) => {
+        const data = await response.json();
         setTrades(data.trades);
         setIsLoading(false);
-      })
-      .catch((error) => {
+
+        // Schedule delayed deletion for existing "Sold" trades
+        data.trades.forEach((trade: Trade) => {
+          if (trade.status === "Sold" && trade.txid) {
+            scheduleDelayedDeletion(trade.tradeid, trade.txid);
+          }
+        });
+      } catch (error) {
         console.error("Error fetching data:", error);
         setError("Error fetching data");
         setIsLoading(false);
-      });
+      }
+    };
+
+    fetchTrades();
+
+    // Real-time subscription for Trade table updates
+    const subscription = supabase
+      .channel("trade-changes")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "Trade", filter: "status=eq.Sold" },
+        (payload) => {
+          const updatedTrade = payload.new as Trade;
+          if (updatedTrade.status === "Sold" && updatedTrade.txid) {
+            scheduleDelayedDeletion(updatedTrade.tradeid, updatedTrade.txid);
+            // Optionally update the trades state to reflect the status change
+            setTrades((prevTrades) =>
+              prevTrades.map((trade) =>
+                trade.tradeid === updatedTrade.tradeid
+                  ? { ...trade, status: updatedTrade.status, txid: updatedTrade.txid }
+                  : trade
+              )
+            );
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "Trade" },
+        (payload) => {
+          setTrades((prevTrades) =>
+            prevTrades.filter((trade) => trade.tradeid !== payload.old.tradeid)
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
+
+  // Function to schedule delayed deletion
+  const scheduleDelayedDeletion = async (tradeid: string, txid: string) => {
+    try {
+      // Fetch the transaction timestamp
+      const { data: transactionData, error: transactionError } = await supabase
+        .from("Transaction")
+        .select("timestamp")
+        .eq("txid", txid)
+        .single();
+
+      if (transactionError || !transactionData) {
+        console.error("Failed to fetch transaction:", transactionError?.message);
+        return;
+      }
+
+      const transactionTimestamp = new Date(transactionData.timestamp).getTime();
+      const currentTime = new Date().getTime();
+      const DELETION_DELAY_MS = 1800000; // 30 minutes
+      const timeElapsed = currentTime - transactionTimestamp;
+      const remainingDelay = Math.max(DELETION_DELAY_MS - timeElapsed, 0);
+
+      // Skip scheduling if the delay has already passed
+      if (timeElapsed >= DELETION_DELAY_MS) {
+        console.log(`Trade ${tradeid} delay has passed. Deleting immediately.`);
+        const { error: deleteError } = await supabase
+          .from("Trade")
+          .delete()
+          .eq("tradeid", tradeid);
+        if (deleteError) {
+          console.error("Failed to delete trade:", deleteError.message);
+        } else {
+          setTrades((prevTrades) => prevTrades.filter((t) => t.tradeid !== tradeid));
+        }
+        return;
+      }
+
+      console.log(`Scheduling deletion for trade ${tradeid} in ${remainingDelay / 1000} seconds`);
+
+      setTimeout(async () => {
+        try {
+          // Check the trade status before deletion
+          const { data: tradeStatusData, error: tradeStatusError } = await supabase
+            .from("Trade")
+            .select("status")
+            .eq("tradeid", tradeid)
+            .single();
+
+          if (tradeStatusError || !tradeStatusData) {
+            console.error("Failed to fetch trade status:", tradeStatusError?.message);
+            return;
+          }
+
+          if (tradeStatusData.status !== "Sold") {
+            console.log(`Trade ${tradeid} is no longer "Sold" (status: ${tradeStatusData.status}). Skipping deletion.`);
+            return;
+          }
+
+          // Delete the trade
+          const { error: deleteError } = await supabase
+            .from("Trade")
+            .delete()
+            .eq("tradeid", tradeid);
+
+          if (deleteError) {
+            console.error("Failed to delete trade:", deleteError.message);
+          } else {
+            console.log(`Trade ${tradeid} deleted after ${DELETION_DELAY_MS / 1000} seconds`);
+            setTrades((prevTrades) => prevTrades.filter((t) => t.tradeid !== tradeid));
+          }
+        } catch (err) {
+          console.error("Error in delayed deletion:", err);
+        }
+      }, remainingDelay);
+    } catch (err) {
+      console.error("Error scheduling deletion:", err);
+    }
+  };
 
   const filteredTrades = trades.filter((trade) => {
     return (

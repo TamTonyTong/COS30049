@@ -9,12 +9,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import CryptoJS from "crypto-js"; // Import hashing library
+import {Eye, EyeOff} from "lucide-react"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [showPassword, setShowPassword] = useState(false) // Add state for password visibility
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); //import eye icons
   const router = useRouter();
 
   //useEffect checking Log in state
@@ -69,10 +71,14 @@ export default function LoginPage() {
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+    }
+    
+    const togglePasswordVisibility = () => {
+      setShowPassword(!showPassword)
+    }
+    
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -133,10 +139,10 @@ export default function LoginPage() {
   return (
     <Layout>
       <div className="mx-auto mt-8 max-w-md rounded-lg bg-[#1a2b4b] p-6 shadow-lg">
-        <h1 className="mb-6 text-center text-2xl font-bold text-white">
+        <h1 className="mb-6 text-2xl font-bold text-center text-white">
           Login to TradePro
         </h1>
-        <p className="text-center font-bold">Example Account</p>
+        <p className="font-bold text-center">Example Account</p>
         <p className="text-center">Seller: user1@example.com / a1b2c3d4e5 </p>
         <p className="text-center">Buyer: user3@example.com / 12345678</p>
         <br />
@@ -162,16 +168,26 @@ export default function LoginPage() {
             <Label htmlFor="password" className="text-white">
               Password
             </Label>
+            <div className="relative">
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
               name="password"
               placeholder="Enter your password"
-              className="mt-1"
+              className="pr-10"
               value={formData.password}
               onChange={handleChange}
             />
-            {errors.password && (
+            <button
+              type="button"
+              className="absolute text-gray-400 -translate-y-1/2 right-3 top-1/2 hover:text-white focus:outline-none"
+              onClick={togglePasswordVisibility}
+              tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+              {errors.password && (
               <p className="mt-1 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
@@ -180,13 +196,13 @@ export default function LoginPage() {
           )}
           <Button
             type="submit"
-            className="w-full bg-blue-500 text-white hover:bg-blue-600"
+            className="w-full text-white bg-blue-500 hover:bg-blue-600"
             disabled={isLoading}
           >
             {isLoading ? "Logging in..." : "Log In"}
           </Button>
         </form>
-        <div className="mt-4 text-center text-sm text-blue-300 hover:text-blue-200">
+        <div className="mt-4 text-sm text-center text-blue-300 hover:text-blue-200">
           Forgot password?
         </div>
         <div className="mt-6 text-center">

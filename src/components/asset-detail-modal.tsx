@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabaseClient"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/src/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
 import { Badge } from "@/src/components/ui/badge"
@@ -8,34 +9,125 @@ import { ExternalLink, User, FileText, Heart, Share2 } from "lucide-react"
 import Image from "next/image"
 
 interface Asset {
-  symbol: string
-  name: string
-  price: number
-  currencypair: string
-  assettype: string
+  assetid: string;
+  symbol: string;
+  name: string;
+  price: number;
+  currencypair: string;
+  assettype: string;
+  creatorid: string | null; // Changed from userid to creatorid, allowing null
+  createdat: string | null;
 }
 
 interface AssetDetailModalProps {
-  asset: Asset | null
-  isOpen: boolean
-  onClose: () => void
+  asset: Asset | null;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetailModalProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [creatorMetawallet, setCreatorMetawallet] = useState<string>("Loading...")
+  const [ownerMetawallet, setOwnerMetawallet] = useState<string>("Loading...")
 
   // Reset states when modal opens with a new asset
   useEffect(() => {
+    console.log("useEffect triggered - isOpen:", isOpen, "asset:", asset);
     if (isOpen && asset) {
-      setImageLoaded(false)
+      setImageLoaded(false);
+      setCreatorMetawallet("Loading...");
+      setOwnerMetawallet("Loading...");
+      console.log("Asset passed to modal:", asset);
+      fetchAssetDetails();
     }
-  }, [isOpen, asset])
+  }, [isOpen, asset]);
+
+  const fetchAssetDetails = async () => {
+    console.log("fetchAssetDetails called with asset:", asset);
+    if (!asset) {
+      console.log("No asset provided, exiting fetchAssetDetails");
+      return;
+    }
+  
+    try {
+      console.log("Checking creatorid:", asset.creatorid);
+      if (!asset.creatorid || asset.creatorid === null) {
+        console.warn("CreatorID is null or undefined, skipping creator fetch:", asset);
+        setCreatorMetawallet("Unknown");
+      } else {
+        console.log("Fetching creator with creatorid:", asset.creatorid);
+        const { data: creatorData, error: creatorError } = await supabase
+          .from("User")
+          .select("metawallet")
+          .eq("userid", asset.creatorid)
+          .single();
+  
+        if (creatorError) {
+          console.error("Creator fetch error:", creatorError);
+          throw new Error(`Failed to fetch creator: ${creatorError.message}`);
+        }
+        console.log("Creator data received:", creatorData);
+        console.log("Setting creatorMetawallet:", creatorData?.metawallet || "Unknown");
+        setCreatorMetawallet(creatorData?.metawallet || "Unknown");
+      }
+  
+      console.log("Checking assetid:", asset.assetid);
+      if (!asset.assetid) {
+        console.error("Asset assetid is undefined:", asset);
+        setOwnerMetawallet("Not owned");
+      } else {
+        console.log("Fetching wallet with assetid:", asset.assetid);
+        const { data: walletData, error: walletError } = await supabase
+          .from("Wallet")
+          .select("userid")
+          .eq("assetid", asset.assetid)
+          .limit(1);
+  
+        const walletUserId = walletData && walletData.length > 0 ? walletData[0].userid : null;
+        if (walletError || !walletUserId) {
+          console.warn("Wallet fetch error or no owner found:", walletError);
+          setOwnerMetawallet("Not owned");
+        } else {
+          console.log("Fetching owner with userid:", walletUserId);
+          const { data: ownerData, error: ownerError } = await supabase
+            .from("User")
+            .select("metawallet")
+            .eq("userid", walletUserId)
+            .single();
+  
+          if (ownerError) {
+            console.error("Owner fetch error:", ownerError);
+            throw new Error(`Failed to fetch owner: ${ownerError.message}`);
+          }
+          console.log("Owner data received:", ownerData);
+          console.log("Setting ownerMetawallet:", ownerData?.metawallet || "Unknown");
+          setOwnerMetawallet(ownerData?.metawallet || "Unknown");
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching asset details:", error instanceof Error ? error.message : JSON.stringify(error));
+      setCreatorMetawallet("Error");
+      setOwnerMetawallet("Error");
+    }
+  };
 
   if (!asset) return null
 
   // Generate a unique image URL based on the asset symbol for demonstration
   const imageUrl = `/placeholder.svg?height=500&width=500&text=${asset.symbol}`
+
+  // Format the createdat timestamp
+  const createdTimestamp = asset.createdat
+    ? (() => {
+        try {
+          return new Date(asset.createdat).toLocaleDateString()
+        } catch (e) {
+          console.error("Invalid createdat format:", asset.createdat)
+          return "Unknown"
+        }
+      })()
+    : "Unknown"
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -104,7 +196,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
                     {asset.name}
                   </DialogTitle>
                   <DialogDescription className="mt-1 text-gray-400">
-                    {asset.price.toFixed(2)} ETH • {asset.currencypair} • NFT
+                    {asset.price.toFixed(2)} ETH • {asset.currencypair} • {asset.assettype}
                   </DialogDescription>
                 </div>
                 <div className="flex gap-2">
@@ -120,75 +212,93 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
 
             {/* Tabs Component */}
             <Tabs defaultValue="description" className="mt-2">
-  <TabsList className="grid w-full grid-cols-3 bg-[#1a2b4b]/50 p-1">
-    <TabsTrigger
-      value="description"
-      className="capitalize data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 hover:text-blue-300 transition-all"
-    >
-      Description
-    </TabsTrigger>
-    <TabsTrigger
-      value="owner"
-      className="capitalize data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 hover:text-blue-300 transition-all"
-    >
-      Owner
-    </TabsTrigger>
-    <TabsTrigger
-      value="metadata"
-      className="capitalize data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 hover:text-blue-300 transition-all"
-    >
-      Metadata
-    </TabsTrigger>
-  </TabsList>
+              <TabsList className="grid w-full grid-cols-4 bg-[#1a2b4b]/50 p-1">
+                <TabsTrigger
+                  value="description"
+                  className="capitalize data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 hover:text-blue-300 transition-all"
+                >
+                  Description
+                </TabsTrigger>
+                <TabsTrigger
+                  value="owner"
+                  className="capitalize data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 hover:text-blue-300 transition-all"
+                >
+                  Owner
+                </TabsTrigger>
+                <TabsTrigger
+                  value="mint"
+                  className="capitalize data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 hover:text-blue-300 transition-all"
+                >
+                  Mint
+                </TabsTrigger>
+                <TabsTrigger
+                  value="metadata"
+                  className="capitalize data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 hover:text-blue-300 transition-all"
+                >
+                  Metadata
+                </TabsTrigger>
+              </TabsList>
 
-  <TabsContent
-    value="description"
-    className="p-4 mt-4 rounded-md bg-[#1a2b4b]/20 border border-blue-500/20 hover:border-blue-500/30 transition-colors"
-  >
-    <div className="flex items-start gap-3">
-      <FileText className="w-5 h-5 mt-1 text-blue-400" />
-      <div>
-        <h3 className="mb-2 font-medium">About {asset.name}</h3>
-        <p className="text-sm leading-relaxed text-gray-300">
-          This NFT token represents ownership of digital assets on the blockchain. It follows the ERC-721
-          standard and provides verifiable ownership and transfer capabilities.
-        </p>
-      </div>
-    </div>
-  </TabsContent>
+              <TabsContent
+                value="description"
+                className="p-4 mt-4 rounded-md bg-[#1a2b4b]/20 border border-blue-500/20 hover:border-blue-500/30 transition-colors"
+              >
+                <div className="flex items-start gap-3">
+                  <FileText className="w-5 h-5 mt-1 text-blue-400" />
+                  <div>
+                    <h3 className="mb-2 font-medium">About {asset.name}</h3>
+                    <p className="text-sm leading-relaxed text-gray-300">
+                      This NFT token represents ownership of digital assets on the blockchain. It follows the ERC-721
+                      standard and provides verifiable ownership and transfer capabilities.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
 
-  <TabsContent
-    value="owner"
-    className="p-4 mt-4 rounded-md bg-[#1a2b4b]/20 border border-blue-500/20 hover:border-blue-500/30 transition-colors"
-  >
-    <div className="flex items-start gap-3">
-      <User className="w-5 h-5 mt-1 text-blue-400" />
-      <div>
-        <h3 className="mb-2 font-medium">Owner Details</h3>
-        <p className="text-sm leading-relaxed text-gray-300">
-          The current owner of this NFT is 0x7Fc9...3E4b.
-        </p>
-      </div>
-    </div>
-  </TabsContent>
+              <TabsContent
+                value="owner"
+                className="p-4 mt-4 rounded-md bg-[#1a2b4b]/20 border border-blue-500/20 hover:border-blue-500/30 transition-colors"
+              >
+                <div className="flex items-start gap-3">
+                  <User className="w-5 h-5 mt-1 text-blue-400" />
+                  <div>
+                    <h3 className="mb-2 font-medium">Owner Details</h3>
+                    <p className="text-sm leading-relaxed text-gray-300">
+                      The current owner of this NFT is {ownerMetawallet}.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
 
-  <TabsContent
-    value="metadata"
-    className="p-4 mt-4 rounded-md bg-[#1a2b4b]/20 border border-blue-500/20 hover:border-blue-500/30 transition-colors"
-  >
-    <div className="flex items-start gap-3">
-      <FileText className="w-5 h-5 mt-1 text-blue-400" />
-      <div>
-        <h3 className="mb-2 font-medium">Metadata</h3>
-        <p className="text-sm leading-relaxed text-gray-300">
-          Token ID: #1234, Standard: ERC-721, Created: 2025-01-15.
-        </p>
-      </div>
-    </div>
-  </TabsContent>
+              <TabsContent
+                value="mint"
+                className="p-4 mt-4 rounded-md bg-[#1a2b4b]/20 border border-blue-500/20 hover:border-blue-500/30 transition-colors"
+              >
+                <div className="flex items-start gap-3">
+                  <User className="w-5 h-5 mt-1 text-blue-400" />
+                  <div>
+                    <h3 className="mb-2 font-medium">Mint Details</h3>
+                    <p className="text-sm leading-relaxed text-gray-300">
+                      The creator of this NFT is {creatorMetawallet}.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
 
-  
-
+              <TabsContent
+                value="metadata"
+                className="p-4 mt-4 rounded-md bg-[#1a2b4b]/20 border border-blue-500/20 hover:border-blue-500/30 transition-colors"
+              >
+                <div className="flex items-start gap-3">
+                  <FileText className="w-5 h-5 mt-1 text-blue-400" />
+                  <div>
+                    <h3 className="mb-2 font-medium">Metadata</h3>
+                    <p className="text-sm leading-relaxed text-gray-300">
+                      Created: {createdTimestamp}.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         </div>

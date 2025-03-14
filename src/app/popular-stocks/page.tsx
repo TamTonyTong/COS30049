@@ -25,13 +25,15 @@ import Link from "next/link"
 import AssetDetailModal from "@/src/components/asset-detail-modal"
 
 interface Asset {
-  symbol: string
-  name: string
-  price: number
-  currencypair: string
-  assettype: string
+  assetid: string;
+  symbol: string;
+  name: string;
+  price: number;
+  currencypair: string;
+  assettype: string;
+  creatorid: string | null; // Updated from userid
+  createdat: string | null;
 }
-
 interface Crypto {
   id: number
   symbol: string
@@ -88,14 +90,15 @@ export default function MarketsPage() {
   const fetchAssets = async () => {
     try {
       setIsRefreshing(true)
-      const response = await fetch("/api/assets") // Ensure API returns ETH prices only
+      const response = await fetch("/api/assets")
       if (!response.ok) throw new Error("Network response was not ok")
-
+  
       const data = await response.json()
+      console.log("API Response:", data) // Add this line for debugging
       if (data.assets && Array.isArray(data.assets)) {
         setAssets(data.assets)
         setLastUpdated(new Date())
-
+  
         // Find the highest ETH price for filter range
         const highestPriceEth = Math.ceil(Math.max(...data.assets.map((a: Asset) => a.price)) * 1.2)
         setMaxPriceValue(highestPriceEth)
@@ -232,9 +235,10 @@ export default function MarketsPage() {
 
   // Handle opening the asset detail modal
   const handleOpenAssetDetail = (asset: Asset) => {
-    setSelectedAsset(asset)
-    setIsModalOpen(true)
-  }
+    console.log("Opening modal with asset:", asset);
+    setSelectedAsset(asset);
+    setIsModalOpen(true);
+  };
 
   // Filter and sort assets
   const filteredAndSortedAssets = useMemo(() => {
@@ -321,6 +325,7 @@ export default function MarketsPage() {
       </Layout>
     )
   }
+  console.log("Rendering AssetDetailModal with isOpen:", isModalOpen, "selectedAsset:", selectedAsset);
 
   return (
     <Layout>
@@ -599,8 +604,11 @@ export default function MarketsPage() {
       </div>
 
       {/* Asset Detail Modal */}
-      <AssetDetailModal asset={selectedAsset} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AssetDetailModal
+        asset={selectedAsset}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </Layout>
   )
 }
-

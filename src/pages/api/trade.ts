@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           pricehistoryid,
           status,
           txid,
-          Asset (symbol, name, assettype),
+          Asset (symbol, name, assettype, img),
           User (metawallet),
           PriceHistory (price),
           walletid
@@ -42,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           tradeid: trade.tradeid,
           symbol: trade.Asset?.symbol || 'N/A',
           name: trade.Asset?.name || 'Unknown',
+          img: trade.Asset?.img || null,
           assettype: trade.Asset?.assettype || 'Unknown',
           price: trade.PriceHistory?.price || 0,
           status: trade.status,

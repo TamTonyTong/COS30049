@@ -15,6 +15,7 @@ import Link from "next/link";
 import { DollarSign, Activity } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // Define Asset and Transaction types
 type Asset = {
@@ -25,6 +26,7 @@ type Asset = {
   price: number;
   totalValue: number;
   assetid: string;
+  img?: string;
 };
 
 type Transaction = {
@@ -278,6 +280,7 @@ export default function HomePage() {
               <table className="min-w-full bg-[#0d1829] border border-gray-700 text-center">
                 <thead>
                   <tr className="bg-[#1a2b4b]">
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Preview</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Asset</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Amount</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Price (ETH)</th>
@@ -288,12 +291,22 @@ export default function HomePage() {
                 <tbody>
                   {assets.map((asset, index) => (
                     <tr key={index} className="hover:bg-[#1a2b4b]">
-                      <td className="font-medium text-white">
+                      <td className="py-2 px-4 border-b border-gray-700">
+                        <div className="relative w-12 h-12 mx-auto">
+                          <Image
+                            src={asset.img || '/placeholder.svg'}
+                            alt={`${asset.name} preview`}
+                            fill
+                            className="object-contain rounded-sm"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                          />
+                        </div>
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-700 text-white">
                         <div className="flex items-center justify-center">
-                          <Badge
-                            variant="outline"
-                            className="mr-2 border-blue-500/30"
-                          >
+                          <Badge variant="outline" className="mr-2 border-blue-500/30">
                             {asset.symbol.toUpperCase()}
                           </Badge>
                           {asset.name}

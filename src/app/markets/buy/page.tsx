@@ -231,6 +231,17 @@ export default function SecureTradingInterface() {
                 return;
             }
 
+            //Set Current Balance
+            const balanceWei = await provider.getBalance(getStoredAddress());
+            const balanceEth = parseFloat(ethers.formatEther(balanceWei)).toFixed(18);
+
+            const { error: updateError } = await supabase
+                .from("User")
+                .update({ balance: balanceEth })
+                .ilike("metawallet", getStoredAddress());
+
+            if (updateError) throw new Error("Failed to update balance");
+
             // Show success message and redirect
             setError("Purchase successful! Redirecting to markets...");
             setTimeout(() => router.push("/markets"), 2000);

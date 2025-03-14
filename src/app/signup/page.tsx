@@ -103,6 +103,18 @@ export default function SignUpForm() {
       ])
       if (error) throw error
 
+      //Set Current Balance
+      const provider = new ethers.BrowserProvider(window.ethereum as unknown as ethers.Eip1193Provider);
+      const balanceWei = await provider.getBalance(walletAddress);
+      const balanceEth = parseFloat(ethers.formatEther(balanceWei)).toFixed(18);
+
+      const { error: updateError } = await supabase
+        .from("User")
+        .update({ balance: balanceEth })
+        .ilike("metawallet", walletAddress);
+
+      if (updateError) throw new Error("Failed to update balance");
+
       // Save email and userid to localStorage
       localStorage.setItem("isLoggedIn", "true")
       localStorage.setItem("userid", userId)

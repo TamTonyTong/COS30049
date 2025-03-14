@@ -298,12 +298,12 @@ export default function TradePage() {
                         <TableCell className="text-white">
                           <div className="relative w-12 h-12">
                             <Image
-                              src={trade.img || '/placeholder.svg'}
+                              src={trade.img || "/placeholder.svg"}
                               alt={`${trade.name} preview`}
                               fill
                               className="object-contain rounded-sm"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                (e.target as HTMLImageElement).src = "/placeholder.svg";
                               }}
                             />
                           </div>

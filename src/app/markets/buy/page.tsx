@@ -134,40 +134,40 @@ export default function SecureTradingInterface() {
 
     const executeTrade = async () => {
         if (!provider || !signer || !tradingContract) return;
-    
+
         try {
             if (!isAddress(recipient)) throw new Error("Invalid recipient address");
             if (isNaN(Number(amount)) || Number(amount) <= 0) throw new Error("Invalid amount");
-    
+
             // Convert amount to wei
             const weiAmount = ethers.parseEther(amount);
-    
+
             const tx = await tradingContract.initiateTrade(recipient, weiAmount, { value: weiAmount });
-    
+
             const receipt = await tx.wait();
             if (receipt.status === 0) {
                 throw new Error("Transaction failed on the blockchain");
             }
-    
+
             updateBalances(provider, account!);
-    
+
             // Fetch trade details to get assetid and seller's userid
             const { data: tradeData, error: tradeFetchError } = await supabase
                 .from("Trade")
                 .select("assetid, userid")
                 .eq("tradeid", tradeid)
                 .single();
-    
+
             if (tradeFetchError || !tradeData) {
                 console.error("Failed to fetch trade details:", tradeFetchError?.message);
                 setError("Failed to fetch trade details.");
                 return;
             }
-    
+
             const assetid = tradeData.assetid;
             const sellerUserId = tradeData.userid;
             const buyerUserId = getUserID();
-    
+
             // Update the trade status to "Sold" and set txid
             const { data: buyerTransactionData, error: buyerTransactionError } = await supabase
                 .from("Transaction")
@@ -181,38 +181,38 @@ export default function SecureTradingInterface() {
                 })
                 .select("txid")
                 .single();
-    
+
             if (buyerTransactionError || !buyerTransactionData) {
                 console.error("Failed to add buyer transaction:", buyerTransactionError?.message);
                 setError("Failed to record buyer transaction.");
                 return;
             }
-    
+
             const txid = buyerTransactionData.txid;
-    
+
             const { error: tradeError } = await supabase
                 .from("Trade")
                 .update({ status: "Sold", txid: txid })
                 .eq("tradeid", tradeid);
-    
+
             if (tradeError) {
                 console.error("Failed to update trade status:", tradeError.message);
                 setError("Failed to update trade status.");
                 return;
             }
-    
+
             // Change ownership in the Wallet table
             const { error: walletError } = await supabase
                 .from("Wallet")
                 .update({ userid: buyerUserId })
                 .eq("walletid", walletid);
-    
+
             if (walletError) {
                 console.error("Failed to update wallet ownership:", walletError.message);
                 setError("Failed to update wallet ownership.");
                 return;
             }
-    
+
             // Add transaction for the seller (Sale)
             const { error: sellerTransactionError } = await supabase
                 .from("Transaction")
@@ -224,22 +224,31 @@ export default function SecureTradingInterface() {
                     timestamp: new Date().toISOString(),
                     assetid: assetid,
                 });
-    
+
             if (sellerTransactionError) {
                 console.error("Failed to add seller transaction:", sellerTransactionError.message);
                 setError("Failed to record seller transaction.");
                 return;
             }
-    
+
             // Show success message and redirect
             setError("Purchase successful! Redirecting to markets...");
             setTimeout(() => router.push("/markets"), 2000);
-    
+
         } catch (err) {
-            console.error(err);
-            setError(err instanceof Error ? err.message : "Transaction failed");
+            console.error("Transaction Error:", err);
+
+            const errorMessage = (err instanceof Error) ? err.message : JSON.stringify(err);
+
+            // Handle user rejection specifically
+            if (errorMessage.includes("user denied") || errorMessage.includes("ACTION_REJECTED")) {
+                setError("Transaction canceled - no funds were transferred");
+            } else {
+                setError("Transaction failed. Please try again.");
+            }
         }
     };
+
     return (
         <Layout>
             <div className="p-4 max-w-md mx-auto">
@@ -285,9 +294,9 @@ export default function SecureTradingInterface() {
                         </button>
                     </div>
                 )}
-
                 {error && (
-                    <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
+                    <div className={`mt-4 p-3 rounded-lg border ${error.includes("canceled") ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
+                        }`}>
                         {error}
                     </div>
                 )}

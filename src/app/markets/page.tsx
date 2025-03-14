@@ -37,7 +37,7 @@ export default function TradePage() {
     metawallet: string;
     pricehistoryid: string;
     walletid: string;
-    txid: string | null; // Added to link to Transaction table
+    txid: string | null;
   }
 
   const router = useRouter();
@@ -57,7 +57,6 @@ export default function TradePage() {
         setTrades(data.trades);
         setIsLoading(false);
 
-        // Schedule delayed deletion for existing "Sold" trades
         data.trades.forEach((trade: Trade) => {
           if (trade.status === "Sold" && trade.txid) {
             scheduleDelayedDeletion(trade.tradeid, trade.txid);
@@ -72,7 +71,6 @@ export default function TradePage() {
 
     fetchTrades();
 
-    // Real-time subscription for Trade table updates
     const subscription = supabase
       .channel("trade-changes")
       .on(
@@ -82,7 +80,6 @@ export default function TradePage() {
           const updatedTrade = payload.new as Trade;
           if (updatedTrade.status === "Sold" && updatedTrade.txid) {
             scheduleDelayedDeletion(updatedTrade.tradeid, updatedTrade.txid);
-            // Optionally update the trades state to reflect the status change
             setTrades((prevTrades) =>
               prevTrades.map((trade) =>
                 trade.tradeid === updatedTrade.tradeid
@@ -109,10 +106,8 @@ export default function TradePage() {
     };
   }, []);
 
-  // Function to schedule delayed deletion
   const scheduleDelayedDeletion = async (tradeid: string, txid: string) => {
     try {
-      // Fetch the transaction timestamp
       const { data: transactionData, error: transactionError } = await supabase
         .from("Transaction")
         .select("timestamp")
@@ -130,7 +125,6 @@ export default function TradePage() {
       const timeElapsed = currentTime - transactionTimestamp;
       const remainingDelay = Math.max(DELETION_DELAY_MS - timeElapsed, 0);
 
-      // Skip scheduling if the delay has already passed
       if (timeElapsed >= DELETION_DELAY_MS) {
         console.log(`Trade ${tradeid} delay has passed. Deleting immediately.`);
         const { error: deleteError } = await supabase
@@ -149,7 +143,6 @@ export default function TradePage() {
 
       setTimeout(async () => {
         try {
-          // Check the trade status before deletion
           const { data: tradeStatusData, error: tradeStatusError } = await supabase
             .from("Trade")
             .select("status")
@@ -166,7 +159,6 @@ export default function TradePage() {
             return;
           }
 
-          // Delete the trade
           const { error: deleteError } = await supabase
             .from("Trade")
             .delete()
@@ -272,7 +264,7 @@ export default function TradePage() {
                   <TableRow>
                     <TableHead className="text-white">Symbol</TableHead>
                     <TableHead className="text-white">Name</TableHead>
-                    <TableHead className="text-white">Asset</TableHead> {/* Changed from Asset Type */}
+                    <TableHead className="text-white">Asset</TableHead>
                     <TableHead className="text-right text-white">Price (ETH)</TableHead>
                     <TableHead className="text-right text-white">Status</TableHead>
                   </TableRow>
@@ -284,59 +276,57 @@ export default function TradePage() {
                         No trades found matching your criteria.
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    filteredTrades.map((trade) => (
-                      <TableRow key={trade.tradeid} className="transition-colors hover:bg-[#0d1829]">
-                        <TableCell className="font-medium text-white">
-                          <div className="flex items-center">
-                            <Badge variant="outline" className="mr-2">
-                              {trade.symbol.toUpperCase()}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-white">{trade.name}</TableCell>
-                        <TableCell className="text-white">
-                          <div className="relative w-12 h-12">
-                            <Image
-                              src={trade.img || "/placeholder.svg"}
-                              alt={`${trade.name} preview`}
-                              fill
-                              className="object-contain rounded-sm"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/placeholder.svg";
-                              }}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right text-white">
-                          {trade.price.toFixed(2)} ETH
-                        </TableCell>
-                        <TableCell className="text-right align-middle">
-                          {trade.status === "Sold" ? (
-                            <Badge variant="secondary" className="bg-gray-200 text-black px-2 py-1 rounded">
-                              Sold
-                            </Badge>
-                          ) : (
-                            <Button
-                              onClick={() => {
-                                if (localStorage.getItem("isLoggedIn") === "false") {
-                                  router.push("/login");
-                                } else {
-                                  router.push(
-                                    `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`
-                                  );
-                                }
-                              }}
-                              variant="outline"
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                              Buy
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
+                  ) : filteredTrades.map((trade) => (
+                    <TableRow key={trade.tradeid} className="transition-colors hover:bg-[#0d1829]">
+                      <TableCell className="font-medium text-white">
+                        <div className="flex items-center">
+                          <Badge variant="outline" className="mr-2">
+                            {trade.symbol.toUpperCase()}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-white">{trade.name}</TableCell>
+                      <TableCell className="text-white">
+                        <div className="relative w-12 h-12">
+                          <Image
+                            src={trade.img || "/placeholder.svg"}
+                            alt={`${trade.name} preview`}
+                            fill
+                            className="object-contain rounded-sm"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right text-white">
+                        {trade.price.toFixed(2)} ETH
+                      </TableCell>
+                      <TableCell className="text-right align-middle">
+                        {trade.status === "Sold" ? (
+                          <Badge variant="secondary" className="bg-gray-200 text-black px-2 py-1 rounded">
+                            Sold
+                          </Badge>
+                        ) : (
+                          <Button
+                            onClick={() => {
+                              if (localStorage.getItem("isLoggedIn") === "false") {
+                                router.push("/login");
+                              } else {
+                                router.push(
+                                  `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`
+                                );
+                              }
+                            }}
+                            variant="outline"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            Buy
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>

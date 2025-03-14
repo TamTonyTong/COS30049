@@ -218,7 +218,7 @@ export default function SecureTradingInterface() {
                 .from("Transaction")
                 .insert({
                     userid: sellerUserId,
-                    type: "Sale",
+                    type: "Sell",
                     amount: amount,
                     status: "Completed",
                     timestamp: new Date().toISOString(),

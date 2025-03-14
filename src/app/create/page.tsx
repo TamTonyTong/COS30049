@@ -6,14 +6,14 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
-import { v4 as uuidv4 } from "uuid"; // For generating UUIDsz
-import { supabase } from "@/lib/supabaseClient"; //Supabase call
+import { v4 as uuidv4 } from "uuid";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function CreateCurrencyPage() {
   const [formData, setFormData] = useState({ symbol: "", name: "", price: "" });
-  const [selectedFile, setSelectedFile] = useState<File | null>(null); //Image file
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false); // Add loading state
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -25,7 +25,8 @@ export default function CreateCurrencyPage() {
         setUserId(storedUserId);
       } else {
         const fetchUser = async () => {
-          const { data: { session } } = await fetch("/api/auth/session").then((res) => res.json());
+          const response = await fetch("/api/auth/session");
+          const { data: { session } } = await response.json();
           if (session) {
             setUserId(session.user.id);
             localStorage.setItem("userid", session.user.id);
@@ -49,7 +50,9 @@ export default function CreateCurrencyPage() {
     }
     if (!formData.name) newErrors.name = "Name is required";
     if (!formData.price) newErrors.price = "Price is required";
-    if (isNaN(Number(formData.price))) newErrors.price = "Price must be a number";
+    if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
+      newErrors.price = "Price must be a positive number";
+    }
     if (!selectedFile) newErrors.image = "Image is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -58,12 +61,12 @@ export default function CreateCurrencyPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validateForm() && userId) {
-      setLoading(true); // Disable button and prevent further clicks
-      setErrors({}); // Clear previous errors
+      setLoading(true);
+      setErrors({});
 
       try {
-        const assetId = uuidv4(); // Generate a unique ID for the asset
-        const priceHistoryId = uuidv4(); // Generate a unique ID for the price history
+        const assetId = uuidv4();
+        const priceHistoryId = uuidv4();
 
         // Upload image to Supabase Storage
         const file = selectedFile!;
@@ -75,21 +78,19 @@ export default function CreateCurrencyPage() {
           .upload(fileName, file);
 
         if (uploadError) {
-          throw new Error(`Failed to upload a file: ${uploadError.message}`);
+          throw new Error(`Failed to upload file: ${uploadError.message}`);
         }
 
-        // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('nft-img')
           .getPublicUrl(fileName);
-
 
         // Insert into Asset table
         const assetResponse = await fetch("/api/create", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "user-id": userId, // Pass userId in headers
+            "user-id": userId,
           },
           body: JSON.stringify({
             table: "Asset",
@@ -97,10 +98,10 @@ export default function CreateCurrencyPage() {
               assetid: assetId,
               symbol: formData.symbol,
               name: formData.name,
-              assettype: "NFT", // Changed from "cryptocurrency" to "NFT"
+              assettype: "NFT",
               createdat: new Date().toISOString(),
               isactive: true,
-              img: publicUrl, // Add image URL here
+              img: publicUrl,
             },
           }),
         });
@@ -115,15 +116,15 @@ export default function CreateCurrencyPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "user-id": userId, // Pass userId in headers
+            "user-id": userId,
           },
           body: JSON.stringify({
             table: "PriceHistory",
             data: {
               pricehistoryid: priceHistoryId,
               assetid: assetId,
-              price: Number(formData.price), // Price in ETH
-              currencypair: `${formData.symbol}/ETH`, // Auto-generated currency pair
+              price: Number(formData.price),
+              currencypair: `${formData.symbol}/ETH`,
               timestamp: new Date().toISOString(),
               source: "User",
             },
@@ -135,14 +136,13 @@ export default function CreateCurrencyPage() {
           throw new Error(errorData.error || "Failed to insert into PriceHistory table");
         }
 
-        // Redirect to the personal-assets page
         router.push("/personal-assets");
       } catch (error) {
         setErrors({
           general: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
         });
       } finally {
-        setLoading(false); // Re-enable button after operation completes
+        setLoading(false);
       }
     } else if (!userId) {
       setErrors({
@@ -170,7 +170,7 @@ export default function CreateCurrencyPage() {
                 value={formData.symbol}
                 onChange={handleChange}
                 maxLength={3}
-                disabled={loading} // Disable input while loading
+                disabled={loading}
               />
               {errors.symbol && (
                 <p className="mt-1 text-sm text-red-500">{errors.symbol}</p>
@@ -188,7 +188,7 @@ export default function CreateCurrencyPage() {
                 className="mt-1"
                 value={formData.name}
                 onChange={handleChange}
-                disabled={loading} // Disable input while loading
+                disabled={loading}
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-500">{errors.name}</p>
@@ -206,7 +206,7 @@ export default function CreateCurrencyPage() {
                 className="mt-1"
                 value={formData.price}
                 onChange={handleChange}
-                disabled={loading} // Disable input while loading
+                disabled={loading}
               />
               {errors.price && (
                 <p className="mt-1 text-sm text-red-500">{errors.price}</p>
@@ -233,7 +233,7 @@ export default function CreateCurrencyPage() {
             <Button
               type="submit"
               className="w-full bg-blue-500 text-white hover:bg-blue-600"
-              disabled={loading || !formData.symbol || !formData.name || !formData.price} // Disable if loading or fields are empty
+              disabled={loading || !formData.symbol || !formData.name || !formData.price}
             >
               {loading ? "Creating..." : "Create Currency"}
             </Button>

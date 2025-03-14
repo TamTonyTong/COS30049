@@ -24,10 +24,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Insert data into Supabase
       if (table === "Asset") {
-        // Add the userId to the data object for the Asset table (minct_userid)
+        // Add the userId to the data object for the Asset table (as creatorid)
         const assetDataWithUserId = {
           ...data,
-          userid: userId, // Set the creator's userid (minct_userid)
+          creatorid: userId, // Changed from userid to creatorid
         };
 
         const { data: assetData, error: assetError } = await supabase
@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Insert into Wallet table with all required fields
         const walletData = {
-          userid: userId, // The initial owner is the creator
+          userid: userId, // The initial owner is the creator (this field name might still be correct depending on your schema)
           assetid: data.assetid,
           address: `addr_${userId}_${data.assetid}`, // Example address; adjust as needed
           nonce: 0, // Default nonce

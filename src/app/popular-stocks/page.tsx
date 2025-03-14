@@ -33,6 +33,7 @@ interface Asset {
   assettype: string;
   creatorid: string | null; // Updated from userid
   createdat: string | null;
+  img?: string;
 }
 interface Crypto {
   id: number

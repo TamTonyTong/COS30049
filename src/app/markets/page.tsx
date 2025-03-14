@@ -22,12 +22,14 @@ import { Input } from "@/src/components/ui/input";
 import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Layout from "../../components/layout";
+import Image from "next/image";
 
 export default function TradePage() {
   interface Trade {
     tradeid: string;
     symbol: string;
     name: string;
+    img?: string;
     assettype: string;
     price: number;
     status: "Buy" | "Sold";
@@ -270,7 +272,7 @@ export default function TradePage() {
                   <TableRow>
                     <TableHead className="text-white">Symbol</TableHead>
                     <TableHead className="text-white">Name</TableHead>
-                    <TableHead className="text-white">Asset Type</TableHead>
+                    <TableHead className="text-white">Asset</TableHead> {/* Changed from Asset Type */}
                     <TableHead className="text-right text-white">Price (ETH)</TableHead>
                     <TableHead className="text-right text-white">Status</TableHead>
                   </TableRow>
@@ -293,7 +295,19 @@ export default function TradePage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-white">{trade.name}</TableCell>
-                        <TableCell className="text-white">{trade.assettype}</TableCell>
+                        <TableCell className="text-white">
+                          <div className="relative w-12 h-12">
+                            <Image
+                              src={trade.img || "/placeholder.svg"}
+                              alt={`${trade.name} preview`}
+                              fill
+                              className="object-contain rounded-sm"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right text-white">
                           {trade.price.toFixed(2)} ETH
                         </TableCell>

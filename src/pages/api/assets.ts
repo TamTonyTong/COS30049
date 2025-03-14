@@ -13,27 +13,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           name,
           assettype,
           createdat,
+          img,
           PriceHistory (
             price,
-            pricehistoryid
+            pricehistoryid,
+            currencypair,
+            timestamp
           ),
           Wallet (
             userid
           )
-        `);
+        `)
+        .order('timestamp', { foreignTable: 'PriceHistory', ascending: false }); // Order by latest price
 
       if (error) throw error;
 
       const assets = data.map((asset: any) => ({
         assetid: asset.assetid,
-        creatorid: asset.creatorid, // Map database userid to creatorid in the response
-        ownerid: asset.Wallet && asset.Wallet.length > 0 ? asset.Wallet[0].userid : '', // Handle Wallet array
+        creatorid: asset.creatorid,
+        ownerid: asset.Wallet && asset.Wallet.length > 0 ? asset.Wallet[0].userid : '',
         symbol: asset.symbol || 'N/A',
         name: asset.name || 'Unknown',
         assettype: asset.assettype || 'Unknown',
         price: asset.PriceHistory && asset.PriceHistory.length > 0 ? asset.PriceHistory[0].price : 0,
-        currencypair: `${asset.symbol || 'N/A'}/ETH`,
+        currencypair: asset.PriceHistory && asset.PriceHistory.length > 0 ? asset.PriceHistory[0].currencypair || `${asset.symbol || 'N/A'}/ETH` : `${asset.symbol || 'N/A'}/ETH`,
         createdat: asset.createdat || null,
+        img: asset.img || null,
       }));
 
       res.status(200).json({ assets });

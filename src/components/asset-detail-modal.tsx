@@ -17,6 +17,7 @@ interface Asset {
   assettype: string;
   creatorid: string | null; // Changed from userid to creatorid, allowing null
   createdat: string | null;
+  img?: string; // Added from the first version to support optional image URL
 }
 
 interface AssetDetailModalProps {
@@ -27,18 +28,46 @@ interface AssetDetailModalProps {
 
 export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetailModalProps) {
   const [isLiked, setIsLiked] = useState(false)
+  const [imageStatus, setImageStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageError, setImageError] = useState(false)
   const [creatorMetawallet, setCreatorMetawallet] = useState<string>("Loading...")
   const [ownerMetawallet, setOwnerMetawallet] = useState<string>("Loading...")
 
-  // Reset states when modal opens with a new asset
+  // Reset states and fetch image/details when modal opens with a new asset
   useEffect(() => {
+    const fetchImage = async () => {
+      if (!asset) return
+      setImageError(false)
+      setImageLoaded(false)
+      try {
+        // Check if image exists in storage
+        const { data: listData } = await supabase.storage
+          .from('nft-img')
+          .list(`nfts/${asset.symbol}`)
+
+        if (listData && listData.length > 0) {
+          const { data: urlData } = await supabase.storage
+            .from('nft-img')
+            .getPublicUrl(`nfts/${asset.symbol}/` + listData[0].name)
+          setImageUrl(urlData.publicUrl)
+        } else {
+          setImageError(true)
+        }
+      } catch (error) {
+        console.error('Error fetching image:', error)
+        setImageError(true)
+      }
+    }
+
     console.log("useEffect triggered - isOpen:", isOpen, "asset:", asset);
     if (isOpen && asset) {
       setImageLoaded(false);
       setCreatorMetawallet("Loading...");
       setOwnerMetawallet("Loading...");
       console.log("Asset passed to modal:", asset);
+      fetchImage();
       fetchAssetDetails();
     }
   }, [isOpen, asset]);
@@ -112,22 +141,29 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
     }
   };
 
-  if (!asset) return null
+  const handleImageLoaded = () => {
+    setImageStatus('success');
+    setImageLoaded(true);
+  };
 
-  // Generate a unique image URL based on the asset symbol for demonstration
-  const imageUrl = `/placeholder.svg?height=500&width=500&text=${asset.symbol}`
+  const handleImageError = () => {
+    setImageStatus('error');
+    setImageError(true);
+  };
+
+  if (!asset) return null;
 
   // Format the createdat timestamp
   const createdTimestamp = asset.createdat
     ? (() => {
         try {
-          return new Date(asset.createdat).toLocaleDateString()
+          return new Date(asset.createdat).toLocaleDateString();
         } catch (e) {
-          console.error("Invalid createdat format:", asset.createdat)
-          return "Unknown"
+          console.error("Invalid createdat format:", asset.createdat);
+          return "Unknown";
         }
       })()
-    : "Unknown"
+    : "Unknown";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -139,17 +175,28 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
           {/* NFT Image Display with loading animation */}
           <div className="relative w-full h-[300px] sm:h-[350px] overflow-hidden group">
             {/* Shimmer loading effect */}
-            {!imageLoaded && (
+            {imageStatus === 'loading' && (
               <div className="absolute inset-0 bg-gradient-to-r from-[#0d1829] via-[#1a2b4b] to-[#0d1829] bg-[length:400%_100%] animate-shimmer"></div>
             )}
 
-            <Image
-              src={imageUrl || "/placeholder.svg"}
-              alt={`${asset.name} NFT`}
-              fill
-              className={`object-contain p-4 transition-all duration-700 ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
-              onLoadingComplete={() => setImageLoaded(true)}
-            />
+            {imageUrl || asset.img ? (
+              <Image
+                src={imageUrl || asset.img || "/placeholder.svg"}
+                alt={`${asset.name} NFT`}
+                fill
+                className={`object-contain p-4 transition-all duration-700 ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+                onLoadingComplete={handleImageLoaded}
+                onError={handleImageError}
+                unoptimized // Prevent Next.js image optimization
+              />
+            ) : (
+              <div className="flex items-center justify-center w-full h-full text-gray-500">
+                <div className="text-center">
+                  <FileText className="w-16 h-16 mx-auto mb-4" />
+                  <p>No image available</p>
+                </div>
+              </div>
+            )}
 
             {/* Hover effect glow */}
             <div className="absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100 bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10"></div>
@@ -161,8 +208,8 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
                 variant="ghost"
                 className="w-8 h-8 rounded-full bg-[#1a2b4b]/80 hover:bg-blue-500/30 hover:text-blue-300 hover:shadow-glow transition-all"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  setIsLiked(!isLiked)
+                  e.stopPropagation();
+                  setIsLiked(!isLiked);
                 }}
               >
                 <Heart className={`w-4 h-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />

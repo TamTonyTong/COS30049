@@ -20,9 +20,9 @@ import {
 } from "@/src/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
 import { Slider } from "@/src/components/ui/slider"
-import { RefreshCw, Info, Search, X, SlidersHorizontal, ArrowUp, ArrowDown } from "lucide-react"
+import { RefreshCw, Info, Search, X, SlidersHorizontal, ArrowUp, ArrowDown, Sparkles } from "lucide-react"
 import Link from "next/link"
-
+import AssetDetailModal from "@/src/components/asset-detail-modal"
 
 interface Asset {
   symbol: string
@@ -42,7 +42,7 @@ interface Crypto {
 type SortField = "name" | "price"
 type SortOrder = "asc" | "desc"
 type PriceRange = [number, number]
-type AssetType = "all" | "cryptocurrency" | "stock" | "forex" | "commodity"
+type AssetType = "all" | "nft"
 
 export default function MarketsPage() {
   const [assets, setAssets] = useState<Asset[]>([])
@@ -50,6 +50,9 @@ export default function MarketsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState<string>("")
@@ -77,10 +80,7 @@ export default function MarketsPage() {
   const getAssetTypeLabel = (type: AssetType): string => {
     const labels: Record<AssetType, string> = {
       all: "All Types",
-      cryptocurrency: "Cryptocurrency",
-      stock: "Stock",
-      forex: "Forex",
-      commodity: "Commodity",
+      nft: "NFT",
     }
     return labels[type]
   }
@@ -230,6 +230,12 @@ export default function MarketsPage() {
     setIsSearchOpen(false)
   }
 
+  // Handle opening the asset detail modal
+  const handleOpenAssetDetail = (asset: Asset) => {
+    setSelectedAsset(asset)
+    setIsModalOpen(true)
+  }
+
   // Filter and sort assets
   const filteredAndSortedAssets = useMemo(() => {
     // First filter by search term, price range, and asset type
@@ -239,8 +245,7 @@ export default function MarketsPage() {
         asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         asset.symbol.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
 
-      const matchesPrice =
-        asset.price >= debouncedPriceRange[0] && asset.price <= debouncedPriceRange[1]
+      const matchesPrice = asset.price >= debouncedPriceRange[0] && asset.price <= debouncedPriceRange[1]
 
       const matchesType = assetType === "all" || asset.assettype === assetType
 
@@ -250,9 +255,7 @@ export default function MarketsPage() {
     // Then sort the filtered assets
     return filtered.sort((a, b) => {
       if (sortField === "name") {
-        return sortOrder === "asc"
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name)
+        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
       } else {
         return sortOrder === "asc" ? a.price - b.price : b.price - a.price
       }
@@ -322,20 +325,29 @@ export default function MarketsPage() {
   return (
     <Layout>
       <div className="container px-4 py-8 mx-auto">
-        <Card className="border-blue-500/30 bg-[#1a2b4b]">
-          <CardHeader>
+        <Card className="border-blue-500/30 bg-[#0d1829] overflow-hidden">
+          {/* Animated background gradient */}
+          <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-blue-900/5 via-indigo-900/5 to-purple-900/5"></div>
+
+          <CardHeader className="relative">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-white">Digital Asset Markets</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-2xl font-bold text-white">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                Digital Asset Markets
+              </CardTitle>
               <div className="flex items-center gap-3">
                 <Link href="/markets">
-                  <Button variant="outline" className="text-white">
+                  <Button
+                    variant="outline"
+                    className="text-white transition-all border-blue-500/30 hover:bg-blue-500/20 hover:border-blue-400/50 hover:shadow-glow-sm"
+                  >
                     Trade
                   </Button>
                 </Link>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-blue-400 hover:text-blue-300 hover:bg-[#243860]"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-[#243860] hover:shadow-glow-sm transition-all"
                   onClick={fetchAssets}
                   disabled={isRefreshing}
                 >
@@ -344,12 +356,12 @@ export default function MarketsPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             {/* Enhanced Search Bar */}
             <div className="mb-6">
               <div className="relative">
                 <div className="absolute inset-0 rounded-lg bg-blue-500/10 blur-md"></div>
-                <div className="relative flex items-center bg-[#0d1829]/90 rounded-lg overflow-hidden border border-blue-500/30">
+                <div className="relative flex items-center bg-[#0d1829]/90 rounded-lg overflow-hidden border border-blue-500/30 hover:border-blue-400/50 transition-colors">
                   <Search className="w-5 h-5 ml-4 text-blue-400" />
                   <Input
                     type="text"
@@ -377,7 +389,7 @@ export default function MarketsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="mr-1 text-blue-400 hover:text-blue-300 hover:bg-[#243860]"
+                        className="mr-1 text-blue-400 hover:text-blue-300 hover:bg-[#243860] transition-colors"
                       >
                         <SlidersHorizontal className="w-5 h-5" />
                       </Button>
@@ -390,15 +402,12 @@ export default function MarketsPage() {
                         <DropdownMenuLabel className="text-xs text-gray-400">Asset Type</DropdownMenuLabel>
                         <div className="px-3 py-2">
                           <Select value={assetType} onValueChange={(value) => setAssetType(value as AssetType)}>
-                            <SelectTrigger className="bg-[#243860] text-white border-gray-700">
+                            <SelectTrigger className="bg-[#243860] text-white border-gray-700 hover:border-blue-500/30 transition-colors">
                               <SelectValue placeholder="Asset Type" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Types</SelectItem>
-                              <SelectItem value="cryptocurrency">Cryptocurrency</SelectItem>
-                              <SelectItem value="stock">Stock</SelectItem>
-                              <SelectItem value="forex">Forex</SelectItem>
-                              <SelectItem value="commodity">Commodity</SelectItem>
+                              <SelectItem value="nft">NFT</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -421,7 +430,7 @@ export default function MarketsPage() {
                             onValueChange={(newValue) => {
                               setPriceRange([newValue[0], newValue[1]])
                             }}
-                            className="[&>span:first-child]:bg-blue-500 [&>span:first-child]:h-2 [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white"
+                            className="[&>span:first-child]:bg-blue-500 [&>span:first-child]:h-2 [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white [&_[role=slider]]:hover:shadow-glow-sm"
                           />
                         </div>
                       </DropdownMenuGroup>
@@ -432,7 +441,7 @@ export default function MarketsPage() {
                         <DropdownMenuLabel className="text-xs text-gray-400">Sort By</DropdownMenuLabel>
                         <div className="grid grid-cols-2 gap-2 px-3 py-2">
                           <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
-                            <SelectTrigger className="bg-[#243860] text-white border-gray-700">
+                            <SelectTrigger className="bg-[#243860] text-white border-gray-700 hover:border-blue-500/30 transition-colors">
                               <SelectValue placeholder="Field" />
                             </SelectTrigger>
                             <SelectContent>
@@ -442,7 +451,7 @@ export default function MarketsPage() {
                           </Select>
 
                           <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrder)}>
-                            <SelectTrigger className="bg-[#243860] text-white border-gray-700">
+                            <SelectTrigger className="bg-[#243860] text-white border-gray-700 hover:border-blue-500/30 transition-colors">
                               <SelectValue placeholder="Order" />
                             </SelectTrigger>
                             <SelectContent>
@@ -458,7 +467,7 @@ export default function MarketsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full mt-2 border-gray-700 text-white hover:bg-[#243860]"
+                        className="w-full mt-2 border-gray-700 text-white hover:bg-[#243860] hover:border-blue-500/30 transition-all"
                         onClick={() => {
                           clearAllFilters()
                           setIsFilterOpen(false)
@@ -469,15 +478,17 @@ export default function MarketsPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-
-                
               </div>
 
               {/* Active filters */}
               {activeFilters.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {activeFilters.map((filter) => (
-                    <Badge key={filter} variant="secondary" className="bg-[#243860] text-white hover:bg-[#2c4a7c]">
+                    <Badge
+                      key={filter}
+                      variant="secondary"
+                      className="bg-[#243860] text-white hover:bg-[#2c4a7c] hover:shadow-glow-sm transition-all"
+                    >
                       {filter}
                       <button className="ml-1 hover:text-blue-300" onClick={() => clearFilter(filter)}>
                         <X className="w-3 h-3" />
@@ -488,7 +499,7 @@ export default function MarketsPage() {
                   {activeFilters.length > 1 && (
                     <Badge
                       variant="outline"
-                      className="border-gray-700 text-gray-400 hover:bg-[#243860] cursor-pointer"
+                      className="border-gray-700 text-gray-400 hover:bg-[#243860] cursor-pointer hover:border-blue-500/30 hover:text-blue-300 transition-all"
                       onClick={clearAllFilters}
                     >
                       Clear All
@@ -498,7 +509,12 @@ export default function MarketsPage() {
               )}
             </div>
 
-            <div className="overflow-x-auto border rounded-md border-blue-500/20">
+            <div className="relative overflow-x-auto border rounded-md border-blue-500/20">
+              {/* Table glow effect on hover */}
+              <div
+                className={`absolute inset-0 opacity-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-blue-500/5 pointer-events-none transition-opacity duration-500 ${hoveredRow ? "opacity-100" : ""}`}
+              ></div>
+
               <Table>
                 <TableHeader className="bg-[#0d1829]/70">
                   <TableRow className="hover:bg-[#0d1829] border-b border-blue-500/20">
@@ -523,19 +539,37 @@ export default function MarketsPage() {
                     filteredAndSortedAssets.map((asset) => (
                       <TableRow
                         key={asset.symbol}
-                        className="transition-colors border-b border-blue-500/10 hover:bg-[#0d1829]"
+                        className={`transition-all duration-200 border-b border-blue-500/10 hover:bg-[#1a2b4b]/50 cursor-pointer ${hoveredRow === asset.symbol ? "bg-[#1a2b4b]/30 shadow-glow-sm" : ""}`}
+                        onClick={() => handleOpenAssetDetail(asset)}
+                        onMouseEnter={() => setHoveredRow(asset.symbol)}
+                        onMouseLeave={() => setHoveredRow(null)}
                       >
                         <TableCell className="font-medium text-white">
                           <div className="flex items-center">
-                            <Badge variant="outline" className="mr-2 border-blue-500/30">
+                            <Badge
+                              variant="outline"
+                              className={`mr-2 border-blue-500/30 ${hoveredRow === asset.symbol ? "bg-blue-500/10 border-blue-400/50" : ""} transition-colors`}
+                            >
                               {asset.symbol.toUpperCase()}
                             </Badge>
-                            {asset.name}
+                            <span className={`${hoveredRow === asset.symbol ? "text-blue-300" : ""} transition-colors`}>
+                              {asset.name}
+                            </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right text-white">{formatPrice(asset.price)}</TableCell>
+                        <TableCell
+                          className={`text-right ${hoveredRow === asset.symbol ? "text-blue-300" : "text-white"} transition-colors`}
+                        >
+                          {formatPrice(asset.price)}
+                        </TableCell>
                         <TableCell className="text-right text-white">{asset.currencypair}</TableCell>
-                        <TableCell className="text-right text-white">{asset.assettype}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            className={`bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 transition-colors ${hoveredRow === asset.symbol ? "shadow-glow-sm" : ""}`}
+                          >
+                            NFT
+                          </Badge>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -552,7 +586,7 @@ export default function MarketsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
+                className="text-blue-400 transition-all border-blue-500/30 hover:bg-blue-500/20 hover:shadow-glow-sm"
                 onClick={fetchAssets}
                 disabled={isRefreshing}
               >
@@ -563,6 +597,10 @@ export default function MarketsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Asset Detail Modal */}
+      <AssetDetailModal asset={selectedAsset} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </Layout>
   )
 }
+

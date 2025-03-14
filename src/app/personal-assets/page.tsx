@@ -14,13 +14,13 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import Link from "next/link";
 import { DollarSign, Activity } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 
 // Define Asset and Transaction types
 type Asset = {
   tradeid: string;
   name: string;
-  symbol: string; // Add symbol to the interface
+  symbol: string;
   quantity: number;
   price: number;
   totalValue: number;
@@ -33,6 +33,9 @@ type Transaction = {
   type: string;
   amount: string;
   status: string;
+  assetid?: string;
+  symbol?: string;
+  name?: string;
 };
 
 export default function HomePage() {
@@ -44,20 +47,28 @@ export default function HomePage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [listedAssetIds, setListedAssetIds] = useState<string[]>([]); // Track listed asset IDs
-  const router = useRouter(); // Initialize useRouter
+  const [listedAssetIds, setListedAssetIds] = useState<string[]>([]);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const router = useRouter();
 
-  // Fetch userId from localStorage (client-side only) and redirect if not logged in
+  // Fetch userId from localStorage and set redirect flag
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUserId = localStorage.getItem("userid");
       if (storedUserId) {
         setUserId(storedUserId);
       } else {
-        router.push("/login"); // Redirect to login page if no userId
+        setShouldRedirect(true);
       }
     }
-  }, [router]);
+  }, []);
+
+  // Perform redirect after mount if needed
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.push("/login");
+    }
+  }, [shouldRedirect, router]);
 
   // Fetch listed trades to determine which assets are being sold
   useEffect(() => {
@@ -69,11 +80,10 @@ export default function HomePage() {
           .from('Trade')
           .select('assetid')
           .eq('userid', userId)
-          .eq('status', 'Buy'); // Fetch trades with status 'Buy'
+          .eq('status', 'Buy');
 
         if (error) throw error;
 
-        // Extract asset IDs that are currently listed
         const assetIds = data.map((trade) => trade.assetid);
         setListedAssetIds(assetIds);
       } catch (error) {
@@ -106,11 +116,14 @@ export default function HomePage() {
         setAssets(data.assets);
         setTransactions(
           data.transactions.map((tx: any) => ({
-            id: tx.txid,
-            timestamp: new Date(tx.creationtimestamp).toLocaleString(),
+            id: tx.id, // Rely on txid from API
+            timestamp: new Date(tx.timestamp).toLocaleString(),
             type: tx.type,
             amount: tx.amount,
             status: tx.status,
+            assetid: tx.assetid,
+            symbol: tx.symbol,
+            name: tx.name,
           }))
         );
       } catch (error) {
@@ -189,7 +202,6 @@ export default function HomePage() {
   }
 
   if (!userId) {
-    // This should not be reached due to the redirect in useEffect, but added as a fallback
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8">
@@ -319,6 +331,7 @@ export default function HomePage() {
                 <thead>
                   <tr className="bg-[#1a2b4b]">
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Transaction ID</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-white">Asset</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Timestamp</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Type</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-white">Amount</th>
@@ -329,6 +342,21 @@ export default function HomePage() {
                   {transactions.map((tx) => (
                     <tr key={tx.id} className="hover:bg-[#1a2b4b]">
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.id}</td>
+                      <td className="font-medium text-white">
+                        {tx.symbol && tx.name ? (
+                          <div className="flex items-center justify-center">
+                            <Badge
+                              variant="outline"
+                              className="mr-2 border-blue-500/30"
+                            >
+                              {tx.symbol.toUpperCase()}
+                            </Badge>
+                            {tx.name}
+                          </div>
+                        ) : (
+                          "N/A"
+                        )}
+                      </td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.timestamp}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.type}</td>
                       <td className="py-2 px-4 border-b border-gray-700 text-white">{tx.amount}</td>

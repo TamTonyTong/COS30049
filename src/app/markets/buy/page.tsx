@@ -6,7 +6,7 @@ import { isAddress } from "ethers";
 import TradingContractABI from "../../../../contracts/TradingContract.json";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import Layout from "../../../components/layout";
 
 //const TRADING_CONTRACT_ADDRESS = "0xF2f084A2f4fB8D836d47b176726e6aD01a2B7143";
@@ -14,7 +14,7 @@ import Layout from "../../../components/layout";
 export default function SecureTradingInterface() {
     const searchParams = useSearchParams();
     const tradeid = searchParams?.get("tradeid") || "";
-    const metawallet = searchParams?.get("metawallet") || ""; // Recipient address
+    const metawallet = searchParams?.get("metawallet") || ""; // Recipient address (seller's wallet)
     const price = searchParams?.get("price") || "0"; // Buy amount
     const walletid = searchParams?.get("walletid") || "0";
     const router = useRouter();
@@ -39,12 +39,12 @@ export default function SecureTradingInterface() {
             walletid.trim() === "";
 
         if (validation) {
-            setIsInvalid(true)
+            setIsInvalid(true);
             setTimeout(() => router.push("/markets"), 3000);
             return;
         }
 
-        //Set data
+        // Set data
         if (!metawallet || !isAddress(metawallet)) {
             setError("Invalid or missing recipient wallet address");
         }
@@ -144,11 +144,31 @@ export default function SecureTradingInterface() {
 
             const tx = await tradingContract.initiateTrade(recipient, weiAmount, { value: weiAmount });
 
-            await tx.wait();
+            const receipt = await tx.wait();
+            if (receipt.status === 0) {
+                throw new Error("Transaction failed on the blockchain");
+            }
 
             updateBalances(provider, account!);
 
-            // Update the trade status to "Sold" and change ownership in Supabase
+            // Fetch trade details to get assetid and seller's userid
+            const { data: tradeData, error: tradeFetchError } = await supabase
+                .from("Trade")
+                .select("assetid, userid")
+                .eq("tradeid", tradeid)
+                .single();
+
+            if (tradeFetchError || !tradeData) {
+                console.error("Failed to fetch trade details:", tradeFetchError?.message);
+                setError("Failed to fetch trade details.");
+                return;
+            }
+
+            const assetid = tradeData.assetid;
+            const sellerUserId = tradeData.userid;
+            const buyerUserId = getUserID();
+
+            // Update the trade status to "Sold"
             const { error: tradeError } = await supabase
                 .from("Trade")
                 .update({ status: "Sold" })
@@ -160,19 +180,57 @@ export default function SecureTradingInterface() {
                 return;
             }
 
+            // Change ownership in the Wallet table
             const { error: walletError } = await supabase
                 .from("Wallet")
-                .update({ userid: getUserID() })
+                .update({ userid: buyerUserId })
                 .eq("walletid", walletid);
 
             if (walletError) {
                 console.error("Failed to update wallet ownership:", walletError.message);
-                setError(walletid);
+                setError("Failed to update wallet ownership.");
                 return;
             }
 
-            // Redirect to markets page after successful transaction and update
-            router.push("/markets");
+            // Add transaction for the buyer (Purchase)
+            const { error: buyerTransactionError } = await supabase
+                .from("Transaction")
+                .insert({
+                    userid: buyerUserId,
+                    type: "Purchase",
+                    amount: amount,
+                    status: "Completed",
+                    timestamp: new Date().toISOString(),
+                    assetid: assetid,
+                });
+
+            if (buyerTransactionError) {
+                console.error("Failed to add buyer transaction:", buyerTransactionError.message);
+                setError("Failed to record buyer transaction.");
+                return;
+            }
+
+            // Add transaction for the seller (Sale)
+            const { error: sellerTransactionError } = await supabase
+                .from("Transaction")
+                .insert({
+                    userid: sellerUserId,
+                    type: "Sell",
+                    amount: amount,
+                    status: "Completed",
+                    timestamp: new Date().toISOString(),
+                    assetid: assetid,
+                });
+
+            if (sellerTransactionError) {
+                console.error("Failed to add seller transaction:", sellerTransactionError.message);
+                setError("Failed to record seller transaction.");
+                return;
+            }
+
+            // Show success message and redirect
+            setError("Purchase successful! Redirecting to markets...");
+            setTimeout(() => router.push("/markets"), 2000);
 
         } catch (err) {
             console.error(err);

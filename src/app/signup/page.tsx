@@ -4,28 +4,16 @@ import type React from "react"
 
 import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button"
-import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import Layout from "../../components/layout"
 import { supabase } from "@/lib/supabaseClient"
-import CryptoJS from "crypto-js"
 import { useRouter } from "next/navigation"
 import { v4 as uuidv4 } from "uuid"
-import { Eye, EyeOff } from "lucide-react" // Import eye icons
 import { ethers } from "ethers";
-import TradingContractABI from "../../../contracts/TradingContract.json";
 
 export default function SignUpForm() {
-  const [formData, setFormData] = useState({
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false) // Add state for password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false) // Add state for confirm password visibility
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [walletAddress, setWalletAddress] = useState("")
   const [walletError, setWalletError] = useState("")
@@ -75,30 +63,8 @@ export default function SignUpForm() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value.trim() }))
-  }
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-    //Email checking
-    if (!formData.email) {
-      newErrors.email = "Email is required"
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid"
-    }
-    //Password checking
-    if (!formData.password) {
-      newErrors.password = "Password is required"
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters"
-    }
-    //Confirm Password checking
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match"
-    }
-
     // New wallet validation
     if (!walletAddress) {
       newErrors.wallet = "Wallet connection is required"
@@ -107,15 +73,6 @@ export default function SignUpForm() {
     return Object.keys(newErrors).length === 0
   }
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
-  }
-
-  const toggleConfirmPasswordVisibility = () => {
-    setShowConfirmPassword(!showConfirmPassword)
-  }
-
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!validateForm()) return
@@ -123,43 +80,32 @@ export default function SignUpForm() {
     setIsLoading(true)
 
     try {
-      // Check if email already exists
-      const { data: existingUser } = await supabase.from("User").select("email").eq("email", formData.email).single()
+      // Check if wallet already exists
+      const { data: existingUser } = await supabase
+        .from("User")
+        .select("metawallet")
+        .eq("metawallet", walletAddress)
+        .single()
 
       if (existingUser) {
-        throw new Error("Email already registered")
+        throw new Error("Wallet already registered")
       }
 
       // Generate a UUID for the user
       const userId = uuidv4()
 
-      // Generate salt and hash password
-      const salt = CryptoJS.lib.WordArray.random(16).toString()
-      const hashedPassword = CryptoJS.SHA256(formData.password + salt).toString()
-
-
-
       // Insert new user into Supabase
       const { error } = await supabase.from("User").insert([
         {
-          userid: userId, // Store the generated UUID
-          email: formData.email,
-          phone: formData.phone,
-          passwordhash: hashedPassword,
-          salt: salt,
-          isverified: "FALSE",
-          balance: "0",
+          userid: userId,
           metawallet: walletAddress,
         },
       ])
-
       if (error) throw error
 
       // Save email and userid to localStorage
       localStorage.setItem("isLoggedIn", "true")
-      localStorage.setItem("email", formData.email)
       localStorage.setItem("userid", userId)
-      localStorage.setItem("phone", formData.phone)
       localStorage.setItem("metawallet", walletAddress)
 
       // Redirect to personal-assets after successful signup
@@ -178,86 +124,8 @@ export default function SignUpForm() {
   return (
     <Layout>
       <div className="mx-auto mt-8 max-w-md rounded-lg bg-[#1a2b4b] p-6 shadow-lg">
-        <h1 className="mb-6 text-2xl font-bold text-center text-white">Sign Up for TradePro</h1>
+        <h1 className="mb-6 text-2xl font-bold text-center text-white">Sign Up with Wallet</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="email" className="text-white">
-              Email
-            </Label>
-            <Input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-            {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
-          </div>
-          <div>
-            <Label htmlFor="phone" className="text-white">
-              Phone
-            </Label>
-            <Input
-              type="phone"
-              id="phone"
-              name="phone"
-              placeholder="Enter your phone number"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-            {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
-          </div>
-          <div>
-            <Label htmlFor="password" className="text-white">
-              Password
-            </Label>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                placeholder="Create a password"
-                value={formData.password}
-                onChange={handleChange}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                className="absolute text-gray-400 -translate-y-1/2 right-3 top-1/2 hover:text-white focus:outline-none"
-                onClick={togglePasswordVisibility}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
-          </div>
-          <div>
-            <Label htmlFor="confirmPassword" className="text-white">
-              Confirm Password
-            </Label>
-            <div className="relative">
-              <Input
-                type={showConfirmPassword ? "text" : "password"}
-                id="confirmPassword"
-                name="confirmPassword"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                className="absolute text-gray-400 -translate-y-1/2 right-3 top-1/2 hover:text-white focus:outline-none"
-                onClick={toggleConfirmPasswordVisibility}
-                tabIndex={-1}
-              >
-                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}
-          </div>
           <div>
             <Label className="text-white">
               Wallet Address *
@@ -288,7 +156,6 @@ export default function SignUpForm() {
                   Connect MetaMask Wallet
                 </Button>
               )}
-              {/* Error messages */}
               {walletError && (
                 <p className="mt-1 text-sm text-red-500">{walletError}</p>
               )}
@@ -299,7 +166,7 @@ export default function SignUpForm() {
           </div>
           {errors.general && <p className="mt-2 text-center text-red-500">{errors.general}</p>}
           <Button type="submit" className="w-full text-white bg-blue-500 hover:bg-blue-600" disabled={isLoading}>
-            {isLoading ? "Creating Account..." : "Sign Up"}
+            {isLoading ? "Creating Account..." : "Sign Up with Wallet"}
           </Button>
         </form>
         <div className="mt-6 text-center">

@@ -45,7 +45,6 @@ export default function HomePage() {
   const [balance, setBalance] = useState<number>(0);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [depositAmount, setDepositAmount] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -138,35 +137,6 @@ export default function HomePage() {
     fetchData();
   }, [userId]);
 
-  // Handle Deposit
-  const handleDepositUSD = async () => {
-    if (!depositAmount || isNaN(Number(depositAmount))) {
-      setError('Invalid deposit amount');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/personal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'user-id': userId || "",
-        },
-        body: JSON.stringify({ amount: Number(depositAmount) }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update balance");
-      }
-
-      const data = await response.json();
-      setBalance(data.balance);
-      setDepositAmount("");
-    } catch (error) {
-      setError('Error updating balance');
-    }
-  };
-
   if (loading) {
     return (
       <Layout>
@@ -250,26 +220,6 @@ export default function HomePage() {
                   {balance.toFixed(2)} ETH
                 </span>
               </div>
-            </div>
-
-            {/* Deposit USD */}
-            <div className="mb-6">
-              <h2 className="text-xl font-medium text-white">Deposit USD</h2>
-              <input
-                className="rounded-lg border border-gray-400 bg-transparent p-2 text-white"
-                placeholder="Deposit Amount"
-                type="text"
-                value={depositAmount}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (/^\d*\.?\d*$/.test(value)) {
-                    setDepositAmount(value);
-                  }
-                }}
-              />
-              <Button onClick={handleDepositUSD} className="ml-2">
-                Deposit
-              </Button>
             </div>
 
             {/* User Assets */}

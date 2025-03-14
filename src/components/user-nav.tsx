@@ -26,14 +26,11 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
 
   // Get user data from localStorage
   const userId = localStorage.getItem("userid") || "Guest";
-  const email = localStorage.getItem("email") || "guest@example.com";
 
   const handleLogout = () => {
     // Implement logout logic here
     localStorage.setItem("isLoggedIn", "false");
     localStorage.setItem("userid", "");
-    localStorage.setItem("email", "");
-    localStorage.setItem("phone", "");
     localStorage.setItem("metawallet", "");
     console.log("Logging out...");
     router.push("/");
@@ -60,9 +57,6 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{userId}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {email}
-            </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

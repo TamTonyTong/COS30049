@@ -67,7 +67,7 @@ export default function LoginPage() {
       const { data, error } = await supabase
         .from("User")
         .select("userid, metawallet")
-        .eq("metawallet", walletAddress)
+        .ilike("metawallet", walletAddress)
         .single();
 
       if (error || !data) {

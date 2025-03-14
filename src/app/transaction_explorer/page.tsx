@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import Layout from "@/src/components/layout";
 import { fetchTransactions } from "@/src/pages/api/fetchTransactions2";
 import { fetchInfuraTransactions } from "@/src/pages/api/infuraapi";
 import SearchBar from "@/src/components/transactionexplorer/searchbar";
@@ -221,89 +222,91 @@ const TransactionExplorer: React.FC = () => {
 
   const allTransactions = Array.from(uniqueTransactions.values());
   return (
-    <div className="mx-auto max-w-6xl p-4">
-      <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
+    <Layout>
+      <div className="mx-auto max-w-6xl p-4">
+        <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
 
-      {/* Blockchain selector */}
-      <div className="mb-4">
-        <span className="mr-2 text-sm font-medium">Blockchain:</span>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => selectBlockchainType("ETH")}
-            className={`rounded-md px-4 py-2 text-sm font-medium ${
-              blockchainType === "ETH"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800"
-            }`}
-          >
-            Ethereum (ETH)
-          </button>
-          <button
-            onClick={() => selectBlockchainType("SWC")}
-            className={`rounded-md px-4 py-2 text-sm font-medium ${
-              blockchainType === "SWC"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800"
-            }`}
-          >
-            Swinburne (SWC)
-          </button>
-        </div>
-      </div>
-
-      {/* Replace ETH modes with Infura indicator */}
-      {blockchainType === "ETH" && (
+        {/* Blockchain selector */}
         <div className="mb-4">
-          <span className="mr-2 text-sm font-medium">ETH Data Source:</span>
+          <span className="mr-2 text-sm font-medium">Blockchain:</span>
           <div className="flex flex-wrap gap-2">
-            <button className="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white">
-              Infura API
+            <button
+              onClick={() => selectBlockchainType("ETH")}
+              className={`rounded-md px-4 py-2 text-sm font-medium ${
+                blockchainType === "ETH"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              Ethereum (ETH)
+            </button>
+            <button
+              onClick={() => selectBlockchainType("SWC")}
+              className={`rounded-md px-4 py-2 text-sm font-medium ${
+                blockchainType === "SWC"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              Swinburne (SWC)
             </button>
           </div>
         </div>
-      )}
 
-      <SearchBar
-        address={address}
-        setAddress={setAddress}
-        handleSearch={() => handleSearch()}
-        loading={loading}
-        error={error}
-        isTransactionHash={isTransactionHash}
-        setIsTransactionHash={setIsTransactionHash}
-      />
-
-      {hasLoadedTransactions && (
-        <>
-          <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
-            <div className="col-span-7 rounded-lg border shadow">
-              <TransactionNetwork
-                transactions={currentTransactions}
-                address={address}
-                onAddressChange={handleAddressChange}
-                blockchainType={blockchainType}
-                onNodeExpanded={handleNodeExpansion}
-                expandedNodes={expandedNodes}
-                onResetView={handleResetView}
-              />
+        {/* Replace ETH modes with Infura indicator */}
+        {blockchainType === "ETH" && (
+          <div className="mb-4">
+            <span className="mr-2 text-sm font-medium">ETH Data Source:</span>
+            <div className="flex flex-wrap gap-2">
+              <button className="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white">
+                Infura API
+              </button>
             </div>
           </div>
-          <TransactionList
-            transactions={allTransactions}
-            address={address}
-            blockchainType={blockchainType}
-          />
-          <Pagination
-            currentPage={currentPage}
-            maxPage={maxPage}
-            navigateToPage={navigateToPage}
-            loadMore={loadMore}
-            hasMore={hasMore}
-            loading={loading}
-          />
-        </>
-      )}
-    </div>
+        )}
+
+        <SearchBar
+          address={address}
+          setAddress={setAddress}
+          handleSearch={() => handleSearch()}
+          loading={loading}
+          error={error}
+          isTransactionHash={isTransactionHash}
+          setIsTransactionHash={setIsTransactionHash}
+        />
+
+        {hasLoadedTransactions && (
+          <>
+            <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
+              <div className="col-span-7 rounded-lg border shadow">
+                <TransactionNetwork
+                  transactions={currentTransactions}
+                  address={address}
+                  onAddressChange={handleAddressChange}
+                  blockchainType={blockchainType}
+                  onNodeExpanded={handleNodeExpansion}
+                  expandedNodes={expandedNodes}
+                  onResetView={handleResetView}
+                />
+              </div>
+            </div>
+            <TransactionList
+              transactions={allTransactions}
+              address={address}
+              blockchainType={blockchainType}
+            />
+            <Pagination
+              currentPage={currentPage}
+              maxPage={maxPage}
+              navigateToPage={navigateToPage}
+              loadMore={loadMore}
+              hasMore={hasMore}
+              loading={loading}
+            />
+          </>
+        )}
+      </div>
+    </Layout>
   );
 };
 

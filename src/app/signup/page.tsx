@@ -12,6 +12,8 @@ import CryptoJS from "crypto-js"
 import { useRouter } from "next/navigation"
 import { v4 as uuidv4 } from "uuid"
 import { Eye, EyeOff } from "lucide-react" // Import eye icons
+import { ethers } from "ethers";
+import TradingContractABI from "../../../contracts/TradingContract.json";
 
 export default function SignUpForm() {
   const [formData, setFormData] = useState({
@@ -25,6 +27,8 @@ export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false) // Add state for password visibility
   const [showConfirmPassword, setShowConfirmPassword] = useState(false) // Add state for confirm password visibility
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [walletAddress, setWalletAddress] = useState("")
+  const [walletError, setWalletError] = useState("")
   const router = useRouter()
 
   //useEffect checking Log in state
@@ -50,6 +54,27 @@ export default function SignUpForm() {
     );
   }
 
+  const connectWallet = async () => {
+    try {
+      setWalletError("") // Clear previous errors
+      if (!window.ethereum) throw new Error("Please install MetaMask to continue")
+
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const accounts = await provider.send("eth_requestAccounts", [])
+
+      if (accounts.length > 0) {
+        setWalletAddress(accounts[0])
+      }
+    } catch (error: any) {
+      setWalletError(error.message)
+      console.error("Wallet connection error:", error)
+    }
+  }
+
+  const truncateAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value.trim() }))
@@ -73,6 +98,11 @@ export default function SignUpForm() {
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match"
     }
+
+    // New wallet validation
+    if (!walletAddress) {
+      newErrors.wallet = "Wallet connection is required"
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -84,6 +114,7 @@ export default function SignUpForm() {
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword)
   }
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -106,6 +137,8 @@ export default function SignUpForm() {
       const salt = CryptoJS.lib.WordArray.random(16).toString()
       const hashedPassword = CryptoJS.SHA256(formData.password + salt).toString()
 
+
+
       // Insert new user into Supabase
       const { error } = await supabase.from("User").insert([
         {
@@ -116,6 +149,7 @@ export default function SignUpForm() {
           salt: salt,
           isverified: "FALSE",
           balance: "0",
+          metawallet: walletAddress,
         },
       ])
 
@@ -126,6 +160,7 @@ export default function SignUpForm() {
       localStorage.setItem("email", formData.email)
       localStorage.setItem("userid", userId)
       localStorage.setItem("phone", formData.phone)
+      localStorage.setItem("metawallet", walletAddress)
 
       // Redirect to personal-assets after successful signup
       router.push("/personal-assets")
@@ -222,6 +257,45 @@ export default function SignUpForm() {
               </button>
             </div>
             {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}
+          </div>
+          <div>
+            <Label className="text-white">
+              Wallet Address *
+              <span className="ml-1 text-red-500">(required)</span>
+            </Label>
+            <div className="mt-2">
+              {walletAddress ? (
+                <div className="flex items-center justify-between p-2 rounded-md bg-gray-800">
+                  <span className="text-sm text-gray-200">
+                    {truncateAddress(walletAddress)}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setWalletAddress("")}
+                    className="text-xs"
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={connectWallet}
+                  variant="outline"
+                  className="w-full text-white bg-purple-600 hover:bg-purple-700"
+                >
+                  Connect MetaMask Wallet
+                </Button>
+              )}
+              {/* Error messages */}
+              {walletError && (
+                <p className="mt-1 text-sm text-red-500">{walletError}</p>
+              )}
+              {errors.wallet && !walletError && (
+                <p className="mt-1 text-sm text-red-500">{errors.wallet}</p>
+              )}
+            </div>
           </div>
           {errors.general && <p className="mt-2 text-center text-red-500">{errors.general}</p>}
           <Button type="submit" className="w-full text-white bg-blue-500 hover:bg-blue-600" disabled={isLoading}>

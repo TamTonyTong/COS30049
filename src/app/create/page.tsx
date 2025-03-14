@@ -6,10 +6,12 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
-import { v4 as uuidv4 } from "uuid"; // For generating UUIDs
+import { v4 as uuidv4 } from "uuid"; // For generating UUIDsz
+import { supabase } from "@/lib/supabaseClient"; //Supabase call
 
 export default function CreateCurrencyPage() {
   const [formData, setFormData] = useState({ symbol: "", name: "", price: "" });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null); //Image file
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false); // Add loading state
   const router = useRouter();
@@ -48,6 +50,7 @@ export default function CreateCurrencyPage() {
     if (!formData.name) newErrors.name = "Name is required";
     if (!formData.price) newErrors.price = "Price is required";
     if (isNaN(Number(formData.price))) newErrors.price = "Price must be a number";
+    if (!selectedFile) newErrors.image = "Image is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -61,6 +64,25 @@ export default function CreateCurrencyPage() {
       try {
         const assetId = uuidv4(); // Generate a unique ID for the asset
         const priceHistoryId = uuidv4(); // Generate a unique ID for the price history
+
+        // Upload image to Supabase Storage
+        const file = selectedFile!;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${assetId}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('nft-img')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          throw new Error(`Failed to upload a file: ${uploadError.message}`);
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('nft-img')
+          .getPublicUrl(fileName);
+
 
         // Insert into Asset table
         const assetResponse = await fetch("/api/create", {
@@ -78,6 +100,7 @@ export default function CreateCurrencyPage() {
               assettype: "NFT", // Changed from "cryptocurrency" to "NFT"
               createdat: new Date().toISOString(),
               isactive: true,
+              img: publicUrl, // Add image URL here
             },
           }),
         });
@@ -187,6 +210,21 @@ export default function CreateCurrencyPage() {
               />
               {errors.price && (
                 <p className="mt-1 text-sm text-red-500">{errors.price}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="image" className="text-white">
+                Image
+              </Label>
+              <Input
+                type="file"
+                id="image"
+                accept="image/*"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                disabled={loading}
+              />
+              {errors.image && (
+                <p className="mt-1 text-sm text-red-500">{errors.image}</p>
               )}
             </div>
             {errors.general && (

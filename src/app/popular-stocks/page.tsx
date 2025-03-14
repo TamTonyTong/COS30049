@@ -30,6 +30,7 @@ interface Asset {
   price: number
   currencypair: string
   assettype: string
+  img?: string  // Img
 }
 
 interface Crypto {

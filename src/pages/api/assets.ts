@@ -11,6 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           symbol,
           name,
           assettype,
+          img,
           PriceHistory (price, currencypair, timestamp)
         `)
         .order('timestamp', { foreignTable: 'PriceHistory', ascending: false }); // Order by latest price
@@ -24,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         symbol: asset.symbol,
         name: asset.name,
         assettype: asset.assettype,
+        img: asset.img,
         price: asset.PriceHistory[0]?.price || 0, // Latest price
         currencypair: asset.PriceHistory[0]?.currencypair || 'N/A', // Latest currency pair
       }));

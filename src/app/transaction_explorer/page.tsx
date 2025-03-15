@@ -16,6 +16,7 @@ import {
 } from "@/src/pages/api/infura-sync";
 import { fetchTransactionByHash } from "@/src/pages/api/fetchTransaction";
 import TransactionChart from "@/src/components/transactionexplorer/transactionchart";
+import TopTransactionsChart from "@/src/components/transactionexplorer/top10transaction";
 
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
@@ -411,6 +412,11 @@ const TransactionExplorer: React.FC = () => {
               transactions={allHistoricalTransactions}
               timeRange={timeRange}
             />
+          </div>
+        )}
+        {hasLoadedTransactions && (
+          <div className="mb-6">
+            <TopTransactionsChart transactions={allHistoricalTransactions} />
           </div>
         )}
         <TransactionList

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Layout from "@/src/components/layout";
 import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
 import { fetchInfuraTransactions } from "@/src/pages/api/infuraapi";
@@ -15,6 +15,7 @@ import {
   getTransactionByHash,
 } from "@/src/pages/api/infura-sync";
 import { fetchTransactionByHash } from "@/src/pages/api/fetchTransaction";
+import TransactionChart from "@/src/components/transactionexplorer/transactionchart";
 
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
@@ -42,6 +43,34 @@ const TransactionExplorer: React.FC = () => {
   const [ethDataSource, setEthDataSource] = useState<"infura">("infura");
   const [forceFresh, setForceFresh] = useState<boolean>(false);
   // Add this function to be passed to TransactionNetwork
+  const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("24h");
+  const [allHistoricalTransactions, setAllHistoricalTransactions] = useState<
+    Transaction[]
+  >([]);
+  // Add an effect to update allHistoricalTransactions whenever transactionsByPage changes
+  useEffect(() => {
+    const allTxs = Object.values(transactionsByPage).flat();
+    setAllHistoricalTransactions((prev) => {
+      // Combine existing transactions with new ones, avoiding duplicates
+      const uniqueTxMap = new Map<string, Transaction>();
+
+      // Add previous transactions to the map
+      prev.forEach((tx) => {
+        if (tx.hash) {
+          uniqueTxMap.set(tx.hash, tx);
+        }
+      });
+
+      // Add new transactions, replacing duplicates if any
+      allTxs.forEach((tx) => {
+        if (tx.hash) {
+          uniqueTxMap.set(tx.hash, tx);
+        }
+      });
+
+      return Array.from(uniqueTxMap.values());
+    });
+  }, [transactionsByPage]);
   const handleNodeExpansion = async (
     address: string,
     transactions: Transaction[],
@@ -50,6 +79,26 @@ const TransactionExplorer: React.FC = () => {
       ...prev,
       [address]: transactions,
     }));
+    // Add expanded transactions to the historical collection
+    setAllHistoricalTransactions((prev) => {
+      const uniqueTxMap = new Map<string, Transaction>();
+
+      // Add previous transactions to the map
+      prev.forEach((tx) => {
+        if (tx.hash) {
+          uniqueTxMap.set(tx.hash, tx);
+        }
+      });
+
+      // Add new expanded transactions
+      transactions.forEach((tx) => {
+        if (tx.hash) {
+          uniqueTxMap.set(tx.hash, tx);
+        }
+      });
+
+      return Array.from(uniqueTxMap.values());
+    });
   };
 
   const handleSearch = async (addressToSearch: string = address) => {
@@ -62,6 +111,7 @@ const TransactionExplorer: React.FC = () => {
     setCurrentPage(1);
     setLoadedPages([]);
     setHasMore(false);
+    setAllHistoricalTransactions([]); // Reset historical transactions on new search
     try {
       let extractedTransactions: Transaction[] = [];
       if (isTransactionHash) {
@@ -112,6 +162,7 @@ const TransactionExplorer: React.FC = () => {
         setCurrentPage(1);
         setLoadedPages([1]);
         setHasMore(extractedTransactions.length >= 8); // Adjust based on page size
+        setAllHistoricalTransactions(extractedTransactions);
       } else {
         setTransactionsByPage({});
         setLoadedPages([]);
@@ -165,6 +216,7 @@ const TransactionExplorer: React.FC = () => {
         setCurrentPage(nextPage);
         setLoadedPages((prev) => [...prev, nextPage]);
         setHasMore(extractedTransactions.length >= 8);
+        setAllHistoricalTransactions(extractedTransactions);
       } else {
         setHasMore(false);
       }
@@ -206,6 +258,7 @@ const TransactionExplorer: React.FC = () => {
     setLoadedPages([]);
     setIsTransactionHash(false); // Reset to address search when changing blockchain
     setExpandedNodes({}); // Also reset expanded nodes
+    setAllHistoricalTransactions([]); // Reset historical transactions
   };
 
   // Simplified selector
@@ -233,7 +286,10 @@ const TransactionExplorer: React.FC = () => {
   });
 
   const allTransactions = Array.from(uniqueTransactions.values());
-
+  console.log(
+    allHistoricalTransactions.length,
+    "allTransactions from time to time",
+  );
   return (
     <Layout>
       <div className="mx-auto max-w-6xl p-4">
@@ -327,7 +383,36 @@ const TransactionExplorer: React.FC = () => {
             />
           </div>
         </div>
-
+        {hasLoadedTransactions && blockchainType === "ETH" && (
+          <div className="mb-6">
+            <div className="mb-4">
+              <span className="mr-2 text-sm font-medium">Time Range:</span>
+              <div className="flex flex-wrap gap-2">
+                {(["24h", "7d", "30d"] as const).map((range) => (
+                  <button
+                    key={range}
+                    onClick={() => setTimeRange(range)}
+                    className={`rounded-md px-4 py-2 text-sm font-medium ${
+                      timeRange === range
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200 text-gray-800"
+                    }`}
+                  >
+                    {range === "24h"
+                      ? "Last 24 Hours"
+                      : range === "7d"
+                        ? "Last Week"
+                        : "Last Month"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <TransactionChart
+              transactions={allHistoricalTransactions}
+              timeRange={timeRange}
+            />
+          </div>
+        )}
         <TransactionList
           transactions={allTransactions}
           address={address}

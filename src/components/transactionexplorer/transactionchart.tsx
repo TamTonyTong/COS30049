@@ -323,7 +323,7 @@ const TransactionChart: React.FC<TransactionChartProps> = ({
   }
 
   return (
-    <div className="h-[200px] w-1/2 rounded-lg bg-[hsl(215,25%,15%)] p-4 shadow">
+    <div className="h-[400px] w-1/2 rounded-lg bg-[hsl(215,25%,15%)] p-4 shadow">
       <Line data={chartData} options={options} />
     </div>
   );

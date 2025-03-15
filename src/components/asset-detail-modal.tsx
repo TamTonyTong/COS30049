@@ -1,12 +1,13 @@
-"use client"
-import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabaseClient"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/src/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
-import { Badge } from "@/src/components/ui/badge"
-import { Button } from "@/src/components/ui/button"
-import { ExternalLink, User, FileText, Heart, Share2 } from "lucide-react"
-import Image from "next/image"
+"use client";
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/src/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@/src/components/ui/button";
+import { ExternalLink, User, FileText, Heart, Share2 } from "lucide-react";
+import Image from "next/image";
 
 interface Asset {
   assetid: string;
@@ -15,9 +16,9 @@ interface Asset {
   price: number;
   currencypair: string;
   assettype: string;
-  creatorid: string | null; // Changed from userid to creatorid, allowing null
+  creatorid: string | null;
   createdat: string | null;
-  img?: string; // Added from the first version to support optional image URL
+  img?: string;
 }
 
 interface AssetDetailModalProps {
@@ -27,39 +28,38 @@ interface AssetDetailModalProps {
 }
 
 export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetailModalProps) {
-  const [isLiked, setIsLiked] = useState(false)
-  const [imageStatus, setImageStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [imageError, setImageError] = useState(false)
-  const [creatorMetawallet, setCreatorMetawallet] = useState<string>("Loading...")
-  const [ownerMetawallet, setOwnerMetawallet] = useState<string>("Loading...")
+  const [isLiked, setIsLiked] = useState(false);
+  const [imageStatus, setImageStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const [creatorMetawallet, setCreatorMetawallet] = useState<string>("Loading...");
+  const [ownerMetawallet, setOwnerMetawallet] = useState<string>("Loading...");
 
   // Reset states and fetch image/details when modal opens with a new asset
   useEffect(() => {
     const fetchImage = async () => {
-      if (!asset) return
-      setImageError(false)
-      setImageLoaded(false)
+      if (!asset) return;
+      setImageError(false);
+      setImageLoaded(false);
       try {
-        // Check if image exists in storage
         const { data: listData } = await supabase.storage
           .from('nft-img')
-          .list(`nfts/${asset.symbol}`)
+          .list(`nfts/${asset.symbol}`);
 
         if (listData && listData.length > 0) {
           const { data: urlData } = await supabase.storage
             .from('nft-img')
-            .getPublicUrl(`nfts/${asset.symbol}/` + listData[0].name)
-          setImageUrl(urlData.publicUrl)
+            .getPublicUrl(`nfts/${asset.symbol}/` + listData[0].name);
+          setImageUrl(urlData.publicUrl);
         } else {
-          setImageError(true)
+          setImageError(true);
         }
       } catch (error) {
-        console.error('Error fetching image:', error)
-        setImageError(true)
+        console.error('Error fetching image:', error);
+        setImageError(true);
       }
-    }
+    };
 
     console.log("useEffect triggered - isOpen:", isOpen, "asset:", asset);
     if (isOpen && asset) {
@@ -78,7 +78,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
       console.log("No asset provided, exiting fetchAssetDetails");
       return;
     }
-  
+
     try {
       console.log("Checking creatorid:", asset.creatorid);
       if (!asset.creatorid || asset.creatorid === null) {
@@ -91,7 +91,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
           .select("metawallet")
           .eq("userid", asset.creatorid)
           .single();
-  
+
         if (creatorError) {
           console.error("Creator fetch error:", creatorError);
           throw new Error(`Failed to fetch creator: ${creatorError.message}`);
@@ -100,7 +100,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
         console.log("Setting creatorMetawallet:", creatorData?.metawallet || "Unknown");
         setCreatorMetawallet(creatorData?.metawallet || "Unknown");
       }
-  
+
       console.log("Checking assetid:", asset.assetid);
       if (!asset.assetid) {
         console.error("Asset assetid is undefined:", asset);
@@ -112,7 +112,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
           .select("userid")
           .eq("assetid", asset.assetid)
           .limit(1);
-  
+
         const walletUserId = walletData && walletData.length > 0 ? walletData[0].userid : null;
         if (walletError || !walletUserId) {
           console.warn("Wallet fetch error or no owner found:", walletError);
@@ -124,7 +124,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
             .select("metawallet")
             .eq("userid", walletUserId)
             .single();
-  
+
           if (ownerError) {
             console.error("Owner fetch error:", ownerError);
             throw new Error(`Failed to fetch owner: ${ownerError.message}`);
@@ -153,11 +153,20 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
 
   if (!asset) return null;
 
-  // Format the createdat timestamp
+  // Format the createdat timestamp to include time down to the second
   const createdTimestamp = asset.createdat
     ? (() => {
         try {
-          return new Date(asset.createdat).toLocaleDateString();
+          const date = new Date(asset.createdat);
+          return date.toLocaleString("en-US", {
+            month: "numeric",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          });
         } catch (e) {
           console.error("Invalid createdat format:", asset.createdat);
           return "Unknown";
@@ -187,7 +196,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
                 className={`object-contain p-4 transition-all duration-700 ${imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
                 onLoadingComplete={handleImageLoaded}
                 onError={handleImageError}
-                unoptimized // Prevent Next.js image optimization
+                unoptimized
               />
             ) : (
               <div className="flex items-center justify-center w-full h-full text-gray-500">
@@ -342,5 +351,5 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

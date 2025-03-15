@@ -18,7 +18,15 @@ import { fetchTransactionByHash } from "@/src/pages/api/fetchTransaction";
 import TransactionChart from "@/src/components/transactionexplorer/transactionchart";
 import TopTransactionsChart from "@/src/components/transactionexplorer/top10transaction";
 import WalletOverview from "@/src/components/transactionexplorer/walletoverview";
-
+// Import icons
+import {
+  Activity,
+  Database,
+  BarChart3,
+  Cloud,
+  Layers,
+  Coins,
+} from "lucide-react";
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
   const [transactionsByPage, setTransactionsByPage] = useState<{
@@ -295,46 +303,91 @@ const TransactionExplorer: React.FC = () => {
   return (
     <Layout>
       <div className="mx-auto max-w-6xl p-4">
-        <h2 className="mb-4 text-xl font-bold">Transaction Explorer</h2>
+        {/* Centered title with icon */}
+        <div className="mb-8 flex justify-center">
+          <h1 className="flex items-center gap-3 text-center text-3xl font-bold">
+            <Activity className="h-8 w-8 text-blue-500" />
+            <span>Transaction Explorer</span>
+          </h1>
+        </div>
 
-        {/* Blockchain selector */}
-        <div className="mb-4">
-          <span className="mr-2 text-sm font-medium">Blockchain:</span>
-          <div className="flex flex-wrap gap-2">
+        {/* Blockchain selector with icons */}
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-3 flex items-center">
+            <Coins className="mr-2 h-5 w-5 text-blue-500" />
+            <span className="text-lg font-semibold">Blockchain Network</span>
+          </div>
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => selectBlockchainType("ETH")}
-              className={`rounded-md px-4 py-2 text-sm font-medium ${
+              className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
                 blockchainType === "ETH"
                   ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-800"
+                  : "bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
               }`}
             >
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 256 417"
+                xmlns="http://www.w3.org/2000/svg"
+                preserveAspectRatio="xMidYMid"
+              >
+                <path
+                  fill={blockchainType === "ETH" ? "#fff" : "#343434"}
+                  d="M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z"
+                />
+                <path
+                  fill={blockchainType === "ETH" ? "#fff" : "#8C8C8C"}
+                  d="M127.962 0L0 212.32l127.962 75.639V154.158z"
+                />
+                <path
+                  fill={blockchainType === "ETH" ? "#fff" : "#3C3C3B"}
+                  d="M127.961 312.187l-1.575 1.92v98.199l1.575 4.6L256 236.587z"
+                />
+                <path
+                  fill={blockchainType === "ETH" ? "#fff" : "#8C8C8C"}
+                  d="M127.962 416.905v-104.72L0 236.585z"
+                />
+                <path
+                  fill={blockchainType === "ETH" ? "#fff" : "#141414"}
+                  d="M127.961 287.958l127.96-75.637-127.96-58.162z"
+                />
+                <path
+                  fill={blockchainType === "ETH" ? "#fff" : "#393939"}
+                  d="M0 212.32l127.96 75.638v-133.8z"
+                />
+              </svg>
               Ethereum (ETH)
             </button>
             <button
               onClick={() => selectBlockchainType("SWC")}
-              className={`rounded-md px-4 py-2 text-sm font-medium ${
+              className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
                 blockchainType === "SWC"
                   ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-800"
+                  : "bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
               }`}
             >
+              <Layers
+                className={`h-5 w-5 ${blockchainType === "SWC" ? "text-white" : "text-gray-700"}`}
+              />
               Swinburne (SWC)
             </button>
           </div>
-        </div>
 
-        {/* Replace ETH modes with Infura indicator */}
-        {blockchainType === "ETH" && (
-          <div className="mb-4">
-            <span className="mr-2 text-sm font-medium">ETH Data Source:</span>
-            <div className="flex flex-wrap gap-2">
-              <button className="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white">
-                Infura API
-              </button>
+          {/* ETH data source with Infura icon */}
+          {blockchainType === "ETH" && (
+            <div className="mt-4 flex items-center">
+              <Cloud className="mr-2 h-4 w-4 text-blue-400" />
+              <span className="mr-2 text-sm font-medium">Data Source:</span>
+              <div className="flex flex-wrap gap-2">
+                <div className="flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white">
+                  <Database className="h-4 w-4" />
+                  Infura API
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Block range selector for ETH only */}
         {blockchainType === "ETH" && !isTransactionHash && (
@@ -344,54 +397,75 @@ const TransactionExplorer: React.FC = () => {
           />
         )}
 
-        <SearchBar
-          address={address}
-          setAddress={setAddress}
-          handleSearch={() => handleSearch()}
-          loading={loading}
-          error={error}
-          isTransactionHash={isTransactionHash}
-          setIsTransactionHash={setIsTransactionHash}
-        />
-
-        {blockchainType === "ETH" && (
-          <div className="mb-4 flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="forceFresh"
-              checked={forceFresh}
-              onChange={(e) => setForceFresh(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
-            />
-            <label htmlFor="forceFresh" className="text-sm">
-              Force fresh data from Infura
-              {forceFresh && (
-                <span className="ml-2 text-yellow-500">
-                  (May take longer to load)
-                </span>
-              )}
-            </label>
+        {/* Search section */}
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-3 flex items-center">
+            <BarChart3 className="mr-2 h-5 w-5 text-blue-500" />
+            <span className="text-lg font-semibold">Search Transactions</span>
           </div>
-        )}
-        {/* Add wallet overview when transactions are loaded */}
-        {hasLoadedTransactions && !isTransactionHash && (
-          <WalletOverview
+
+          <SearchBar
             address={address}
-            transactions={allHistoricalTransactions}
-            blockchainType={blockchainType}
+            setAddress={setAddress}
+            handleSearch={() => handleSearch()}
+            loading={loading}
+            error={error}
+            isTransactionHash={isTransactionHash}
+            setIsTransactionHash={setIsTransactionHash}
           />
-        )}
-        <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
-          <div className="col-span-7 rounded-lg border shadow">
-            <TransactionNetwork
-              transactions={currentTransactions}
+
+          {blockchainType === "ETH" && (
+            <div className="mt-4 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="forceFresh"
+                checked={forceFresh}
+                onChange={(e) => setForceFresh(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+              />
+              <label htmlFor="forceFresh" className="text-sm">
+                Force fresh data from Infura
+                {forceFresh && (
+                  <span className="ml-2 text-yellow-500">
+                    (May take longer to load)
+                  </span>
+                )}
+              </label>
+            </div>
+          )}
+        </div>
+        {/* Add wallet overview when transactions are loaded */}
+        {hasLoadedTransactions &&
+          !isTransactionHash &&
+          blockchainType === "ETH" && (
+            <WalletOverview
               address={address}
-              onAddressChange={handleAddressChange}
+              transactions={allHistoricalTransactions}
               blockchainType={blockchainType}
-              onNodeExpanded={handleNodeExpansion}
-              expandedNodes={expandedNodes}
-              onResetView={handleResetView}
             />
+          )}
+
+        {/* Transaction Network Visualization */}
+        <div className="mb-6 overflow-hidden rounded-lg border border-gray-200 bg-white shadow dark:border-gray-800 dark:bg-gray-900">
+          <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800">
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <Activity className="h-5 w-5 text-blue-500" />
+              Transaction Network
+            </h3>
+          </div>
+
+          <div className="relative grid grid-cols-7 md:flex-row">
+            <div className="col-span-7">
+              <TransactionNetwork
+                transactions={currentTransactions}
+                address={address}
+                onAddressChange={handleAddressChange}
+                blockchainType={blockchainType}
+                onNodeExpanded={handleNodeExpansion}
+                expandedNodes={expandedNodes}
+                onResetView={handleResetView}
+              />
+            </div>
           </div>
         </div>
         {hasLoadedTransactions && blockchainType === "ETH" && (
@@ -429,19 +503,30 @@ const TransactionExplorer: React.FC = () => {
             <TopTransactionsChart transactions={allHistoricalTransactions} />
           </div>
         )}
-        <TransactionList
-          transactions={allTransactions}
-          address={address}
-          blockchainType={blockchainType}
-        />
-        <Pagination
-          currentPage={currentPage}
-          maxPage={maxPage}
-          navigateToPage={navigateToPage}
-          loadMore={loadMore}
-          hasMore={hasMore}
-          loading={loading}
-        />
+        {/* Transaction List */}
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white shadow dark:border-gray-800 dark:bg-gray-900">
+          <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800">
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <Database className="h-5 w-5 text-blue-500" />
+              Transactions
+            </h3>
+          </div>
+          <div className="p-4">
+            <TransactionList
+              transactions={allTransactions}
+              address={address}
+              blockchainType={blockchainType}
+            />
+            <Pagination
+              currentPage={currentPage}
+              maxPage={maxPage}
+              navigateToPage={navigateToPage}
+              loadMore={loadMore}
+              hasMore={hasMore}
+              loading={loading}
+            />
+          </div>
+        </div>
       </div>
     </Layout>
   );

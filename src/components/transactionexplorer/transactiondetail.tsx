@@ -225,16 +225,20 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
           )}
         </div>
 
-        {/* Action button */}
+        {/* Action button - conditionally show based on blockchain type */}
         <div className="mt-6 flex justify-center">
-          <a
-            href={`https://etherscan.io/tx/${transaction.hash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-          >
-            View on Etherscan
-          </a>
+          {blockchainType === "ETH" ? (
+            <a
+              href={`https://etherscan.io/tx/${transaction.hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+            >
+              View on Etherscan
+            </a>
+          ) : (
+            <a></a>
+          )}
         </div>
       </div>
     </div>

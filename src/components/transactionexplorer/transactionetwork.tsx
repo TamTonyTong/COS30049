@@ -532,7 +532,8 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
         d3.select(this.parentNode as SVGGElement)
           .selectAll(".visible-link-source, .visible-link-target")
           .style("stroke-width", 3)
-          .style("stroke", "#94a3b8");
+          .style("stroke", "#3b82f6")
+          .style("filter", "drop-shadow(0 0 3px rgba(59, 130, 246, 0.6))"); // Add glow effect
       })
       .on("mouseout", function () {
         d3.select(this.parentNode as SVGGElement)
@@ -565,8 +566,9 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       .on("mouseover", function () {
         d3.select(this.parentNode as SVGGElement)
           .selectAll(".visible-link-source, .visible-link-target")
-          .style("stroke-width", 3)
-          .style("stroke", "#94a3b8");
+          .style("stroke-width", 3.5)
+          .style("stroke", "#3b82f6")
+          .style("filter", "drop-shadow(0 0 3px rgba(59, 130, 246, 0.6))"); // Add glow effect
       })
       .on("mouseout", function () {
         d3.select(this.parentNode as SVGGElement)
@@ -945,7 +947,7 @@ const TransactionNetwork: React.FC<TransactionNetworkProps> = ({
       // Choose the correct data source based on blockchain type
       if (blockchainType === "ETH") {
         // For ETH, use Infura
-        transactions = await syncInfuraData(address, forceFresh);
+        transactions = await syncInfuraData(address, forceFresh, 30);
       } else {
         // For SWC, use your internal DB
         const response = await fetchTransactions(address, "initial");

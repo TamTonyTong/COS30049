@@ -253,7 +253,7 @@ export default function SecureTradingInterface() {
 
             // Handle user rejection specifically
             if (errorMessage.includes("user denied") || errorMessage.includes("ACTION_REJECTED")) {
-                setError("Transaction canceled - no funds were transferred");
+                setError("Transaction cancelled - no funds were transferred");
             } else {
                 setError("Transaction failed. Please try again.");
             }
@@ -306,7 +306,7 @@ export default function SecureTradingInterface() {
                     </div>
                 )}
                 {error && (
-                    <div className={`mt-4 p-3 rounded-lg border ${error.includes("canceled") ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
+                    <div className={`mt-4 p-3 rounded-lg border ${error.includes("cancelled") ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
                         }`}>
                         {error}
                     </div>

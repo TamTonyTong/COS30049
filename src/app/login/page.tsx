@@ -77,7 +77,7 @@ export default function LoginPage() {
       //Set Current Balance
       const provider = new ethers.BrowserProvider(window.ethereum as unknown as ethers.Eip1193Provider);
       const balanceWei = await provider.getBalance(walletAddress);
-      const balanceEth = parseFloat(ethers.formatEther(balanceWei)).toFixed(18);
+      const balanceEth = parseFloat(ethers.formatEther(balanceWei));
 
       const { error: updateError } = await supabase
         .from("User")

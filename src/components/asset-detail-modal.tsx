@@ -247,12 +247,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
                   </DialogDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="text-white transition-all bg-blue-600 hover:bg-blue-500 hover:shadow-glow-blue"
-                  >
-                    Buy Now
-                  </Button>
+                 
                 </div>
               </div>
             </DialogHeader>

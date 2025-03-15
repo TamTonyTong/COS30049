@@ -248,25 +248,26 @@ export default function MarketsPage() {
       const matchesSearch =
         debouncedSearchTerm === "" ||
         asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        asset.symbol.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-
-      const matchesPrice = asset.price >= debouncedPriceRange[0] && asset.price <= debouncedPriceRange[1]
-
-      const matchesType = assetType === "all" || asset.assettype === assetType
-
-      return matchesSearch && matchesPrice && matchesType
-    })
-
+        asset.symbol.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+  
+      const matchesPrice = asset.price >= debouncedPriceRange[0] && asset.price <= debouncedPriceRange[1];
+  
+      // Ensure that the assettype is correctly checked
+      const matchesType = assetType === "all" || (assetType === "nft" && asset.assettype === "NFT");
+  
+      return matchesSearch && matchesPrice && matchesType;
+    });
+  
     // Then sort the filtered assets
     return filtered.sort((a, b) => {
       if (sortField === "name") {
-        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       } else {
-        return sortOrder === "asc" ? a.price - b.price : b.price - a.price
+        return sortOrder === "asc" ? a.price - b.price : b.price - a.price;
       }
-    })
-  }, [assets, debouncedSearchTerm, debouncedPriceRange, assetType, sortField, sortOrder])
-
+    });
+  }, [assets, debouncedSearchTerm, debouncedPriceRange, assetType, sortField, sortOrder]);
+  
   if (isLoading) {
     return (
       <Layout>

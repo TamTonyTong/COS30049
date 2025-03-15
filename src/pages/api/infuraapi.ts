@@ -37,6 +37,7 @@ export async function fetchInfuraTransactions(
   address: string,
   page: number = 1,
   blockRange: number,
+  comprehensive: boolean = false,
 ): Promise<Transaction[]> {
   try {
     console.log(`Fetching transactions for address: ${address}, page: ${page}`);
@@ -107,11 +108,10 @@ export async function fetchInfuraTransactions(
       console.log(
         `Checking block ${blockNum} (${blockCounter}/${blocksToCheck.length})`,
       );
-
-      // Stop if we already have enough transactions
-      if (allTxs.length >= PAGE_SIZE * page) {
+      // Modified condition - only limit transactions if not doing comprehensive search
+      if (!comprehensive && allTxs.length >= PAGE_SIZE * page) {
         console.log(
-          `Found enough transactions (${allTxs.length}). Stopping block check.`,
+          `Found enough transactions for pagination (${allTxs.length}). Stopping block check.`,
         );
         break;
       }
@@ -200,15 +200,22 @@ export async function fetchInfuraTransactions(
         parseInt(String(b.block_number)) - parseInt(String(a.block_number)),
     );
 
-    // Apply pagination
-    const startIdx = (page - 1) * PAGE_SIZE;
-    const endIdx = startIdx + PAGE_SIZE;
-    const result = allTxs.slice(startIdx, endIdx);
-
-    console.log(
-      `Returning ${result.length} transactions (from index ${startIdx} to ${endIdx})`,
-    );
-    return result;
+    // When returning, either limit by page size or return all based on comprehensive flag
+    if (!comprehensive) {
+      // Apply pagination
+      const startIdx = (page - 1) * PAGE_SIZE;
+      const endIdx = startIdx + PAGE_SIZE;
+      const result = allTxs.slice(startIdx, endIdx);
+      console.log(
+        `Returning ${result.length} transactions (from index ${startIdx} to ${endIdx})`,
+      );
+      return result;
+    } else {
+      console.log(
+        `Returning all ${allTxs.length} transactions for comprehensive analysis`,
+      );
+      return allTxs;
+    }
   } catch (error) {
     console.error("Error fetching from Infura:", error);
     throw error;

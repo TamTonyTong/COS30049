@@ -226,7 +226,7 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({
           <div className="mb-1 text-sm text-gray-400">Activity</div>
           <div className="flex flex-col">
             <div className="text-lg font-semibold text-white">
-              {transactionCount} Tx
+              {transactionCount} Transactions
             </div>
             <div className="text-sm text-blue-400">
               {uniqueAddresses} unique addresses

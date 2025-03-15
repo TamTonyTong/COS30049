@@ -51,6 +51,8 @@ export async function storeInfuraTransactions(
       // Create transaction if it doesn't exist
       MERGE (tx:Transaction {hash: $txHash})
       ON CREATE SET
+        tx.sender = $from,
+        tx.receiver = $to,
         tx.value = $value,
         tx.input = $input,
         tx.gas = $gas,

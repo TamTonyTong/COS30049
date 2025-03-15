@@ -158,6 +158,7 @@ const TransactionExplorer: React.FC = () => {
             addressToSearch,
             forceFresh, // Force fresh data instead of using blockRange
             blockRange,
+            true,
           );
         }
       }

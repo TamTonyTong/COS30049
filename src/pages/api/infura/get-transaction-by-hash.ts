@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Driver } from "neo4j-driver";
-import { getDbDriver } from "@/src/pages/api/neo4j/2nd-database-connection";
+import { getDbDriver } from "@/src/pages/api/infura/2nd-database-connection";
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,7 +32,7 @@ export default async function handler(
     if (result.records.length === 0) {
       return res.status(404).json({ message: "Transaction not found" });
     }
-
+    console.log("Raw Transactions", result.records[0].get("tx").properties);
     const txNode = result.records[0].get("tx").properties;
     const transaction = {
       hash: txNode.hash,
@@ -52,12 +52,14 @@ export default async function handler(
       receiver: txNode.to_address,
       direction: "", // Will be set in UI based on context
     };
-
+    console.log("Transaction found:", transaction);
     return res.status(200).json({ transaction });
   } catch (error) {
     console.error("Error fetching transaction by hash:", error);
     return res.status(500).json({ error: "Failed to fetch transaction" });
   } finally {
+    // Make sure to close the session first
+
     if (driver) {
       await driver.close();
     }

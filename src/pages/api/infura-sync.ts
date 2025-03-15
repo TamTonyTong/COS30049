@@ -3,7 +3,7 @@ import { fetchInfuraTransactions } from "./infuraapi";
 import {
   storeInfuraTransactions,
   getInfuraTransactionsFromNeo4j,
-} from "@/src/pages/api/neo4j/infura-transactions";
+} from "@/src/pages/api/infura/infura-transactions";
 import { Transaction } from "@/src/components/transactionexplorer/type";
 import { ethers } from "ethers";
 
@@ -53,6 +53,7 @@ export async function syncInfuraData(
   address: string,
   forceFresh: boolean, // Add forceFresh parameter with default value
   blockRange: number, // Add blockRange parameter with default value
+  comprehensive: boolean = false, // Add comprehensive parameter with default value
 ): Promise<Transaction[]> {
   console.log(
     `Syncing Infura data for address: ${address}, forceFresh: ${forceFresh}`,
@@ -72,7 +73,12 @@ export async function syncInfuraData(
   try {
     console.log(`Fetching fresh data from Infura for ${address}`);
     // Fetch transactions from Infura
-    const transactions = await fetchInfuraTransactions(address, 1, blockRange);
+    const transactions = await fetchInfuraTransactions(
+      address,
+      1,
+      blockRange,
+      comprehensive,
+    );
     console.log(`Fetched ${transactions.length} transactions from Infura`);
 
     // If we have transactions, store them in Neo4j
@@ -118,7 +124,7 @@ export const getTransactionByHash = async (
   try {
     // First try to get from database
     const response = await fetch(
-      `/api/neo4j/get-transaction-by-hash?hash=${hash}`,
+      `/api/infura/get-transaction-by-hash?hash=${hash}`,
     );
     const data = await response.json();
 
@@ -173,7 +179,7 @@ export const getTransactionByHash = async (
 
     // Also save to the database for future queries
     try {
-      await fetch("/api/neo4j/save-transaction", {
+      await fetch("/api/infura/save-transaction", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

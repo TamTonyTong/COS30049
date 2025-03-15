@@ -62,12 +62,12 @@ const BlockRangeSelector: React.FC<BlockRangeSelectorProps> = ({
 
   return (
     <div className="mb-4 space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col">
         <Label htmlFor="block-range" className="text-sm font-medium">
           Block Range
         </Label>
         {blockRange > 60 && (
-          <span className="text-xs text-yellow-500">
+          <span className="mt-1 text-xs text-yellow-500">
             Warning: Larger block ranges may take longer to load
           </span>
         )}

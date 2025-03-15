@@ -62,6 +62,14 @@ export default function Header() {
                   News
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/transaction_explorer"
+                  className="transition-colors hover:text-white"
+                >
+                  Transactions Explorer
+                </Link>
+              </li>
 
               {/* Check if user is logged in */}
               {isLoggedIn && (
@@ -74,30 +82,20 @@ export default function Header() {
                       Trade
                     </Link>
                   </li>
-                  <li>
+                  {/* <li>
                     <DropdownMenu>
                       <DropdownMenuTrigger className="flex items-center transition-colors hover:text-white">
                         More <ChevronDown className="ml-1 h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem>
-                          <Link href="/walletscan" className="w-full">
-                            Wallet Tracking
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Link href="/transactiondb" className="w-full">
-                            Transactions Graph
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
                           <Link href="/transaction_explorer" className="w-full">
-                            Transactions Graph Real
+                            Transactions Explorer
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </li>
+                  </li> */}
                 </>
               )}
             </ul>

@@ -17,6 +17,7 @@ import {
 import { fetchTransactionByHash } from "@/src/pages/api/fetchTransaction";
 import TransactionChart from "@/src/components/transactionexplorer/transactionchart";
 import TopTransactionsChart from "@/src/components/transactionexplorer/top10transaction";
+import WalletOverview from "@/src/components/transactionexplorer/walletoverview";
 
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
@@ -352,6 +353,7 @@ const TransactionExplorer: React.FC = () => {
           isTransactionHash={isTransactionHash}
           setIsTransactionHash={setIsTransactionHash}
         />
+
         {blockchainType === "ETH" && (
           <div className="mb-4 flex items-center gap-2">
             <input
@@ -370,6 +372,14 @@ const TransactionExplorer: React.FC = () => {
               )}
             </label>
           </div>
+        )}
+        {/* Add wallet overview when transactions are loaded */}
+        {hasLoadedTransactions && !isTransactionHash && (
+          <WalletOverview
+            address={address}
+            transactions={allHistoricalTransactions}
+            blockchainType={blockchainType}
+          />
         )}
         <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
           <div className="col-span-7 rounded-lg border shadow">

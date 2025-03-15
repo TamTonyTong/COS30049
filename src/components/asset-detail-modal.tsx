@@ -227,7 +227,6 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0d1829] to-transparent">
               <div className="flex items-center justify-between">
                 <Badge className="text-blue-300 transition-colors bg-blue-500/30 hover:bg-blue-500/50">NFT</Badge>
-                <span className="text-xs text-gray-400">Token ID: #1234</span>
               </div>
             </div>
           </div>
@@ -245,9 +244,6 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
                   <DialogDescription className="mt-1 text-gray-400">
                     {asset.price.toFixed(2)} ETH • {asset.currencypair} • {asset.assettype}
                   </DialogDescription>
-                </div>
-                <div className="flex gap-2">
-                 
                 </div>
               </div>
             </DialogHeader>

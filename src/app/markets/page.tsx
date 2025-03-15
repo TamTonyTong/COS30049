@@ -186,12 +186,22 @@ export default function TradePage() {
     );
   });
 
-  if (isLoading) return <div>Loading...</div>;
+if (isLoading) {
+    return (
+      <Layout>
+        <div className="container px-4 py-8 mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="w-12 h-12 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
 
   if (error) {
     return (
       <Layout>
-        <div className="container mx-auto px-4 py-8">
+        <div className="container px-4 py-8 mx-auto">
           <Card className="border-red-500/30 bg-[#1a2b4b]">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-white">Error</CardTitle>
@@ -208,7 +218,7 @@ export default function TradePage() {
   if (trades.length === 0) {
     return (
       <Layout>
-        <div className="container mx-auto px-4 py-8">
+        <div className="container px-4 py-8 mx-auto">
           <Card className="border-blue-500/30 bg-[#1a2b4b]">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-white">No Trades Found</CardTitle>
@@ -224,7 +234,7 @@ export default function TradePage() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container px-4 py-8 mx-auto">
         <Card className="border-blue-500/30 bg-[#1a2b4b]">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -304,7 +314,7 @@ export default function TradePage() {
                       </TableCell>
                       <TableCell className="text-right align-middle">
                         {trade.status === "Sold" ? (
-                          <Badge variant="secondary" className="bg-gray-200 text-black px-2 py-1 rounded">
+                          <Badge variant="secondary" className="px-2 py-1 text-black bg-gray-200 rounded">
                             Sold
                           </Badge>
                         ) : (
@@ -319,7 +329,7 @@ export default function TradePage() {
                               }
                             }}
                             variant="outline"
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            className="text-white bg-blue-600 hover:bg-blue-700"
                           >
                             Buy
                           </Button>

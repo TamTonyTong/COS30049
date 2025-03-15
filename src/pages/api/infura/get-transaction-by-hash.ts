@@ -32,7 +32,7 @@ export default async function handler(
     if (result.records.length === 0) {
       return res.status(404).json({ message: "Transaction not found" });
     }
-    console.log("Raw Transactions", result.records[0].get("tx").properties);
+    // console.log("Raw Transactions", result.records[0].get("tx").properties);
     const txNode = result.records[0].get("tx").properties;
     const transaction = {
       hash: txNode.hash,
@@ -52,7 +52,7 @@ export default async function handler(
       receiver: txNode.to_address,
       direction: "", // Will be set in UI based on context
     };
-    console.log("Transaction found:", transaction);
+    // console.log("Transaction found:", transaction);
     return res.status(200).json({ transaction });
   } catch (error) {
     console.error("Error fetching transaction by hash:", error);

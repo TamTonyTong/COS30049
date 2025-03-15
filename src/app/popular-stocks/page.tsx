@@ -25,6 +25,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/src/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
+import AssetDetailModal from "@/src/components/asset-detail-modal"
 
 interface Asset {
   assetid: string
@@ -638,116 +639,12 @@ export default function MarketsPage() {
         </Card>
       </div>
 
-      {/* NFT Detail Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="bg-[#1a2b4b] border-blue-500/30 text-white max-w-4xl">
-          {selectedAsset ? (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold flex items-center">
-                  <div className="relative w-6 h-6 mr-2 overflow-hidden rounded-full border border-blue-500/30 flex-shrink-0">
-                    <Image
-                      src={getAssetImageUrl(selectedAsset) || "/placeholder.svg"}
-                      alt={selectedAsset.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  {selectedAsset.name}
-                </DialogTitle>
-                <DialogDescription className="text-gray-400">
-                  {selectedAsset.description || "No description available"}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                <div className="relative aspect-square rounded-lg overflow-hidden border border-blue-500/20">
-                  <Image
-                    src={getAssetImageUrl(selectedAsset) || "/placeholder.svg"}
-                    alt={selectedAsset.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-
-                <div>
-                  <Tabs defaultValue="details">
-                    <TabsList className="bg-[#0d1829] w-full">
-                      <TabsTrigger value="details">Details</TabsTrigger>
-                      <TabsTrigger value="attributes">Attributes</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="details" className="mt-4 space-y-4">
-                      <div className="bg-[#0d1829] p-4 rounded-lg border border-blue-500/20">
-                        <div className="text-xl font-bold text-white mb-2">Current Price</div>
-                        <div className="text-3xl font-bold text-blue-400">{formatPrice(selectedAsset.price)}</div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex justify-between py-2 border-b border-blue-500/10">
-                          <div className="flex items-center text-gray-400">
-                            <span className="mr-2">Creator</span>
-                          </div>
-                          <div className="text-white font-medium">{selectedAsset.creatorid || "Unknown"}</div>
-                        </div>
-
-                        <div className="flex justify-between py-2 border-b border-blue-500/10">
-                          <div className="flex items-center text-gray-400">
-                            <span className="mr-2">Collection</span>
-                          </div>
-                          <div className="text-white font-medium">{selectedAsset.collection || "Uncategorized"}</div>
-                        </div>
-
-                        <div className="flex justify-between py-2 border-b border-blue-500/10">
-                          <div className="flex items-center text-gray-400">
-                            <span className="mr-2">Created</span>
-                          </div>
-                          <div className="text-white font-medium">{selectedAsset.createdat || "Unknown"}</div>
-                        </div>
-
-                        <div className="flex justify-between py-2 border-b border-blue-500/10">
-                          <div className="flex items-center text-gray-400">
-                            <span className="mr-2">Asset ID</span>
-                          </div>
-                          <div className="text-white font-medium">{selectedAsset.assetid}</div>
-                        </div>
-
-                        <div className="flex justify-between py-2">
-                          <div className="flex items-center text-gray-400">
-                            <span className="mr-2">Currency</span>
-                          </div>
-                          <div className="text-white font-medium">{selectedAsset.currencypair}</div>
-                        </div>
-                      </div>
-
-                      <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">Buy Now</Button>
-                    </TabsContent>
-
-                    <TabsContent value="attributes" className="mt-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        {selectedAsset.attributes?.map((attr, index) => (
-                          <div key={index} className="bg-[#0d1829] p-3 rounded-lg border border-blue-500/20">
-                            <div className="text-sm text-gray-400">{attr.trait_type}</div>
-                            <div className="text-white font-medium">{attr.value}</div>
-                          </div>
-                        )) || (
-                          <div className="col-span-2 text-center text-gray-400 py-4">
-                            No attributes available for this NFT
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="p-4 text-center">
-              <p>No asset selected or asset data is missing.</p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+        {/* Asset Detail Modal */}
+      <AssetDetailModal
+        asset={selectedAsset}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </Layout>
   )
 }

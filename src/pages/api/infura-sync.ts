@@ -51,7 +51,8 @@ function saveSyncedAddressesCache(cache: Map<string, number>): void {
 const syncedAddresses = loadSyncedAddressesCache();
 export async function syncInfuraData(
   address: string,
-  forceFresh = false,
+  forceFresh: boolean, // Add forceFresh parameter with default value
+  blockRange: number, // Add blockRange parameter with default value
 ): Promise<Transaction[]> {
   console.log(
     `Syncing Infura data for address: ${address}, forceFresh: ${forceFresh}`,
@@ -71,7 +72,7 @@ export async function syncInfuraData(
   try {
     console.log(`Fetching fresh data from Infura for ${address}`);
     // Fetch transactions from Infura
-    const transactions = await fetchInfuraTransactions(address);
+    const transactions = await fetchInfuraTransactions(address, 1, blockRange);
     console.log(`Fetched ${transactions.length} transactions from Infura`);
 
     // If we have transactions, store them in Neo4j

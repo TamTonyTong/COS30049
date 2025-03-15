@@ -1,19 +1,20 @@
 "use client";
 import React, { useState } from "react";
 import Layout from "@/src/components/layout";
-import { fetchTransactions } from "@/src/pages/api/fetchTransactions2";
+import { fetchTransactions } from "@/src/pages/api/fetchTransaction";
 import { fetchInfuraTransactions } from "@/src/pages/api/infuraapi";
 import SearchBar from "@/src/components/transactionexplorer/searchbar";
 import TransactionList from "@/src/components/transactionexplorer/transactionlist";
 import Pagination from "@/src/components/transactionexplorer/pagnition";
 import TransactionNetwork from "@/src/components/transactionexplorer/transactionetwork";
+import BlockRangeSelector from "@/src/components/transactionexplorer/blockselector";
 import { Transaction } from "@/src/components/transactionexplorer/type";
 import {
   syncInfuraData,
   getInfuraPageFromDb,
   getTransactionByHash,
 } from "@/src/pages/api/infura-sync";
-import { fetchTransactionByHash } from "@/src/pages/api/fetchTransactions2";
+import { fetchTransactionByHash } from "@/src/pages/api/fetchTransaction";
 
 const TransactionExplorer: React.FC = () => {
   const [address, setAddress] = useState<string>("");
@@ -33,9 +34,13 @@ const TransactionExplorer: React.FC = () => {
   }>({});
   // Keep blockchain type selection
   const [blockchainType, setBlockchainType] = useState<"ETH" | "SWC">("ETH");
+  // Add block range state for ETH
+  const [blockRange, setBlockRange] = useState<number>(30);
+  // Add view mode state to toggle between visualization and analytics
 
   // Replace ETH modes with a single Infura mode
   const [ethDataSource, setEthDataSource] = useState<"infura">("infura");
+  const [forceFresh, setForceFresh] = useState<boolean>(false);
   // Add this function to be passed to TransactionNetwork
   const handleNodeExpansion = async (
     address: string,
@@ -46,6 +51,7 @@ const TransactionExplorer: React.FC = () => {
       [address]: transactions,
     }));
   };
+
   const handleSearch = async (addressToSearch: string = address) => {
     if (!addressToSearch) return;
     setLoading(true);
@@ -87,8 +93,12 @@ const TransactionExplorer: React.FC = () => {
           const data = await fetchTransactions(addressToSearch, "initial");
           extractedTransactions = data.length > 0 ? data[0].transactions : [];
         } else {
-          // ETH now always uses Infura
-          extractedTransactions = await syncInfuraData(addressToSearch);
+          // ETH now uses Infura with the forceFresh parameter
+          extractedTransactions = await syncInfuraData(
+            addressToSearch,
+            forceFresh, // Force fresh data instead of using blockRange
+            blockRange,
+          );
         }
       }
       if (extractedTransactions.length > 0) {
@@ -179,6 +189,7 @@ const TransactionExplorer: React.FC = () => {
     resetState();
     handleSearch(newAddress);
   };
+
   const handleResetView = () => {
     // Reset expanded nodes
     setExpandedNodes({});
@@ -186,6 +197,7 @@ const TransactionExplorer: React.FC = () => {
     // Keep only the initial transactions for the current address
     // This ensures we go back to just showing the first page
   };
+
   // Helper function to reset state
   const resetState = () => {
     setTransactionsByPage({});
@@ -221,6 +233,7 @@ const TransactionExplorer: React.FC = () => {
   });
 
   const allTransactions = Array.from(uniqueTransactions.values());
+
   return (
     <Layout>
       <div className="mx-auto max-w-6xl p-4">
@@ -265,6 +278,14 @@ const TransactionExplorer: React.FC = () => {
           </div>
         )}
 
+        {/* Block range selector for ETH only */}
+        {blockchainType === "ETH" && !isTransactionHash && (
+          <BlockRangeSelector
+            blockRange={blockRange}
+            setBlockRange={setBlockRange}
+          />
+        )}
+
         <SearchBar
           address={address}
           setAddress={setAddress}
@@ -274,37 +295,52 @@ const TransactionExplorer: React.FC = () => {
           isTransactionHash={isTransactionHash}
           setIsTransactionHash={setIsTransactionHash}
         />
-
-        {hasLoadedTransactions && (
-          <>
-            <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
-              <div className="col-span-7 rounded-lg border shadow">
-                <TransactionNetwork
-                  transactions={currentTransactions}
-                  address={address}
-                  onAddressChange={handleAddressChange}
-                  blockchainType={blockchainType}
-                  onNodeExpanded={handleNodeExpansion}
-                  expandedNodes={expandedNodes}
-                  onResetView={handleResetView}
-                />
-              </div>
-            </div>
-            <TransactionList
-              transactions={allTransactions}
-              address={address}
-              blockchainType={blockchainType}
+        {blockchainType === "ETH" && (
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="forceFresh"
+              checked={forceFresh}
+              onChange={(e) => setForceFresh(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
             />
-            <Pagination
-              currentPage={currentPage}
-              maxPage={maxPage}
-              navigateToPage={navigateToPage}
-              loadMore={loadMore}
-              hasMore={hasMore}
-              loading={loading}
-            />
-          </>
+            <label htmlFor="forceFresh" className="text-sm">
+              Force fresh data from Infura
+              {forceFresh && (
+                <span className="ml-2 text-yellow-500">
+                  (May take longer to load)
+                </span>
+              )}
+            </label>
+          </div>
         )}
+        <div className="relative mb-6 grid grid-cols-7 rounded-lg border md:flex-row">
+          <div className="col-span-7 rounded-lg border shadow">
+            <TransactionNetwork
+              transactions={currentTransactions}
+              address={address}
+              onAddressChange={handleAddressChange}
+              blockchainType={blockchainType}
+              onNodeExpanded={handleNodeExpansion}
+              expandedNodes={expandedNodes}
+              onResetView={handleResetView}
+            />
+          </div>
+        </div>
+
+        <TransactionList
+          transactions={allTransactions}
+          address={address}
+          blockchainType={blockchainType}
+        />
+        <Pagination
+          currentPage={currentPage}
+          maxPage={maxPage}
+          navigateToPage={navigateToPage}
+          loadMore={loadMore}
+          hasMore={hasMore}
+          loading={loading}
+        />
       </div>
     </Layout>
   );

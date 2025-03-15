@@ -36,6 +36,7 @@ async function fetchWithRetry(data: any, retries = 3, delay = 1000) {
 export async function fetchInfuraTransactions(
   address: string,
   page: number = 1,
+  blockRange: number,
 ): Promise<Transaction[]> {
   try {
     console.log(`Fetching transactions for address: ${address}, page: ${page}`);
@@ -88,7 +89,7 @@ export async function fetchInfuraTransactions(
     const PAGE_SIZE = 8;
 
     // Increase the number of blocks to check - 10 might be too few
-    const NUM_BLOCKS_TO_CHECK = 30;
+    const NUM_BLOCKS_TO_CHECK = blockRange + 1;
     const blocksToCheck = Array.from(
       { length: NUM_BLOCKS_TO_CHECK },
       (_, i) => latestBlock - i,

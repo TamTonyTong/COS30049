@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar"
-import { Button } from "@/src/components/ui/button"
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
+import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,28 +12,38 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu"
-import { User, LogOut, Settings, PlusCircle, LayoutDashboard, UserCircle, ChevronDown } from "lucide-react"
-import type React from "react"
-import { useState, useEffect } from "react"
+} from "@/src/components/ui/dropdown-menu";
+import { User, LogOut, Settings, PlusCircle, LayoutDashboard, UserCircle, ChevronDown } from "lucide-react";
+import type React from "react";
+import { useState, useEffect } from "react";
 
 export function UserNav({ children }: { children?: React.ReactNode }) {
-  const router = useRouter()
-  const [userId, setUserId] = useState("Guest")
-  const [isOpen, setIsOpen] = useState(false)
+  const router = useRouter();
+  const [userId, setUserId] = useState("Guest");
+  const [metawallet, setMetawallet] = useState("N/A");
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Get user data from localStorage on client side
+  // Get user data and metawallet from localStorage on client side
   useEffect(() => {
-    setUserId(localStorage.getItem("userid") || "Guest")
-  }, [])
+    const storedUserId = localStorage.getItem("userid") || "Guest";
+    const storedMetawallet = localStorage.getItem("metawallet") || "N/A";
+    setUserId(storedUserId);
+    setMetawallet(storedMetawallet);
+  }, []);
 
   const handleLogout = () => {
-    localStorage.setItem("isLoggedIn", "false")
-    localStorage.setItem("userid", "")
-    localStorage.setItem("metawallet", "")
-    console.log("Logging out...")
-    router.push("/")
-  }
+    localStorage.setItem("isLoggedIn", "false");
+    localStorage.setItem("userid", "");
+    localStorage.setItem("metawallet", "");
+    console.log("Logging out...");
+    router.push("/");
+  };
+
+  // Shorten the metawallet address for display
+  const shortenAddress = (address: string) => {
+    if (address === "N/A" || address === "Guest") return address;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -53,7 +63,7 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0d1829] rounded-full"></span>
             </div>
             <span className="hidden text-sm font-medium text-white md:inline-block max-w-[80px] truncate">
-              {userId}
+              {shortenAddress(metawallet)}
             </span>
             <ChevronDown
               className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -75,7 +85,7 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <p className="text-base font-medium leading-none text-white">{userId}</p>
+              <p className="text-base font-medium leading-none text-white">{shortenAddress(metawallet)}</p>
               <p className="text-xs text-gray-400">Trader</p>
             </div>
           </div>
@@ -136,6 +146,5 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
-

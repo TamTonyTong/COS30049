@@ -48,18 +48,25 @@ export default function HomePage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [metawallet, setMetawallet] = useState<string | null>(null);
   const [listedAssetIds, setListedAssetIds] = useState<string[]>([]);
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const router = useRouter();
 
-  // Fetch userId from localStorage and set redirect flag
+  // Fetch userId and metawallet from localStorage and set redirect flag
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUserId = localStorage.getItem("userid");
+      const storedMetawallet = localStorage.getItem("metawallet");
       if (storedUserId) {
         setUserId(storedUserId);
       } else {
         setShouldRedirect(true);
+      }
+      if (storedMetawallet) {
+        setMetawallet(storedMetawallet);
+      } else {
+        setMetawallet("N/A"); // Fallback if metawallet is not set
       }
     }
   }, []);
@@ -117,7 +124,7 @@ export default function HomePage() {
         setAssets(data.assets);
         setTransactions(
           data.transactions.map((tx: any) => ({
-            id: tx.id, // Rely on txid from API
+            id: tx.id,
             timestamp: new Date(tx.timestamp).toLocaleString(),
             type: tx.type,
             amount: tx.amount,
@@ -205,9 +212,9 @@ export default function HomePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Address */}
+            {/* Metawallet Address */}
             <div className="mb-6">
-              <h2 className="text-xl text-white">UserID: {userId}</h2>
+              <h2 className="text-xl text-white">Address: {metawallet}</h2>
             </div>
 
             {/* Balance */}

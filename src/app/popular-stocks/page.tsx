@@ -374,7 +374,7 @@ export default function MarketsPage() {
                     variant="outline"
                     className="text-white transition-all border-blue-500/30 hover:bg-blue-500/20 hover:border-blue-400/50 hover:shadow-glow-sm"
                   >
-                    Trade
+                    Market
                   </Button>
                 </Link>
                 <Button

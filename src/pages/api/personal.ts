@@ -3,8 +3,6 @@ import { supabase } from '../../../lib/supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('API route invoked');
-
   try {
     const userId = req.headers['user-id'];
     if (!userId) {
@@ -88,7 +86,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const transactionsWithAssets = transactionData.map((tx) => {
         const asset = transactionAssetData?.find((a) => a.assetid === tx.assetid);
         if (!tx.txid) {
-          console.warn(`Transaction with missing txid for user ${userId}:`, tx);
           tx.txid = uuidv4();
         }
         return {
@@ -110,13 +107,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         transactions: transactionsWithAssets,
       };
 
-      console.log('Fetched data from Supabase:', responseData);
       res.status(200).json(responseData);
     } else {
       res.status(405).json({ error: 'Method Not Allowed' });
     }
   } catch (error) {
-    console.error('Error in API route:', error);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }

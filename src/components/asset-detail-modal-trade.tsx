@@ -1,95 +1,131 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
-import { Badge } from "@/src/components/ui/badge"
-import { Zap, CheckCircle, FileText, User, Clock, Tag } from "lucide-react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { Badge } from "@/src/components/ui/badge";
+import { Zap, CheckCircle, FileText, User, Clock, Tag } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabaseClient";
 
 interface Trade {
-  tradeid: string
-  symbol: string
-  name: string
-  img?: string
-  assettype: string
-  price: number
-  status: "Buy" | "Sold"
-  userid: string
-  metawallet: string
-  pricehistoryid: string
-  walletid: string
-  txid: string | null
-  description?: string
-  creatorid?: string
-  createdat?: string
-  owner?: string
-  creator?: string
+  tradeid: string;
+  symbol: string;
+  name: string;
+  img?: string;
+  assettype: string;
+  price: number;
+  status: "Buy" | "Sold";
+  userid: string;
+  metawallet: string;
+  pricehistoryid: string;
+  walletid: string;
+  txid: string | null;
+  description?: string;
+  createdat?: string;
+  owner?: string;
+  creator?: string;
+  creatorid?: string;
+  creatorMetawallet?: string;
 }
 
 interface AssetDetailModalProps {
-  trade: Trade | null
-  isOpen: boolean
-  onClose: () => void
+  trade: Trade | null;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetailModalProps) {
-  const router = useRouter()
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [isHoveringBuy, setIsHoveringBuy] = useState(false)
+  const router = useRouter();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isHoveringBuy, setIsHoveringBuy] = useState(false);
+  const [creatorMetawallet, setCreatorMetawallet] = useState<string>("Unknown");
 
-  // Reset states when modal opens with a new trade
+  // Fetch creator metawallet
+  const fetchCreatorMetawallet = async () => {
+    if (!trade || !trade.creatorid) {
+      setCreatorMetawallet("Unknown");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("User")
+        .select("metawallet")
+        .eq("userid", trade.creatorid)
+        .single();
+
+      if (error || !data) {
+        console.warn("Error or no data fetching creator metawallet:", error?.message);
+        setCreatorMetawallet("Unknown");
+        return;
+      }
+
+      setCreatorMetawallet(data.metawallet || "Unknown");
+    } catch (err) {
+      console.error("Unexpected error fetching creator metawallet:", err);
+      setCreatorMetawallet("Unknown");
+    }
+  };
+
   useEffect(() => {
     if (isOpen && trade) {
-      setImageLoaded(false)
+      setImageLoaded(false);
+      console.log("Trade object received by modal:", trade); // Debug log
+      // If creatorMetawallet is available from the API, use it; otherwise, fetch it
+      if (trade.creatorMetawallet) {
+        setCreatorMetawallet(trade.creatorMetawallet);
+      } else {
+        fetchCreatorMetawallet();
+      }
     }
-  }, [isOpen, trade])
+  }, [isOpen, trade]);
 
   const handleBuyClick = () => {
-    if (!trade) return
+    if (!trade) return;
 
-    const loggedInUserId = localStorage.getItem("userid")
+    const loggedInUserId = localStorage.getItem("userid");
     if (localStorage.getItem("isLoggedIn") === "false") {
-      router.push("/login")
+      router.push("/login");
     } else if (loggedInUserId && loggedInUserId === trade.userid) {
-      alert("You can't buy the asset that you sell.")
+      alert("You can't buy the asset that you sell.");
     } else {
       router.push(
         `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`,
-      )
-      onClose() // Close the modal after navigation
+      );
+      onClose(); // Close the modal after navigation
     }
-  }
+  };
 
-  if (!trade) return null
+  if (!trade) return null;
 
   // Determine if the trade is available for purchase
-  const isAvailable = trade.status === "Buy"
+  const isAvailable = trade.status === "Buy";
 
   // Format the createdat timestamp if available
   const createdTimestamp = trade.createdat
-  ? (() => {
-      console.log("Raw createdat:", trade.createdat); // Log the raw value
-      console.log("Type of createdat:", typeof trade.createdat); // Log its type
-      try {
-        const date = new Date(trade.createdat!)
-        console.log("Parsed Date:", date); // Log the parsed date
-        return date.toLocaleString("en-US", {
-          month: "numeric",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        })
-      } catch (e) {
-        console.error("Error parsing date:", e); // Log the error
-        return "Unknown"
-      }
-    })()
-  : "Unknown"
+    ? (() => {
+        console.log("Raw createdat:", trade.createdat);
+        console.log("Type of createdat:", typeof trade.createdat);
+        try {
+          const date = new Date(trade.createdat!);
+          console.log("Parsed Date:", date);
+          return date.toLocaleString("en-US", {
+            month: "numeric",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          });
+        } catch (e) {
+          console.error("Error parsing date:", e);
+          return "Unknown";
+        }
+      })()
+    : "Unknown";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -184,7 +220,7 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
                   value="metadata"
                   className="text-xs capitalize data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 hover:text-blue-300 transition-all"
                 >
-                  Meta
+                  Metadata
                 </TabsTrigger>
               </TabsList>
 
@@ -240,7 +276,7 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
                   <User className="w-4 h-4 mt-0.5 text-blue-400 shrink-0" />
                   <div>
                     <p className="leading-relaxed text-gray-300">
-                      The creator of this asset is {trade.creator || trade.userid || "Unknown"}.
+                      The creator of this asset is {creatorMetawallet}.
                     </p>
                   </div>
                 </motion.div>
@@ -321,6 +357,5 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

@@ -13,7 +13,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           pricehistoryid,
           status,
           txid,
-          Asset (symbol, name, assettype, img),
+          Asset (
+            symbol,
+            name,
+            assettype,
+            img,
+            createdat,
+            creatorid,
+            User!Asset_creatorid_fkey (metawallet)
+          ),
           User (metawallet),
           PriceHistory (price),
           walletid
@@ -27,7 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const trades = data.map((trade: any) => {
-        // Log the trade for debugging
         if (!trade.Asset) {
           console.warn(`Trade ${trade.tradeid} is missing Asset data`);
         }
@@ -36,6 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         if (!trade.PriceHistory) {
           console.warn(`Trade ${trade.tradeid} is missing PriceHistory data`);
+        }
+        if (!trade.Asset?.User) {
+          console.warn(`Trade ${trade.tradeid} is missing creator User data`);
         }
 
         return {
@@ -51,6 +61,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           pricehistoryid: trade.pricehistoryid,
           walletid: trade.walletid,
           txid: trade.txid,
+          createdat: trade.Asset?.createdat || null,
+          creatorid: trade.Asset?.creatorid || null,
+          creatorMetawallet: trade.Asset?.User?.metawallet || 'Unknown',
         };
       });
 

@@ -1,7 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+    "*.{js,ts,jsx,tsx,mdx}",
+  ],
   theme: {
     container: {
       center: true,
@@ -60,10 +66,25 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        shimmer: {
+          "0%, 100%": { backgroundPosition: "100% 50%" },
+          "50%": { backgroundPosition: "0% 50%" },
+        },
+        "gradient-slow": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        shimmer: "shimmer 3s ease-in-out infinite",
+        "gradient-slow": "gradient-slow 15s ease infinite",
+      },
+      boxShadow: {
+        glow: "0 0 15px 2px rgba(59, 130, 246, 0.3)",
+        "glow-sm": "0 0 10px 1px rgba(59, 130, 246, 0.2)",
+        "glow-blue": "0 0 20px 2px rgba(59, 130, 246, 0.4)",
       },
     },
   },

@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/src/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -15,66 +11,125 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { User } from "lucide-react";
-import type React from "react"; // Added import for React
+import { User, LogOut, Settings, PlusCircle, LayoutDashboard, UserCircle, ChevronDown } from "lucide-react";
+import type React from "react";
+import { useState, useEffect } from "react";
 
 export function UserNav({ children }: { children?: React.ReactNode }) {
   const router = useRouter();
+  const [userId, setUserId] = useState("Guest");
+  const [metawallet, setMetawallet] = useState("N/A");
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Get user data and metawallet from localStorage on client side
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userid") || "Guest";
+    const storedMetawallet = localStorage.getItem("metawallet") || "N/A";
+    setUserId(storedUserId);
+    setMetawallet(storedMetawallet);
+  }, []);
 
   const handleLogout = () => {
-    // Implement logout logic here
     localStorage.setItem("isLoggedIn", "false");
+    localStorage.setItem("userid", "");
+    localStorage.setItem("metawallet", "");
     console.log("Logging out...");
     router.push("/");
   };
 
+  // Shorten the metawallet address for display
+  const shortenAddress = (address: string) => {
+    if (address === "N/A" || address === "Guest") return address;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         {children || (
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
-              <AvatarImage
-                src="/avatars/professional-avatar.png"
-                alt="@username"
-              />
-              <AvatarFallback>
-                <User className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
+          <Button
+            variant="ghost"
+            className="relative flex items-center gap-2 px-3 py-2 transition-all rounded-full hover:bg-[#1a2b4b] group"
+          >
+            <div className="relative">
+              <Avatar className="w-8 h-8 transition-colors border-2 border-blue-500/30 group-hover:border-blue-400">
+                <AvatarImage src="/avatars/professional-avatar.png" alt="@username" />
+                <AvatarFallback className="text-blue-400 bg-blue-500/20">
+                  <User className="w-4 h-4" />
+                </AvatarFallback>
+              </Avatar>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0d1829] rounded-full"></span>
+            </div>
+            <span className="hidden text-sm font-medium text-white md:inline-block max-w-[80px] truncate">
+              {shortenAddress(metawallet)}
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            />
           </Button>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Alice</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              alice@example.com
-            </p>
+      <DropdownMenuContent
+        className="w-64 mt-2 overflow-hidden border-blue-500/30 bg-[#1a2b4b] backdrop-blur-sm"
+        align="end"
+        forceMount
+      >
+        <DropdownMenuLabel className="px-5 py-4 font-normal bg-gradient-to-r from-blue-900/30 to-indigo-900/30">
+          <div className="flex items-center gap-3">
+            <Avatar className="w-10 h-10 border-2 border-blue-500/50">
+              <AvatarImage src="/avatars/professional-avatar.png" alt="@username" />
+              <AvatarFallback className="text-blue-400 bg-blue-500/20">
+                <User className="w-5 h-5" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <p className="text-base font-medium leading-none text-white">{shortenAddress(metawallet)}</p>
+              <p className="text-xs text-gray-400">Trader</p>
+            </div>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>Dashboard</DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="personal-assets">Personal Assets</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>Orders</DropdownMenuItem>
-          <DropdownMenuItem>Account</DropdownMenuItem>
-          <DropdownMenuItem>History</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
-          <Link href="/" onClick={handleLogout}>
-            Log out
+
+        <div className="p-2">
+          <DropdownMenuGroup>
+            
+
+            <Link href="/personal-assets" className="w-full">
+              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-blue-500/20 focus:bg-blue-500/20">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10">
+                  <UserCircle className="w-4 h-4 text-blue-400" />
+                </div>
+                <span>Account</span>
+              </DropdownMenuItem>
+            </Link>
+
+            <Link href="/create" className="w-full">
+              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-blue-500/20 focus:bg-blue-500/20">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10">
+                  <PlusCircle className="w-4 h-4 text-blue-400" />
+                </div>
+                <span>Create Asset</span>
+              </DropdownMenuItem>
+            </Link>
+
+            
+          </DropdownMenuGroup>
+        </div>
+
+        <DropdownMenuSeparator className="bg-blue-500/10" />
+
+        <div className="p-2">
+          <Link href="/" onClick={handleLogout} className="w-full">
+            <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 cursor-pointer text-red-400 hover:bg-red-500/10 focus:bg-red-500/10">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/10">
+                <LogOut className="w-4 h-4 text-red-400" />
+              </div>
+              <span>Log out</span>
+              <span className="ml-auto text-xs text-gray-500">⇧⌘Q</span>
+            </DropdownMenuItem>
           </Link>
-          <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
-        </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

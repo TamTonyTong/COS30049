@@ -115,7 +115,7 @@ export default function AboutPage() {
                     104775085
                   </td>
                   <td className="border border-gray-600 px-4 py-2">
-                    Project Manager, Team Member
+                    Team Member
                   </td>
                 </tr>
                 <tr>

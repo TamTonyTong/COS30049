@@ -148,10 +148,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   </div>
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-400">
-                  {transaction.sender.substring(0, 8)}...
+                  {/* {transaction.sender.substring(0, 8)}... */}
+                  {(
+                    transaction.sender ||
+                    transaction.from_address ||
+                    "Unknown"
+                  ).substring(0, 8)}
+                  ...
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-400">
-                  {transaction.receiver.substring(0, 8)}...
+                  {/* {transaction.receiver.substring(0, 8)}... */}
+                  {(
+                    transaction.receiver ||
+                    transaction.to_address ||
+                    "Unknown"
+                  ).substring(0, 8)}
+                  ...
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-xs text-gray-400">
                   {formatValue(transaction.value)}

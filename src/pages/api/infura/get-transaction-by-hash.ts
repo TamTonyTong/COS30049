@@ -32,7 +32,7 @@ export default async function handler(
     if (result.records.length === 0) {
       return res.status(404).json({ message: "Transaction not found" });
     }
-    // console.log("Raw Transactions", result.records[0].get("tx").properties);
+    console.log("Raw Transactions", result.records[0].get("tx").properties);
     const txNode = result.records[0].get("tx").properties;
     const transaction = {
       hash: txNode.hash,

@@ -1,18 +1,14 @@
-import neo4j from "neo4j-driver";
-import * as dotenv from "dotenv";
+import neo4j, { Driver } from "neo4j-driver";
 
-dotenv.config();
+let DbDriver: Driver | null = null;
 
-let etherscanDriver: neo4j.Driver | null = null;
-
-export function getEtherscanDriver() {
-  if (!etherscanDriver) {
-    etherscanDriver = neo4j.driver(
-      process.env.NEO4J_URI3 || "neo4j+s://3b88003a.databases.neo4j.io",
+export function getDbDriver() {
+  if (!DbDriver) {
+    DbDriver = neo4j.driver(
+      process.env.NEXT_PUBLIC_NEO4J_URI2 || "",
       neo4j.auth.basic(
-        process.env.NEO4J_USER || "neo4j",
-        process.env.NEO4J_PASSWORD3 ||
-          "a3k3OhY4GMMafnRjEkOXXeQUqdxOs16UnpCrUdiO8Lo",
+        process.env.NEXT_PUBLIC_NEO4J_USER || "",
+        process.env.NEXT_PUBLIC_NEO4J_PASSWORD2 || "",
       ),
       {
         // Add this configuration to convert JavaScript numbers to Neo4j integers
@@ -20,17 +16,17 @@ export function getEtherscanDriver() {
       },
     );
   }
-  return etherscanDriver;
+  return DbDriver;
 }
 
 export async function closeEtherscanDriver() {
-  if (etherscanDriver) {
-    await etherscanDriver.close();
-    etherscanDriver = null;
+  if (DbDriver) {
+    await DbDriver.close();
+    DbDriver = null;
   }
 }
 
-export async function runEtherscanQuery(cypher: string, params = {}) {
+export async function runQuery(cypher: string, params = {}) {
   // Convert any number parameters to integers for Neo4j
   const processedParams = Object.entries(params).reduce(
     (acc, [key, value]) => {
@@ -45,7 +41,7 @@ export async function runEtherscanQuery(cypher: string, params = {}) {
     {} as Record<string, any>,
   );
 
-  const session = getEtherscanDriver().session();
+  const session = getDbDriver().session();
   try {
     const result = await session.run(cypher, processedParams);
     return result.records.map((record) => record.toObject());

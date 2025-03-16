@@ -1,15 +1,17 @@
-// src/pages/api/neo4j/etherscan-transactions.ts
-import { runEtherscanQuery } from "./etherscan-client";
+// src/pages/api/neo4j/infura-transactions.ts
+import { runQuery } from "./2nd-database-connection"; // Reuse your existing Neo4j client
 import { Transaction } from "@/src/components/transactionexplorer/type";
 
-export async function storeEtherscanTransactions(
+export async function storeInfuraTransactions(
   transactions: Transaction[],
   address: string,
 ): Promise<void> {
   // Create or ensure the main Address node exists
-  await runEtherscanQuery(
+  await runQuery(
     `
     MERGE (a:Address {addressId: $address})
+    ON CREATE SET a.blockchain = 'ETH'
+    ON MATCH SET a.blockchain = 'ETH' 
     RETURN a
   `,
     { address },
@@ -31,28 +33,26 @@ export async function storeEtherscanTransactions(
       timestamp: tx.block_timestamp || 0,
       from: tx.sender,
       to: tx.receiver || address,
-      methodId: tx.method_id || "",
-      functionName: tx.function_name || "",
-      contractAddress: tx.contract_address || "",
-      cumulativeGasUsed: tx.cumulative_gas_used || "0",
-      txReceiptStatus: tx.tx_receipt_status || "",
-      confirmations: tx.confirmations || "0",
-      isError: tx.is_error || "0",
-      nonce: tx.nonce || "0",
     };
 
     // Create transaction and connect to addresses
-    await runEtherscanQuery(
+    await runQuery(
       `
       // Create or get sender address
       MERGE (sender:Address {addressId: $from})
+      ON CREATE SET sender.blockchain = 'ETH'
+      ON MATCH SET sender.blockchain = 'ETH'
       
       // Create or get receiver address 
       MERGE (receiver:Address {addressId: $to})
+      ON CREATE SET receiver.blockchain = 'ETH'
+      ON MATCH SET receiver.blockchain = 'ETH'
       
       // Create transaction if it doesn't exist
       MERGE (tx:Transaction {hash: $txHash})
       ON CREATE SET
+        tx.sender = $from,
+        tx.receiver = $to,
         tx.value = $value,
         tx.input = $input,
         tx.gas = $gas,
@@ -63,14 +63,11 @@ export async function storeEtherscanTransactions(
         tx.transaction_index = $txIndex,
         tx.block_hash = $blockHash,
         tx.block_timestamp = $timestamp,
-        tx.method_id = $methodId,
-        tx.function_name = $functionName,
-        tx.contract_address = $contractAddress,
-        tx.cumulative_gas_used = $cumulativeGasUsed,
-        tx.tx_receipt_status = $txReceiptStatus,
-        tx.confirmations = $confirmations,
-        tx.is_error = $isError,
-        tx.nonce = $nonce
+        tx.blockchain = 'ETH',
+        tx.source = 'infura' // Tag the source to distinguish from Etherscan data
+      ON MATCH SET
+        tx.blockchain = 'ETH',
+        tx.source = 'infura'
       
       // Create relationships
       MERGE (sender)-[out:SENT]->(tx)
@@ -81,7 +78,7 @@ export async function storeEtherscanTransactions(
   }
 }
 
-export async function getEtherscanTransactionsFromNeo4j(
+export async function getInfuraTransactionsFromNeo4j(
   address: string,
   page: number = 1,
   offset: number = 8,
@@ -90,15 +87,17 @@ export async function getEtherscanTransactionsFromNeo4j(
   const skip = Math.floor((page - 1) * offset);
   const limit = Math.floor(offset);
 
-  const result = await runEtherscanQuery(
+  const result = await runQuery(
     `
     MATCH (a:Address {addressId: $address})
     
-    // Outgoing transactions
+    // Outgoing transactions with source = 'infura'
     OPTIONAL MATCH (a)-[:SENT]->(outgoing:Transaction)-[:RECEIVED]->(receiver:Address)
+    WHERE outgoing.blockchain = 'ETH' AND outgoing.source = 'infura'
     
-    // Incoming transactions
+    // Incoming transactions with source = 'infura'
     OPTIONAL MATCH (sender:Address)-[:SENT]->(incoming:Transaction)-[:RECEIVED]->(a)
+    WHERE incoming.blockchain = 'ETH' AND incoming.source = 'infura'
     
     WITH a, outgoing, receiver, incoming, sender
     
@@ -119,14 +118,7 @@ export async function getEtherscanTransactionsFromNeo4j(
          block_hash: outgoing.block_hash,
          block_timestamp: outgoing.block_timestamp,
          sender: a.addressId,
-         method_id: outgoing.method_id, 
-         function_name: outgoing.function_name,
-         contract_address: outgoing.contract_address,
-         cumulative_gas_used: outgoing.cumulative_gas_used,
-         tx_receipt_status: outgoing.tx_receipt_status,
-         confirmations: outgoing.confirmations,
-         is_error: outgoing.is_error,
-         nonce: outgoing.nonce
+         blockchain: outgoing.blockchain
       } END) AS outTransactions,
       
       // Collect incoming transactions
@@ -145,14 +137,7 @@ export async function getEtherscanTransactionsFromNeo4j(
          block_hash: incoming.block_hash,
          block_timestamp: incoming.block_timestamp,
          receiver: a.addressId,
-         method_id: incoming.method_id, 
-         function_name: incoming.function_name,
-         contract_address: incoming.contract_address,
-         cumulative_gas_used: incoming.cumulative_gas_used,
-         tx_receipt_status: incoming.tx_receipt_status,
-         confirmations: incoming.confirmations,
-         is_error: incoming.is_error,
-         nonce: incoming.nonce
+         blockchain: incoming.blockchain
       } END) AS inTransactions
       
     // Combine and filter null values
@@ -162,7 +147,7 @@ export async function getEtherscanTransactionsFromNeo4j(
     UNWIND allTransactions AS tx
     WITH tx ORDER BY tx.block_timestamp DESC
     
-    // Apply pagination - using integer parameters for SKIP and LIMIT
+    // Apply pagination
     SKIP $skip LIMIT $limit
     
     RETURN tx as transaction
@@ -170,7 +155,5 @@ export async function getEtherscanTransactionsFromNeo4j(
     { address, skip, limit },
   );
 
-  return result.map(
-    (record: { transaction: Transaction }) => record.transaction as Transaction,
-  );
+  return result.map((record: any) => record.transaction as Transaction);
 }

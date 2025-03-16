@@ -1,26 +1,52 @@
+// Update the fetchTransactions function
 export async function fetchTransactions(
-  addressId: string,
-  direction: "initial" | "older" | "newer" = "initial",
-  transaction_index?: number,
+  address: string,
+  direction: string,
+  transactionIndex?: string,
 ) {
   try {
-    let url = `http://localhost:5001/transactions/${addressId}`;
+    console.log(
+      `Fetching transactions for ${address}, direction: ${direction}`,
+    );
 
-    // Add query parameters for pagination
-    if (direction !== "initial" && transaction_index !== undefined) {
-      url += `?direction=${direction}&index=${transaction_index}`;
-    } else if (direction !== "initial") {
-      url += `?direction=${direction}`;
+    let url = `/api/internaldb/transactions?addressId=${address}&direction=${direction}`;
+    if (transactionIndex) {
+      url += `&index=${transactionIndex}`;
     }
 
     const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to fetch transactions");
+    if (!response.ok) {
+      throw new Error("Failed to fetch transactions");
+    }
 
     const data = await response.json();
-    console.log("Raw response data:", data);
     return data;
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return [];
+  }
+}
+
+// Update the fetchTransactionByHash function
+export async function fetchTransactionByHash(hash: string) {
+  try {
+    console.log(`Fetching transaction with hash: ${hash}`);
+    const url = `/api/internaldb/transaction-by-hash?hash=${hash}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log("Transaction not found");
+        return null;
+      }
+      throw new Error("Failed to fetch transaction");
+    }
+
+    const data = await response.json();
+    console.log("Transaction data:", data);
+    return data.transaction;
+  } catch (error) {
+    console.error("Error fetching transaction by hash:", error);
+    return null;
   }
 }

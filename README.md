@@ -2,8 +2,7 @@
 **__Develop branch vercel deployment domain:__** https://tradepro-git-develop-cos30049.vercel.app
 ## How to run our project locally
 
-Install Node.js if you haven't
-[Node.js](https://nodejs.org/en)
+Install [Node.js](https://nodejs.org/en) if you haven't
 
 Navigate to the Project Directory
 ```bash

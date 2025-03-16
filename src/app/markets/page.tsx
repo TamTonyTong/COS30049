@@ -1,12 +1,14 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table";
-import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+import type React from "react"
+
+import { useState, useEffect, useMemo } from "react"
+import { supabase } from "@/lib/supabaseClient"
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Badge } from "@/src/components/ui/badge"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,83 +16,116 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
-import { Slider } from "@/src/components/ui/slider";
-import { RefreshCw, Info, Search, X, SlidersHorizontal, ArrowUp, ArrowDown } from "lucide-react";
-import { useRouter } from "next/navigation";
-import Layout from "../../components/layout";
-import Image from "next/image";
+} from "@/src/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
+import { Slider } from "@/src/components/ui/slider"
+import {
+  RefreshCw,
+  Info,
+  Search,
+  X,
+  SlidersHorizontal,
+  ArrowUp,
+  ArrowDown,
+  Zap,
+  CheckCircle,
+  Clock,
+  Tag,
+  User,
+  ExternalLink,
+  ImageIcon,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import Layout from "../../components/layout"
+import Image from "next/image"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/src/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
+import { motion } from "framer-motion"
+import AssetDetailModal from "@/src/components/asset-detail-modal-trade"
 
 export default function TradePage() {
   interface Trade {
-    tradeid: string;
-    symbol: string;
-    name: string;
-    img?: string;
-    assettype: string;
-    price: number;
-    status: "Buy" | "Sold";
-    userid: string;
-    metawallet: string;
-    pricehistoryid: string;
-    walletid: string;
-    txid: string | null;
+    tradeid: string
+    symbol: string
+    name: string
+    img?: string
+    assettype: string
+    price: number
+    status: "Buy" | "Sold"
+    userid: string
+    metawallet: string
+    pricehistoryid: string
+    walletid: string
+    txid: string | null
+    description?: string
+    owner?: string
+    collection?: string
+    attributes?: Array<{
+      trait_type: string
+      value: string
+    }>
+    createdAt?: string
+    tokenId?: string
+    blockchain?: string
   }
 
-  const router = useRouter();
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const router = useRouter()
+  const [trades, setTrades] = useState<Trade[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
+  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
+
+  
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Search and filter states
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
-  const [sortField, setSortField] = useState<"name" | "price">("name");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10]); // Default ETH range
-  const [debouncedPriceRange, setDebouncedPriceRange] = useState<[number, number]>([0, 10]);
-  const [statusFilter, setStatusFilter] = useState<"all" | "Buy" | "Sold">("all");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [maxPriceValue, setMaxPriceValue] = useState(10); // Default max ETH value
+  const [searchTerm, setSearchTerm] = useState<string>("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("")
+  const [sortField, setSortField] = useState<"name" | "price">("name")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10]) // Default ETH range
+  const [debouncedPriceRange, setDebouncedPriceRange] = useState<[number, number]>([0, 10])
+  const [statusFilter, setStatusFilter] = useState<"all" | "Buy" | "Sold">("all")
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const [maxPriceValue, setMaxPriceValue] = useState(10) // Default max ETH value
 
   useEffect(() => {
     const fetchTrades = async () => {
       try {
-        setIsRefreshing(true);
-        const response = await fetch("/api/trade");
+        setIsRefreshing(true)
+        const response = await fetch("/api/trade")
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          throw new Error("Network response was not ok")
         }
-        const data = await response.json();
-        setTrades(data.trades);
-        setLastUpdated(new Date());
+        const data = await response.json()
+        setTrades(data.trades)
+        setLastUpdated(new Date())
 
         // Find the highest ETH price for filter range
-        const highestPriceEth = Math.ceil(Math.max(...data.trades.map((t: Trade) => t.price)) * 1.2) || 10;
-        setMaxPriceValue(highestPriceEth);
-        setPriceRange([0, highestPriceEth]);
-        setDebouncedPriceRange([0, highestPriceEth]);
+        const highestPriceEth = Math.ceil(Math.max(...data.trades.map((t: Trade) => t.price)) * 1.2) || 10
+        setMaxPriceValue(highestPriceEth)
+        setPriceRange([0, highestPriceEth])
+        setDebouncedPriceRange([0, highestPriceEth])
 
         data.trades.forEach((trade: Trade) => {
           if (trade.status === "Sold" && trade.txid) {
-            scheduleDelayedDeletion(trade.tradeid, trade.txid);
+            scheduleDelayedDeletion(trade.tradeid, trade.txid)
           }
-        });
+        })
       } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Error fetching data");
+        console.error("Error fetching data:", error)
+        setError("Error fetching data")
       } finally {
-        setIsLoading(false);
-        setIsRefreshing(false);
+        setIsLoading(false)
+        setIsRefreshing(false)
       }
-    };
+    }
 
-    fetchTrades();
+    fetchTrades()
 
     const subscription = supabase
       .channel("trade-changes")
@@ -98,65 +133,65 @@ export default function TradePage() {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "Trade", filter: "status=eq.Sold" },
         (payload) => {
-          const updatedTrade = payload.new as Trade;
+          const updatedTrade = payload.new as Trade
           if (updatedTrade.status === "Sold" && updatedTrade.txid) {
-            scheduleDelayedDeletion(updatedTrade.tradeid, updatedTrade.txid);
+            scheduleDelayedDeletion(updatedTrade.tradeid, updatedTrade.txid)
             setTrades((prevTrades) =>
               prevTrades.map((trade) =>
                 trade.tradeid === updatedTrade.tradeid
                   ? { ...trade, status: updatedTrade.status, txid: updatedTrade.txid }
                   : trade,
               ),
-            );
+            )
           }
         },
       )
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "Trade" }, (payload) => {
-        setTrades((prevTrades) => prevTrades.filter((trade) => trade.tradeid !== payload.old.tradeid));
+        setTrades((prevTrades) => prevTrades.filter((trade) => trade.tradeid !== payload.old.tradeid))
       })
-      .subscribe();
+      .subscribe()
 
     return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
+      supabase.removeChannel(subscription)
+    }
+  }, [])
 
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
   // Debounce price range
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedPriceRange(priceRange);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [priceRange]);
+      setDebouncedPriceRange(priceRange)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [priceRange])
 
   // Update active filters
   useEffect(() => {
-    const newActiveFilters: string[] = [];
+    const newActiveFilters: string[] = []
 
     if (sortField !== "name" || sortOrder !== "asc") {
-      newActiveFilters.push(getSortLabel(sortField, sortOrder));
+      newActiveFilters.push(getSortLabel(sortField, sortOrder))
     }
 
     if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < maxPriceValue) {
       newActiveFilters.push(
         `Price: ${formatEthNumber(debouncedPriceRange[0])} - ${debouncedPriceRange[1] === maxPriceValue ? "Max" : formatEthNumber(debouncedPriceRange[1])} ETH`,
-      );
+      )
     }
 
     if (statusFilter !== "all") {
-      newActiveFilters.push(`Status: ${statusFilter}`);
+      newActiveFilters.push(`Status: ${statusFilter}`)
     }
 
-    setActiveFilters(newActiveFilters);
-  }, [sortField, sortOrder, debouncedPriceRange, statusFilter, maxPriceValue]);
+    setActiveFilters(newActiveFilters)
+  }, [sortField, sortOrder, debouncedPriceRange, statusFilter, maxPriceValue])
 
   const scheduleDelayedDeletion = async (tradeid: string, txid: string) => {
     try {
@@ -164,31 +199,31 @@ export default function TradePage() {
         .from("Transaction")
         .select("timestamp")
         .eq("txid", txid)
-        .single();
+        .single()
 
       if (transactionError || !transactionData) {
-        console.error("Failed to fetch transaction:", transactionError?.message);
-        return;
+        console.error("Failed to fetch transaction:", transactionError?.message)
+        return
       }
 
-      const transactionTimestamp = new Date(transactionData.timestamp).getTime();
-      const currentTime = new Date().getTime();
-      const DELETION_DELAY_MS = 1800000; // 30 minutes
-      const timeElapsed = currentTime - transactionTimestamp;
-      const remainingDelay = Math.max(DELETION_DELAY_MS - timeElapsed, 0);
+      const transactionTimestamp = new Date(transactionData.timestamp).getTime()
+      const currentTime = new Date().getTime()
+      const DELETION_DELAY_MS = 1800000 // 30 minutes
+      const timeElapsed = currentTime - transactionTimestamp
+      const remainingDelay = Math.max(DELETION_DELAY_MS - timeElapsed, 0)
 
       if (timeElapsed >= DELETION_DELAY_MS) {
-        console.log(`Trade ${tradeid} delay has passed. Deleting immediately.`);
-        const { error: deleteError } = await supabase.from("Trade").delete().eq("tradeid", tradeid);
+        console.log(`Trade ${tradeid} delay has passed. Deleting immediately.`)
+        const { error: deleteError } = await supabase.from("Trade").delete().eq("tradeid", tradeid)
         if (deleteError) {
-          console.error("Failed to delete trade:", deleteError.message);
+          console.error("Failed to delete trade:", deleteError.message)
         } else {
-          setTrades((prevTrades) => prevTrades.filter((t) => t.tradeid !== tradeid));
+          setTrades((prevTrades) => prevTrades.filter((t) => t.tradeid !== tradeid))
         }
-        return;
+        return
       }
 
-      console.log(`Scheduling deletion for trade ${tradeid} in ${remainingDelay / 1000} seconds`);
+      console.log(`Scheduling deletion for trade ${tradeid} in ${remainingDelay / 1000} seconds`)
 
       setTimeout(async () => {
         try {
@@ -196,120 +231,142 @@ export default function TradePage() {
             .from("Trade")
             .select("status")
             .eq("tradeid", tradeid)
-            .single();
+            .single()
 
           if (tradeStatusError || !tradeStatusData) {
-            console.error("Failed to fetch trade status:", tradeStatusError?.message);
-            return;
+            console.error("Failed to fetch trade status:", tradeStatusError?.message)
+            return
           }
 
           if (tradeStatusData.status !== "Sold") {
-            console.log(`Trade ${tradeid} is no longer "Sold" (status: ${tradeStatusData.status}). Skipping deletion.`);
-            return;
+            console.log(`Trade ${tradeid} is no longer "Sold" (status: ${tradeStatusData.status}). Skipping deletion.`)
+            return
           }
 
-          const { error: deleteError } = await supabase.from("Trade").delete().eq("tradeid", tradeid);
+          const { error: deleteError } = await supabase.from("Trade").delete().eq("tradeid", tradeid)
 
           if (deleteError) {
-            console.error("Failed to delete trade:", deleteError.message);
+            console.error("Failed to delete trade:", deleteError.message)
           } else {
-            console.log(`Trade ${tradeid} deleted after ${DELETION_DELAY_MS / 1000} seconds`);
-            setTrades((prevTrades) => prevTrades.filter((t) => t.tradeid !== tradeid));
+            console.log(`Trade ${tradeid} deleted after ${DELETION_DELAY_MS / 1000} seconds`)
+            setTrades((prevTrades) => prevTrades.filter((t) => t.tradeid !== tradeid))
           }
         } catch (err) {
-          console.error("Error in delayed deletion:", err);
+          console.error("Error in delayed deletion:", err)
         }
-      }, remainingDelay);
+      }, remainingDelay)
     } catch (err) {
-      console.error("Error scheduling deletion:", err);
+      console.error("Error scheduling deletion:", err)
     }
-  };
+  }
 
   // Helper function to get sort label
   const getSortLabel = (field: "name" | "price", order: "asc" | "desc"): string => {
     const fieldLabels: Record<"name" | "price", string> = {
       name: "Name",
       price: "Price",
-    };
-    return `${fieldLabels[field]} (${order === "asc" ? "Low to High" : "High to Low"})`;
-  };
+    }
+    return `${fieldLabels[field]} (${order === "asc" ? "Low to High" : "High to Low"})`
+  }
 
   // Format the last updated time
   const getLastUpdatedText = () => {
-    if (!lastUpdated) return "never";
+    if (!lastUpdated) return "never"
 
     // If it's less than a minute ago, show "just now"
-    const diffMs = Date.now() - lastUpdated.getTime();
-    if (diffMs < 60000) return "just now";
+    const diffMs = Date.now() - lastUpdated.getTime()
+    if (diffMs < 60000) return "just now"
 
     // Otherwise show the time
-    return lastUpdated.toLocaleTimeString();
-  };
+    return lastUpdated.toLocaleTimeString()
+  }
 
   // Helper function to format ETH numbers with 2 decimal places
   function formatEthNumber(num: number): string {
     return num.toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    });
+    })
   }
 
   // Handle sort toggle
   const handleSort = (field: "name" | "price") => {
     if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
     } else {
-      setSortField(field);
-      setSortOrder("desc"); // Default to descending when changing fields
+      setSortField(field)
+      setSortOrder("desc") // Default to descending when changing fields
     }
-  };
+  }
 
   // Get sort icon
   const getSortIcon = (field: "name" | "price") => {
-    if (sortField !== field) return null;
-    return sortOrder === "asc" ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />;
-  };
+    if (sortField !== field) return null
+    return sortOrder === "asc" ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />
+  }
 
   // Clear a specific filter
   const clearFilter = (filter: string) => {
     if (filter.startsWith("Price:")) {
-      setPriceRange([0, maxPriceValue]);
+      setPriceRange([0, maxPriceValue])
     } else if (filter.startsWith("Status:")) {
-      setStatusFilter("all");
+      setStatusFilter("all")
     } else {
       // It's a sort filter
-      setSortField("name");
-      setSortOrder("asc");
+      setSortField("name")
+      setSortOrder("asc")
     }
-  };
+  }
 
   // Clear all filters
   const clearAllFilters = () => {
-    setPriceRange([0, maxPriceValue]);
-    setSortField("name");
-    setSortOrder("asc");
-    setStatusFilter("all");
-    setSearchTerm("");
-  };
+    setPriceRange([0, maxPriceValue])
+    setSortField("name")
+    setSortOrder("asc")
+    setStatusFilter("all")
+    setSearchTerm("")
+  }
 
   // Refresh trades
   const refreshTrades = async () => {
     try {
-      setIsRefreshing(true);
-      const response = await fetch("/api/trade");
+      setIsRefreshing(true)
+      const response = await fetch("/api/trade")
       if (!response.ok) {
-        throw new Error("Network response was not ok");
+        throw new Error("Network response was not ok")
       }
-      const data = await response.json();
-      setTrades(data.trades);
-      setLastUpdated(new Date());
+      const data = await response.json()
+      setTrades(data.trades)
+      setLastUpdated(new Date())
     } catch (error) {
-      console.error("Error refreshing data:", error);
-      setError("Error refreshing data");
+      console.error("Error refreshing data:", error)
+      setError("Error refreshing data")
     } finally {
-      setIsRefreshing(false);
+      setIsRefreshing(false)
     }
-  };
+  }
+
+  // Handle opening the asset detail modal
+  const handleOpenTradeDetail = (trade: Trade) => {
+    console.log("Opening modal with trade:", trade)
+    setSelectedTrade(trade)
+    setIsModalOpen(true)
+  }
+
+  // Handle buy button click
+  const handleBuyClick = (e: React.MouseEvent, trade: Trade) => {
+    e.stopPropagation() // Prevent the row click from triggering
+    const loggedInUserId = localStorage.getItem("userid")
+    if (localStorage.getItem("isLoggedIn") === "false") {
+      router.push("/login")
+    } else if (loggedInUserId && loggedInUserId === trade.userid) {
+      alert("You can't buy the asset that you sell.")
+    } else {
+      router.push(
+        `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`,
+      )
+    }
+  }
 
   // Filter and sort trades
   const filteredAndSortedTrades = useMemo(() => {
@@ -318,24 +375,24 @@ export default function TradePage() {
       const matchesSearch =
         debouncedSearchTerm === "" ||
         trade.symbol.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        trade.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+        trade.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
 
-      const matchesPrice = trade.price >= debouncedPriceRange[0] && trade.price <= debouncedPriceRange[1];
+      const matchesPrice = trade.price >= debouncedPriceRange[0] && trade.price <= debouncedPriceRange[1]
 
-      const matchesStatus = statusFilter === "all" || trade.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || trade.status === statusFilter
 
-      return matchesSearch && matchesPrice && matchesStatus;
-    });
+      return matchesSearch && matchesPrice && matchesStatus
+    })
 
     // Then sort the filtered trades
     return filtered.sort((a, b) => {
       if (sortField === "name") {
-        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
       } else {
-        return sortOrder === "asc" ? a.price - b.price : b.price - a.price;
+        return sortOrder === "asc" ? a.price - b.price : b.price - a.price
       }
-    });
-  }, [trades, debouncedSearchTerm, debouncedPriceRange, statusFilter, sortField, sortOrder]);
+    })
+  }, [trades, debouncedSearchTerm, debouncedPriceRange, statusFilter, sortField, sortOrder])
 
   if (isLoading) {
     return (
@@ -346,7 +403,7 @@ export default function TradePage() {
           </div>
         </div>
       </Layout>
-    );
+    )
   }
 
   if (error) {
@@ -370,7 +427,7 @@ export default function TradePage() {
           </Card>
         </div>
       </Layout>
-    );
+    )
   }
 
   if (trades.length === 0) {
@@ -394,7 +451,7 @@ export default function TradePage() {
           </Card>
         </div>
       </Layout>
-    );
+    )
   }
 
   return (
@@ -406,7 +463,10 @@ export default function TradePage() {
 
           <CardHeader className="relative">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-white">Trade Market</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-2xl font-bold text-white">
+                <Zap className="w-5 h-5 text-blue-400" />
+                Trade Market
+              </CardTitle>
               <div className="flex items-center gap-3">
                 <div className="text-sm text-gray-400">
                   {filteredAndSortedTrades.length} of {trades.length} trades
@@ -498,7 +558,7 @@ export default function TradePage() {
                             max={maxPriceValue}
                             step={maxPriceValue / 100}
                             onValueChange={(newValue) => {
-                              setPriceRange([newValue[0], newValue[1]]);
+                              setPriceRange([newValue[0], newValue[1]])
                             }}
                             className="[&>span:first-child]:bg-blue-500 [&>span:first-child]:h-2 [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white [&_[role=slider]]:hover:shadow-glow-sm"
                           />
@@ -539,8 +599,8 @@ export default function TradePage() {
                         size="sm"
                         className="w-full mt-2 border-gray-700 text-white hover:bg-[#243860] hover:border-blue-500/30 transition-all"
                         onClick={() => {
-                          clearAllFilters();
-                          setIsFilterOpen(false);
+                          clearAllFilters()
+                          setIsFilterOpen(false)
                         }}
                       >
                         Reset All Filters
@@ -610,19 +670,20 @@ export default function TradePage() {
                     filteredAndSortedTrades.map((trade) => (
                       <TableRow
                         key={trade.tradeid}
-                        className={`transition-all duration-200 border-b border-blue-500/10 hover:bg-[#1a2b4b]/50 ${hoveredRow === trade.tradeid ? "bg-[#1a2b4b]/30 shadow-glow-sm" : ""}`}
+                        className={`transition-all duration-200 border-b border-blue-500/10 hover:bg-[#1a2b4b]/50 cursor-pointer ${hoveredRow === trade.tradeid ? "bg-[#1a2b4b]/30 shadow-glow-sm" : ""}`}
                         onMouseEnter={() => setHoveredRow(trade.tradeid)}
                         onMouseLeave={() => setHoveredRow(null)}
+                        onClick={() => handleOpenTradeDetail(trade)}
                       >
                         <TableCell className="text-white">
-                          <div className="relative w-12 h-12 overflow-hidden rounded-md border border-blue-500/20 hover:border-blue-400/50 transition-all">
+                          <div className="relative w-12 h-12 overflow-hidden transition-all border rounded-md border-blue-500/20 hover:border-blue-400/50">
                             <Image
                               src={trade.img || "/placeholder.svg"}
                               alt={`${trade.name} preview`}
                               fill
                               className="object-contain rounded-sm"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/placeholder.svg";
+                                ;(e.target as HTMLImageElement).src = "/placeholder.svg"
                               }}
                             />
                           </div>
@@ -646,40 +707,31 @@ export default function TradePage() {
                         </TableCell>
                         <TableCell className="text-right align-middle">
                           {trade.status === "Sold" ? (
-                            <Badge variant="secondary" className="px-2 py-1 text-black bg-gray-200 rounded">
-                              Sold
-                            </Badge>
+                            <motion.div whileHover={{ scale: 1.05 }} className="inline-block">
+                              <Badge
+                                variant="secondary"
+                                className="relative px-3 py-1 overflow-hidden text-white rounded-lg shadow-md group bg-gradient-to-br from-gray-500 to-gray-700"
+                              >
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                  <CheckCircle className="h-3.5 w-3.5 text-gray-300" />
+                                  Sold
+                                </span>
+                                <span className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-br from-gray-600 to-gray-800 group-hover:opacity-100"></span>
+                              </Badge>
+                            </motion.div>
                           ) : (
-                            <Button
-                              onClick={() => {
-                                const loggedInUserId = localStorage.getItem("userid");
-                                if (localStorage.getItem("isLoggedIn") === "false") {
-                                  router.push("/login");
-                                } else if (loggedInUserId && loggedInUserId === trade.userid) {
-                                  alert("You can't buy the asset that you sell.");
-                                } else {
-                                  router.push(
-                                    `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`,
-                                  );
-                                }
-                              }}
-                              className="relative group overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white font-medium px-3 py-1 rounded-lg shadow-lg hover:shadow-blue-500/40 transition-all duration-300 hover:-translate-y-1"
+                            <motion.button
+                              onClick={(e) => handleBuyClick(e, trade)}
+                              whileHover={{ scale: 1.05, y: -2 }}
+                              whileTap={{ scale: 0.98 }}
+                              className="relative group overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white font-medium px-4 py-1.5 rounded-lg shadow-lg hover:shadow-blue-500/40 transition-all duration-300"
                             >
                               <span className="relative z-10 flex items-center justify-center gap-2">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
+                                <Zap className="w-2 h-2 transition-transform duration-300 group-hover:rotate-12" />
                                 Buy
                               </span>
-                              <span className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                            </Button>
+                              <span className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 group-hover:opacity-100"></span>
+                            </motion.button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -709,6 +761,14 @@ export default function TradePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Asset Detail Modal */}
+            <AssetDetailModal
+              trade={selectedTrade}
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
     </Layout>
-  );
+  )
 }
+

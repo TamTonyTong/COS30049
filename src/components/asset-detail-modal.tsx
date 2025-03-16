@@ -176,13 +176,13 @@ export default function AssetDetailModal({ asset, isOpen, onClose }: AssetDetail
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[650px] p-0 bg-[#0d1829] border-blue-500/30 text-white overflow-hidden">
+      <DialogContent className="sm:max-w-[500px] p-0 bg-[#0d1829] border-blue-500/30 text-white overflow-hidden">
         <div className="relative">
           {/* Animated background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-indigo-900/20 to-purple-900/20 animate-gradient-slow"></div>
 
           {/* NFT Image Display with loading animation */}
-          <div className="relative w-full h-[300px] sm:h-[350px] overflow-hidden group">
+          <div className="relative w-full h-[200px] sm:h-[250px] overflow-hidden group">
             {/* Shimmer loading effect */}
             {imageStatus === 'loading' && (
               <div className="absolute inset-0 bg-gradient-to-r from-[#0d1829] via-[#1a2b4b] to-[#0d1829] bg-[length:400%_100%] animate-shimmer"></div>

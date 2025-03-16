@@ -42,6 +42,7 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHoveringBuy, setIsHoveringBuy] = useState(false);
   const [creatorMetawallet, setCreatorMetawallet] = useState<string>("Unknown");
+  const [ownerMetawallet, setOwnerMetawallet] = useState<string>("Unknown");
 
   // Fetch creator metawallet
   const fetchCreatorMetawallet = async () => {
@@ -70,6 +71,45 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
     }
   };
 
+  const fetchOwner = async () => {
+    if (!trade?.walletid) {
+      setOwnerMetawallet("Unknown");
+      return;
+    }
+    try {
+      // First get the Wallet record
+      const { data: walletData, error: walletError } = await supabase
+        .from('Wallet')
+        .select('userid')
+        .eq('walletid', trade.walletid)
+        .single();
+
+      if (walletError || !walletData) {
+        console.warn('Error fetching wallet:', walletError?.message);
+        setOwnerMetawallet("Unknown");
+        return;
+      }
+
+      // Then get the User's metawallet
+      const { data: userData, error: userError } = await supabase
+        .from('User')
+        .select('metawallet')
+        .eq('userid', walletData.userid)
+        .single();
+
+      if (userError || !userData) {
+        console.warn('Error fetching owner user:', userError?.message);
+        setOwnerMetawallet("Unknown");
+        return;
+      }
+
+      setOwnerMetawallet(userData.metawallet || "Unknown");
+    } catch (err) {
+      console.error('Error fetching owner:', err);
+      setOwnerMetawallet("Unknown");
+    }
+  };
+
   useEffect(() => {
     if (isOpen && trade) {
       setImageLoaded(false);
@@ -79,6 +119,12 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
         setCreatorMetawallet(trade.creatorMetawallet);
       } else {
         fetchCreatorMetawallet();
+      }
+      // Fetch owner if not available in trade data
+      if (trade.owner) {
+        setOwnerMetawallet(trade.owner);
+      } else {
+        fetchOwner();
       }
     }
   }, [isOpen, trade]);
@@ -107,24 +153,24 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
   // Format the createdat timestamp if available
   const createdTimestamp = trade.createdat
     ? (() => {
-        console.log("Raw createdat:", trade.createdat);
-        console.log("Type of createdat:", typeof trade.createdat);
-        try {
-          const date = new Date(trade.createdat!);
-          console.log("Parsed Date:", date);
-          return date.toLocaleString("en-US", {
-            month: "numeric",
-            day: "numeric",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          });
-        } catch (e) {
-          console.error("Error parsing date:", e);
-          return "Unknown";
-        }
-      })()
+      console.log("Raw createdat:", trade.createdat);
+      console.log("Type of createdat:", typeof trade.createdat);
+      try {
+        const date = new Date(trade.createdat!);
+        console.log("Parsed Date:", date);
+        return date.toLocaleString("en-US", {
+          month: "numeric",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+      } catch (e) {
+        console.error("Error parsing date:", e);
+        return "Unknown";
+      }
+    })()
     : "Unknown";
 
   return (
@@ -257,7 +303,7 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
                   <User className="w-4 h-4 mt-0.5 text-blue-400 shrink-0" />
                   <div>
                     <p className="leading-relaxed text-gray-300">
-                      The current owner of this asset is {trade.owner || trade.metawallet || "Unknown"}.
+                      The current owner of this asset is {ownerMetawallet}.
                     </p>
                   </div>
                 </motion.div>
@@ -321,20 +367,20 @@ export default function AssetDetailModal({ trade, isOpen, onClose }: AssetDetail
                 animate={
                   isAvailable
                     ? {
-                        boxShadow: [
-                          "0 0 0 rgba(59, 130, 246, 0)",
-                          "0 0 10px rgba(59, 130, 246, 0.3)",
-                          "0 0 0 rgba(59, 130, 246, 0)",
-                        ],
-                      }
+                      boxShadow: [
+                        "0 0 0 rgba(59, 130, 246, 0)",
+                        "0 0 10px rgba(59, 130, 246, 0.3)",
+                        "0 0 0 rgba(59, 130, 246, 0)",
+                      ],
+                    }
                     : {}
                 }
                 transition={
                   isAvailable
                     ? {
-                        boxShadow: { repeat: Number.POSITIVE_INFINITY, duration: 2 },
-                        scale: { duration: 0.2 },
-                      }
+                      boxShadow: { repeat: Number.POSITIVE_INFINITY, duration: 2 },
+                      scale: { duration: 0.2 },
+                    }
                     : {}
                 }
                 className="relative w-full py-2 overflow-hidden font-medium text-white transition-all duration-300 rounded-lg shadow-lg group bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 hover:shadow-blue-500/40"

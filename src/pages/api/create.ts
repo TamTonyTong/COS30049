@@ -37,14 +37,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (assetError) throw assetError;
         insertedData = assetData;
 
-        // Insert into Wallet table with all required fields
+        // Insert into Wallet table with required fields only
         const walletData = {
-          userid: userId, // The initial owner is the creator (this field name might still be correct depending on your schema)
+          userid: userId, // The initial owner is the creator
           assetid: data.assetid,
           address: `addr_${userId}_${data.assetid}`, // Example address; adjust as needed
-          nonce: 0, // Default nonce
           quantity: 1, // Default quantity
-          lockedbalance: 0, // Default locked balance
           lastupdated: new Date().toISOString(), // Current timestamp
         };
         const { data: walletDataResult, error: walletError } = await supabase

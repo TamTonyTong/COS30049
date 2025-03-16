@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
@@ -17,10 +19,24 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
 import { Slider } from "@/src/components/ui/slider";
-import { RefreshCw, Info, Search, X, SlidersHorizontal, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  RefreshCw,
+  Info,
+  Search,
+  X,
+  SlidersHorizontal,
+  ArrowUp,
+  ArrowDown,
+  Zap,
+  CheckCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Layout from "../../components/layout";
 import Image from "next/image";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { motion } from "framer-motion";
+import AssetDetailModal from "@/src/components/asset-detail-modal-trade";
 
 export default function TradePage() {
   interface Trade {
@@ -36,6 +52,18 @@ export default function TradePage() {
     pricehistoryid: string;
     walletid: string;
     txid: string | null;
+    description?: string;
+    owner?: string;
+    collection?: string;
+    attributes?: Array<{
+      trait_type: string;
+      value: string;
+    }>;
+    createdat?: string;
+    tokenId?: string;
+    blockchain?: string;
+    creatorid?: string;
+    creatorMetawallet?: string;
   }
 
   const router = useRouter();
@@ -45,6 +73,8 @@ export default function TradePage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -67,11 +97,16 @@ export default function TradePage() {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setTrades(data.trades);
+        console.log("API response:", data); // Debug log
+        setTrades(data.trades || []); // Ensure trades is an array
+
         setLastUpdated(new Date());
 
         // Find the highest ETH price for filter range
-        const highestPriceEth = Math.ceil(Math.max(...data.trades.map((t: Trade) => t.price)) * 1.2) || 10;
+        const highestPriceEth =
+          data.trades && data.trades.length > 0
+            ? Math.ceil(Math.max(...data.trades.map((t: Trade) => t.price)) * 1.2) || 10
+            : 10;
         setMaxPriceValue(highestPriceEth);
         setPriceRange([0, highestPriceEth]);
         setDebouncedPriceRange([0, highestPriceEth]);
@@ -147,7 +182,9 @@ export default function TradePage() {
 
     if (debouncedPriceRange[0] > 0 || debouncedPriceRange[1] < maxPriceValue) {
       newActiveFilters.push(
-        `Price: ${formatEthNumber(debouncedPriceRange[0])} - ${debouncedPriceRange[1] === maxPriceValue ? "Max" : formatEthNumber(debouncedPriceRange[1])} ETH`,
+        `Price: ${formatEthNumber(debouncedPriceRange[0])} - ${
+          debouncedPriceRange[1] === maxPriceValue ? "Max" : formatEthNumber(debouncedPriceRange[1])
+        } ETH`,
       );
     }
 
@@ -205,7 +242,9 @@ export default function TradePage() {
           }
 
           if (tradeStatusData.status !== "Sold") {
-            console.log(`Trade ${tradeid} is no longer "Sold" (status: ${tradeStatusData.status}). Skipping deletion.`);
+            console.log(
+              `Trade ${tradeid} is no longer "Sold" (status: ${tradeStatusData.status}). Skipping deletion.`,
+            );
             return;
           }
 
@@ -303,13 +342,35 @@ export default function TradePage() {
         throw new Error("Network response was not ok");
       }
       const data = await response.json();
-      setTrades(data.trades);
+      setTrades(data.trades || []);
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Error refreshing data:", error);
       setError("Error refreshing data");
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  // Handle opening the asset detail modal
+  const handleOpenTradeDetail = (trade: Trade) => {
+    console.log("Trade object being passed to modal:", trade); // Debug log
+    setSelectedTrade(trade);
+    setIsModalOpen(true);
+  };
+
+  // Handle buy button click
+  const handleBuyClick = (e: React.MouseEvent, trade: Trade) => {
+    e.stopPropagation(); // Prevent the row click from triggering
+    const loggedInUserId = localStorage.getItem("userid");
+    if (localStorage.getItem("isLoggedIn") === "false") {
+      router.push("/login");
+    } else if (loggedInUserId && loggedInUserId === trade.userid) {
+      alert("You can't buy the asset that you sell.");
+    } else {
+      router.push(
+        `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`,
+      );
     }
   };
 
@@ -408,7 +469,10 @@ export default function TradePage() {
 
           <CardHeader className="relative">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-white">Trade Market</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-2xl font-bold text-white">
+                <Zap className="w-5 h-5 text-blue-400" />
+                Trade Market
+              </CardTitle>
               <div className="flex items-center gap-3">
                 <div className="text-sm text-gray-400">
                   {filteredAndSortedTrades.length} of {trades.length} trades
@@ -584,7 +648,9 @@ export default function TradePage() {
             <div className="relative overflow-x-auto border rounded-md border-blue-500/20">
               {/* Table glow effect on hover */}
               <div
-                className={`absolute inset-0 opacity-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-blue-500/5 pointer-events-none transition-opacity duration-500 ${hoveredRow ? "opacity-100" : ""}`}
+                className={`absolute inset-0 opacity-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-blue-500/5 pointer-events-none transition-opacity duration-500 ${
+                  hoveredRow ? "opacity-100" : ""
+                }`}
               ></div>
 
               <Table>
@@ -612,12 +678,15 @@ export default function TradePage() {
                     filteredAndSortedTrades.map((trade) => (
                       <TableRow
                         key={trade.tradeid}
-                        className={`transition-all duration-200 border-b border-blue-500/10 hover:bg-[#1a2b4b]/50 ${hoveredRow === trade.tradeid ? "bg-[#1a2b4b]/30 shadow-glow-sm" : ""}`}
+                        className={`transition-all duration-200 border-b border-blue-500/10 hover:bg-[#1a2b4b]/50 cursor-pointer ${
+                          hoveredRow === trade.tradeid ? "bg-[#1a2b4b]/30 shadow-glow-sm" : ""
+                        }`}
                         onMouseEnter={() => setHoveredRow(trade.tradeid)}
                         onMouseLeave={() => setHoveredRow(null)}
+                        onClick={() => handleOpenTradeDetail(trade)}
                       >
                         <TableCell className="text-white">
-                          <div className="relative w-12 h-12 overflow-hidden rounded-md border border-blue-500/20 hover:border-blue-400/50 transition-all">
+                          <div className="relative w-12 h-12 overflow-hidden transition-all border rounded-md border-blue-500/20 hover:border-blue-400/50">
                             <Image
                               src={trade.img || "/placeholder.svg"}
                               alt={`${trade.name} preview`}
@@ -648,40 +717,31 @@ export default function TradePage() {
                         </TableCell>
                         <TableCell className="text-right align-middle">
                           {trade.status === "Sold" ? (
-                            <Badge variant="secondary" className="px-2 py-1 text-black bg-gray-200 rounded">
-                              Sold
-                            </Badge>
+                            <motion.div whileHover={{ scale: 1.05 }} className="inline-block">
+                              <Badge
+                                variant="secondary"
+                                className="relative px-3 py-1 overflow-hidden text-white rounded-lg shadow-md group bg-gradient-to-br from-gray-500 to-gray-700"
+                              >
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                  <CheckCircle className="h-3.5 w-3.5 text-gray-300" />
+                                  Sold
+                                </span>
+                                <span className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-br from-gray-600 to-gray-800 group-hover:opacity-100"></span>
+                              </Badge>
+                            </motion.div>
                           ) : (
-                            <Button
-                              onClick={() => {
-                                const loggedInUserId = localStorage.getItem("userid");
-                                if (localStorage.getItem("isLoggedIn") === "false") {
-                                  router.push("/login");
-                                } else if (loggedInUserId && loggedInUserId === trade.userid) {
-                                  alert("You can't buy the asset that you sell.");
-                                } else {
-                                  router.push(
-                                    `/markets/buy?tradeid=${trade.tradeid}&userid=${trade.userid}&metawallet=${trade.metawallet}&pricehistoryid=${trade.pricehistoryid}&price=${trade.price}&walletid=${trade.walletid}`,
-                                  );
-                                }
-                              }}
-                              className="relative group overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white font-medium px-3 py-1 rounded-lg shadow-lg hover:shadow-blue-500/40 transition-all duration-300 hover:-translate-y-1"
+                            <motion.button
+                              onClick={(e) => handleBuyClick(e, trade)}
+                              whileHover={{ scale: 1.05, y: -2 }}
+                              whileTap={{ scale: 0.98 }}
+                              className="relative group overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white font-medium px-4 py-1.5 rounded-lg shadow-lg hover:shadow-blue-500/40 transition-all duration-300"
                             >
                               <span className="relative z-10 flex items-center justify-center gap-2">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
+                                <Zap className="w-2 h-2 transition-transform duration-300 group-hover:rotate-12" />
                                 Buy
                               </span>
-                              <span className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                            </Button>
+                              <span className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 group-hover:opacity-100"></span>
+                            </motion.button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -711,6 +771,9 @@ export default function TradePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Asset Detail Modal */}
+      <AssetDetailModal trade={selectedTrade} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </Layout>
   );
 }

@@ -51,18 +51,20 @@ export default function Header() {
 
   return (
     <motion.header
-      className={`sticky top-0 z-50 py-4 px-6 transition-all duration-300 ${
-        isScrolled ? "bg-[#0d1829]/95 backdrop-blur-md shadow-lg" : "shadow-blue-500/20 transition duration-300 hover:shadow-blue-400/30"
+      className={`sticky top-0 z-50 px-6 py-4 transition-all duration-300 ${
+        isScrolled
+          ? "bg-[#0d1829]/95 shadow-lg backdrop-blur-md"
+          : "shadow-blue-500/20 transition duration-300 hover:shadow-blue-400/30"
       }`}
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
-      <nav className="relative flex items-center justify-between mx-auto max-w-7xl">
+      <nav className="relative mx-auto flex max-w-7xl items-center justify-between">
         <div className="z-20 flex items-center">
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="group flex items-center gap-2">
             <motion.div
-              className="flex items-center justify-center w-10 h-10 text-white rounded-lg bg-gradient-to-br from-blue-500 to-cyan-300"
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-300 text-white"
               whileHover={{ scale: 1.05, rotate: 5 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
@@ -114,7 +116,7 @@ export default function Header() {
         </div>
 
         {/* Centered Desktop Navigation */}
-        <div className="absolute z-10 hidden transform -translate-x-1/2 left-1/2 md:block">
+        <div className="absolute left-1/2 z-10 hidden -translate-x-1/2 transform md:block">
           <motion.div
             className="rounded-full bg-[#1a2b4b] px-6 py-2"
             initial={{ opacity: 0, y: -20 }}
@@ -132,7 +134,7 @@ export default function Header() {
                 >
                   <Link
                     href={item.href}
-                    className={`hover:text-white transition-colors relative ${
+                    className={`relative transition-colors hover:text-white ${
                       pathname === item.href ? "text-white" : ""
                     }`}
                   >
@@ -154,28 +156,12 @@ export default function Header() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="flex items-center transition-colors hover:text-white">
-                      More <ChevronDown className="w-4 h-4 ml-1" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem>
-                        <Link href="/walletscan" className="w-full">
-                          Wallet Tracking
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Link href="/transactiondb" className="w-full">
-                          Transactions Graph
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Link href="/transaction_explorer" className="w-full">
-                          Transactions Graph Real
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Link
+                    href="/transaction_explorer"
+                    className="transition-colors hover:text-white"
+                  >
+                    Transactions Explorer
+                  </Link>
                 </motion.li>
               )}
             </ul>
@@ -183,7 +169,7 @@ export default function Header() {
         </div>
 
         {/* Auth buttons */}
-        <div className="z-20 items-center hidden gap-4 md:flex">
+        <div className="z-20 hidden items-center gap-4 md:flex">
           {isLoggedIn ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -202,7 +188,10 @@ export default function Header() {
                 whileHover={{ scale: 1.05 }}
               >
                 <Link href="/signup">
-                  <Button variant="ghost" className="text-white hover:bg-[#1a2b4b] hover:text-white">
+                  <Button
+                    variant="ghost"
+                    className="text-white hover:bg-[#1a2b4b] hover:text-white"
+                  >
                     Sign Up
                   </Button>
                 </Link>
@@ -214,7 +203,10 @@ export default function Header() {
                 whileHover={{ scale: 1.05 }}
               >
                 <Link href="/login">
-                  <Button variant="secondary" className="bg-[#1a2b4b] text-white hover:bg-[#243860]">
+                  <Button
+                    variant="secondary"
+                    className="bg-[#1a2b4b] text-white hover:bg-[#243860]"
+                  >
                     Login
                   </Button>
                 </Link>
@@ -228,7 +220,7 @@ export default function Header() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            className="md:hidden absolute top-full left-0 right-0 bg-[#0d1829]/95 backdrop-blur-md"
+            className="absolute left-0 right-0 top-full bg-[#0d1829]/95 backdrop-blur-md md:hidden"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -245,8 +237,8 @@ export default function Header() {
                   >
                     <Link
                       href={item.href}
-                      className={`block py-2 hover:text-white transition-colors ${
-                        pathname === item.href ? "text-white font-medium" : ""
+                      className={`block py-2 transition-colors hover:text-white ${
+                        pathname === item.href ? "font-medium text-white" : ""
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
@@ -287,18 +279,24 @@ export default function Header() {
                 )}
               </ul>
 
-              <div className="flex flex-col gap-3 mt-6">
+              <div className="mt-6 flex flex-col gap-3">
                 {isLoggedIn ? (
                   <UserNav />
                 ) : (
                   <>
                     <Link href="/signup" className="w-full">
-                      <Button variant="ghost" className="w-full text-white hover:bg-[#1a2b4b] hover:text-white">
+                      <Button
+                        variant="ghost"
+                        className="w-full text-white hover:bg-[#1a2b4b] hover:text-white"
+                      >
                         Sign Up
                       </Button>
                     </Link>
                     <Link href="/login" className="w-full">
-                      <Button variant="secondary" className="w-full bg-[#1a2b4b] text-white hover:bg-[#243860]">
+                      <Button
+                        variant="secondary"
+                        className="w-full bg-[#1a2b4b] text-white hover:bg-[#243860]"
+                      >
                         Login
                       </Button>
                     </Link>

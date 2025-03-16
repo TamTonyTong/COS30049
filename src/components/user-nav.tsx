@@ -54,9 +54,9 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
             className="relative flex items-center gap-2 px-3 py-2 transition-all rounded-full hover:bg-[#1a2b4b] group"
           >
             <div className="relative">
-              <Avatar className="w-8 h-8 border-2 border-blue-500/30 group-hover:border-blue-400 transition-colors">
+              <Avatar className="w-8 h-8 transition-colors border-2 border-blue-500/30 group-hover:border-blue-400">
                 <AvatarImage src="/avatars/professional-avatar.png" alt="@username" />
-                <AvatarFallback className="bg-blue-500/20 text-blue-400">
+                <AvatarFallback className="text-blue-400 bg-blue-500/20">
                   <User className="w-4 h-4" />
                 </AvatarFallback>
               </Avatar>
@@ -80,7 +80,7 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <Avatar className="w-10 h-10 border-2 border-blue-500/50">
               <AvatarImage src="/avatars/professional-avatar.png" alt="@username" />
-              <AvatarFallback className="bg-blue-500/20 text-blue-400">
+              <AvatarFallback className="text-blue-400 bg-blue-500/20">
                 <User className="w-5 h-5" />
               </AvatarFallback>
             </Avatar>
@@ -93,14 +93,7 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
 
         <div className="p-2">
           <DropdownMenuGroup>
-            <Link href="/dashboard" className="w-full">
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-blue-500/20 focus:bg-blue-500/20">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10">
-                  <LayoutDashboard className="w-4 h-4 text-blue-400" />
-                </div>
-                <span>Dashboard</span>
-              </DropdownMenuItem>
-            </Link>
+            
 
             <Link href="/personal-assets" className="w-full">
               <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-blue-500/20 focus:bg-blue-500/20">
@@ -120,14 +113,7 @@ export function UserNav({ children }: { children?: React.ReactNode }) {
               </DropdownMenuItem>
             </Link>
 
-            <Link href="/settings" className="w-full">
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-blue-500/20 focus:bg-blue-500/20">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10">
-                  <Settings className="w-4 h-4 text-blue-400" />
-                </div>
-                <span>Settings</span>
-              </DropdownMenuItem>
-            </Link>
+            
           </DropdownMenuGroup>
         </div>
 

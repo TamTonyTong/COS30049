@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { isAddress } from "ethers";
-import TradingContractABI from "../../../../contracts/TradingContract.json";
+import TradingContractABI from "@/contracts/TradingContract.json";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";

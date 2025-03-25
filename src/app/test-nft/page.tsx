@@ -6,7 +6,7 @@ import platformNFTABI from "@/contracts/PlatformNFT.json";
 import { supabase } from "@/lib/supabaseClient";
 
 const ImportNFT = () => {
-  const PLATFORM_NFT_ADDRESS = "0xDEF..."; // Replace with your deployed address
+  const PLATFORM_NFT_ADDRESS = "0xe4d6664D5b191960273E9aE2eA698DA30FDF519f"; 
 
   useEffect(() => {
     const setupEventListener = async () => {
@@ -24,7 +24,7 @@ const ImportNFT = () => {
             const tokenIdStr = tokenId.toString();
             const tokenURI = await platformNFT.tokenURI(tokenId);
 
-            // Fetch additional metadata (optional, if tokenURI points to a JSON file)
+            // Fetch additional metadata
             let metadata: { name?: string } = {};
             try {
               const response = await fetch(tokenURI);
@@ -36,14 +36,13 @@ const ImportNFT = () => {
             // Import into Supabase
             const { data, error } = await supabase.from("Asset").insert({
               assetid: tokenIdStr,
-              full_name: metadata.name || `PlatformNFT #${tokenIdStr}`,
-              abbreviated_name: (metadata.name || `PNFT${tokenIdStr}`).slice(0, 3).toUpperCase(),
-              type: "NFT",
-              eth_pricing: "1.0", // Default price, can be updated later
-              owner: to,
-              mint: "", // Transaction hash not available in event listener, can be added separately
-              metadata: tokenURI,
-              contract_address: PLATFORM_NFT_ADDRESS
+              symbol: (metadata.name || `PNFT${tokenIdStr}`).slice(0, 3).toUpperCase(),
+              assettype: "NFT",
+              createdat: new Date().toISOString(),
+              isactive: true,
+              name: metadata.name || `PlatformNFT #${tokenIdStr}`,
+              creatorid: "0x6ED13c14F988C123b35fF37f260334CBA1e2C553", 
+              img: "https://xsowlfczzjfhklzphkbl.supabase.co/storage/v1/object/public/nft-img/07352823-cea3-464a-a951-b6dc3f37dce9.png"
             });
 
             if (error) {
@@ -62,7 +61,6 @@ const ImportNFT = () => {
 
     // Cleanup listener on component unmount
     return () => {
-      // Remove event listener (ethers.js handles this automatically in newer versions)
     };
   }, []);
 

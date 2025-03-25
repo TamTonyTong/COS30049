@@ -4,9 +4,10 @@ import { useEffect } from "react";
 import { ethers } from "ethers";
 import platformNFTABI from "@/contracts/PlatformNFT.json";
 import { supabase } from "@/lib/supabaseClient";
+import { v4 as uuidv4 } from "uuid"
 
 const ImportNFT = () => {
-  const PLATFORM_NFT_ADDRESS = "0xe4d6664D5b191960273E9aE2eA698DA30FDF519f"; 
+  const PLATFORM_NFT_ADDRESS = "0xe4d6664D5b191960273E9aE2eA698DA30FDF519f";
 
   useEffect(() => {
     const setupEventListener = async () => {
@@ -33,16 +34,19 @@ const ImportNFT = () => {
               console.error("Error fetching metadata:", error);
             }
 
+            const assetId = uuidv4()
+
             // Import into Supabase
             const { data, error } = await supabase.from("Asset").insert({
-              assetid: tokenIdStr,
+              assetid: assetId,
               symbol: (metadata.name || `PNFT${tokenIdStr}`).slice(0, 3).toUpperCase(),
               assettype: "NFT",
               createdat: new Date().toISOString(),
               isactive: true,
               name: metadata.name || `PlatformNFT #${tokenIdStr}`,
-              creatorid: "0x6ED13c14F988C123b35fF37f260334CBA1e2C553", 
-              img: "https://xsowlfczzjfhklzphkbl.supabase.co/storage/v1/object/public/nft-img/07352823-cea3-464a-a951-b6dc3f37dce9.png"
+              creatorid: "01416ac6-ff76-4f9d-84c1-4de4f90b0cb6",
+              img: "https://xsowlfczzjfhklzphkbl.supabase.co/storage/v1/object/public/nft-img/07352823-cea3-464a-a951-b6dc3f37dce9.png",
+              mint: tokenIdStr
             });
 
             if (error) {

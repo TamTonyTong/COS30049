@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import Layout from "@/src/components/layout"
 import { Button } from "@/src/components/ui/button"
@@ -20,13 +19,15 @@ import {
   DollarSign,
   Tag,
   ImageIcon,
+  FolderPlus,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/src/components/ui/tooltip"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
 
 export default function CreateCurrencyPage() {
-  const [formData, setFormData] = useState({ symbol: "", name: "", price: "" })
+  const [formData, setFormData] = useState({ symbol: "", name: "", price: "", collectionId: "" })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -35,90 +36,163 @@ export default function CreateCurrencyPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [formStep, setFormStep] = useState(0)
+  const [collections, setCollections] = useState<any[]>([])
+  const [createNewCollection, setCreateNewCollection] = useState(false)
+  const [newCollectionData, setNewCollectionData] = useState({ name: "" })
+  const [newCollectionImage, setNewCollectionImage] = useState<File | null>(null)
+  const [newCollectionPreviewUrl, setNewCollectionPreviewUrl] = useState<string | null>(null)
 
-  // Fetch userId from localStorage or Supabase session
+  // Fetch userId and collections
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUserId = localStorage.getItem("userid")
-      if (storedUserId) {
-        setUserId(storedUserId)
-      } else {
-        const fetchUser = async () => {
-          const response = await fetch("/api/auth/session")
-          const {
-            data: { session },
-          } = await response.json()
+    const fetchUserAndCollections = async () => {
+      // Fetch user
+      if (typeof window !== "undefined") {
+        const storedUserId = localStorage.getItem("userid");
+        if (storedUserId) {
+          setUserId(storedUserId);
+        } else {
+          const response = await fetch("/api/auth/session");
+          const { data: { session } } = await response.json();
           if (session) {
-            setUserId(session.user.id)
-            localStorage.setItem("userid", session.user.id)
+            setUserId(session.user.id);
+            localStorage.setItem("userid", session.user.id);
+          } else {
+            setErrors({ general: "Please log in to create a currency." });
+            router.push("/login");
           }
         }
-        fetchUser()
       }
-    }
-  }, [])
 
-  // Generate preview URL when file is selected
+      // Fetch collections only if userId is available
+      if (userId) {
+        const { data, error } = await supabase
+          .from("Collection")
+          .select("*")
+          .eq("creatorid", userId);
+        if (error) {
+          console.error("Error fetching collections:", JSON.stringify(error, null, 2));
+          setErrors({ general: `Failed to load collections: ${error.message || "Unknown error"}` });
+        } else {
+          setCollections(data || []);
+        }
+      }
+    };
+
+    fetchUserAndCollections();
+  }, [userId, router]);
+
+  // Generate preview URLs
   useEffect(() => {
     if (selectedFile) {
-      const url = URL.createObjectURL(selectedFile)
-      setPreviewUrl(url)
-      return () => URL.revokeObjectURL(url)
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
     }
-  }, [selectedFile])
+  }, [selectedFile]);
+
+  useEffect(() => {
+    if (newCollectionImage) {
+      const url = URL.createObjectURL(newCollectionImage);
+      setNewCollectionPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [newCollectionImage]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-
-    // Auto-uppercase symbol
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (name === "symbol") {
-      setFormData((prev) => ({ ...prev, symbol: value.toUpperCase() }))
+      setFormData((prev) => ({ ...prev, symbol: value.toUpperCase() }));
     }
-  }
+  };
+
+  const handleNewCollectionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewCollectionData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    if (!formData.symbol) newErrors.symbol = "Symbol is required"
+    const newErrors: Record<string, string> = {};
+    if (!formData.symbol) newErrors.symbol = "Symbol is required";
     if (formData.symbol.length !== 3 || formData.symbol !== formData.symbol.toUpperCase()) {
-      newErrors.symbol = "Symbol must be 3 characters and uppercase"
+      newErrors.symbol = "Symbol must be 3 characters and uppercase";
     }
-    if (!formData.name) newErrors.name = "Name is required"
-    if (!formData.price) newErrors.price = "Price is required"
+    if (!formData.name) newErrors.name = "Name is required";
+    if (!formData.price) newErrors.price = "Price is required";
     if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
-      newErrors.price = "Price must be a positive number"
+      newErrors.price = "Price must be a positive number";
     }
-    if (!selectedFile) newErrors.image = "Image is required"
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    if (!formData.collectionId && !createNewCollection) {
+      newErrors.collection = "Please select a collection or create a new one";
+    }
+    if (!selectedFile) newErrors.image = "Image is required";
+    if (createNewCollection) {
+      if (!newCollectionData.name) newErrors.collectionName = "Collection name is required";
+      if (!newCollectionImage) newErrors.collectionImage = "Collection image is required";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     if (validateForm() && userId) {
-      setLoading(true)
-      setErrors({})
+      setLoading(true);
+      setErrors({});
 
       try {
-        const assetId = uuidv4()
-        const priceHistoryId = uuidv4()
+        const assetId = uuidv4();
+        const priceHistoryId = uuidv4();
+        let collectionId = formData.collectionId;
 
-        // Upload image to Supabase Storage
-        const file = selectedFile!
-        const fileExt = file.name.split(".").pop()
-        const fileName = `${assetId}.${fileExt}`
+        // If creating a new collection
+        if (createNewCollection) {
+          const collectionIdNew = uuidv4();
+          const file = newCollectionImage!;
+          const fileExt = file.name.split(".").pop();
+          const fileName = `${collectionIdNew}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage.from("nft-img").upload(fileName, file)
+          const { error: uploadError } = await supabase.storage.from("collection-img").upload(fileName, file);
+          if (uploadError) throw new Error(`Failed to upload collection image: ${uploadError.message}`);
 
-        if (uploadError) {
-          throw new Error(`Failed to upload file: ${uploadError.message}`)
+          const { data: { publicUrl } } = supabase.storage.from("collection-img").getPublicUrl(fileName);
+
+          const collectionResponse = await fetch("/api/create", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "user-id": userId,
+            },
+            body: JSON.stringify({
+              table: "Collection",
+              data: {
+                collection_id: collectionIdNew,
+                name: newCollectionData.name,
+                creatorid: userId, // Same userId as used for Asset
+                image: publicUrl,
+                createdat: new Date().toISOString(),
+              },
+            }),
+          });
+
+          if (!collectionResponse.ok) {
+            const errorData = await collectionResponse.json();
+            throw new Error(errorData.error || "Failed to create collection");
+          }
+          collectionId = collectionIdNew;
         }
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("nft-img").getPublicUrl(fileName)
+        // Upload asset image
+        const file = selectedFile!;
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${assetId}.${fileExt}`;
 
-        // Insert into Asset table
+        const { error: uploadError } = await supabase.storage.from("nft-img").upload(fileName, file);
+        if (uploadError) throw new Error(`Failed to upload file: ${uploadError.message}`);
+
+        const { data: { publicUrl } } = supabase.storage.from("nft-img").getPublicUrl(fileName);
+
+        // Insert into Asset table with collection_id
         const assetResponse = await fetch("/api/create", {
           method: "POST",
           headers: {
@@ -135,13 +209,15 @@ export default function CreateCurrencyPage() {
               createdat: new Date().toISOString(),
               isactive: true,
               img: publicUrl,
+              collection_id: collectionId,
+              creatorid: userId, // Same userId as used for Collection
             },
           }),
-        })
+        });
 
         if (!assetResponse.ok) {
-          const errorData = await assetResponse.json()
-          throw new Error(errorData.error || "Failed to insert into Asset table")
+          const errorData = await assetResponse.json();
+          throw new Error(errorData.error || "Failed to insert into Asset table");
         }
 
         // Insert into PriceHistory table
@@ -162,35 +238,40 @@ export default function CreateCurrencyPage() {
               source: "User",
             },
           }),
-        })
+        });
 
         if (!priceHistoryResponse.ok) {
-          const errorData = await priceHistoryResponse.json()
-          throw new Error(errorData.error || "Failed to insert into PriceHistory table")
+          const errorData = await priceHistoryResponse.json();
+          throw new Error(errorData.error || "Failed to insert into PriceHistory table");
         }
 
-        setSuccess(true)
+        setSuccess(true);
         setTimeout(() => {
-          router.push("/personal-assets")
-        }, 2000)
+          router.push("/personal-assets");
+        }, 2000);
       } catch (error) {
         setErrors({
           general: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
-        })
+        });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     } else if (!userId) {
       setErrors({
         general: "Please log in to create a currency.",
-      })
+      });
     }
-  }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null
-    setSelectedFile(file)
-  }
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+  };
+
+  const handleNewCollectionFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setNewCollectionImage(file);
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -201,7 +282,7 @@ export default function CreateCurrencyPage() {
         delayChildren: 0.2,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -210,34 +291,48 @@ export default function CreateCurrencyPage() {
       opacity: 1,
       transition: { type: "spring", stiffness: 300, damping: 24 },
     },
-  }
+  };
 
   const nextStep = () => {
-    const currentErrors: Record<string, string> = {}
+    const currentErrors: Record<string, string> = {};
 
     if (formStep === 0) {
-      if (!formData.symbol) currentErrors.symbol = "Symbol is required"
+      if (!formData.symbol) currentErrors.symbol = "Symbol is required";
       if (formData.symbol.length !== 3 || formData.symbol !== formData.symbol.toUpperCase()) {
-        currentErrors.symbol = "Symbol must be 3 characters and uppercase"
+        currentErrors.symbol = "Symbol must be 3 characters and uppercase";
       }
-      if (!formData.name) currentErrors.name = "Name is required"
+      if (!formData.name) currentErrors.name = "Name is required";
     } else if (formStep === 1) {
-      if (!formData.price) currentErrors.price = "Price is required"
+      if (!formData.price) currentErrors.price = "Price is required";
       if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
-        currentErrors.price = "Price must be a positive number"
+        currentErrors.price = "Price must be a positive number";
+      }
+    } else if (formStep === 2) {
+      if (!formData.collectionId && !createNewCollection) {
+        currentErrors.collection = "Please select a collection or create a new one";
+      }
+      if (createNewCollection) {
+        if (!newCollectionData.name) currentErrors.collectionName = "Collection name is required";
+        if (!newCollectionImage) currentErrors.collectionImage = "Collection image is required";
       }
     }
 
-    setErrors(currentErrors)
+    setErrors(currentErrors);
 
     if (Object.keys(currentErrors).length === 0) {
-      setFormStep((prev) => prev + 1)
+      setFormStep((prev) => prev + 1);
     }
-  }
+  };
 
   const prevStep = () => {
-    setFormStep((prev) => prev - 1)
-  }
+    setFormStep((prev) => prev - 1);
+    if (formStep === 2) {
+      setCreateNewCollection(false);
+      setNewCollectionData({ name: "" });
+      setNewCollectionImage(null);
+      setNewCollectionPreviewUrl(null);
+    }
+  };
 
   return (
     <Layout>
@@ -295,7 +390,7 @@ export default function CreateCurrencyPage() {
               <CardContent>
                 <div className="mb-6">
                   <div className="flex justify-between mb-2">
-                    {[0, 1, 2].map((step) => (
+                    {[0, 1, 2, 3].map((step) => (
                       <motion.div
                         key={step}
                         className={`flex items-center justify-center w-8 h-8 rounded-full ${
@@ -316,7 +411,7 @@ export default function CreateCurrencyPage() {
                     <motion.div
                       className="absolute top-0 left-0 h-full bg-blue-500 rounded-full"
                       initial={{ width: "0%" }}
-                      animate={{ width: `${(formStep / 2) * 100}%` }}
+                      animate={{ width: `${(formStep / 3) * 100}%` }}
                       transition={{ duration: 0.3 }}
                     />
                   </div>
@@ -425,7 +520,6 @@ export default function CreateCurrencyPage() {
                             {errors.price}
                           </motion.p>
                         )}
-
                         <div className="mt-2 text-sm text-gray-400">
                           <p>This will be the initial trading price of your currency.</p>
                         </div>
@@ -435,6 +529,151 @@ export default function CreateCurrencyPage() {
 
                   {formStep === 2 && (
                     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-4">
+                      {!createNewCollection ? (
+                        <>
+                          <motion.div variants={itemVariants}>
+                            <div className="flex items-center mb-2">
+                              <FolderPlus className="w-4 h-4 mr-2 text-blue-400" />
+                              <Label className="text-white">Select Collection</Label>
+                            </div>
+                            {collections.length > 0 ? (
+                              <Select
+                                onValueChange={(value) =>
+                                  setFormData((prev) => ({ ...prev, collectionId: value }))
+                                }
+                              >
+                                <SelectTrigger className="bg-[#243860] text-white border-gray-700">
+                                  <SelectValue placeholder="Select a collection" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {collections.map((collection) => (
+                                    <SelectItem key={collection.collection_id} value={collection.collection_id}>
+                                      {collection.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <p className="text-gray-400">No collections found. Create a new one below.</p>
+                            )}
+                            {errors.collection && (
+                              <motion.p
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center mt-1 text-sm text-red-500"
+                              >
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {errors.collection}
+                              </motion.p>
+                            )}
+                          </motion.div>
+                          <motion.div variants={itemVariants}>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setCreateNewCollection(true)}
+                              className="w-full border-gray-700 text-white hover:bg-[#243860]"
+                            >
+                              Create New Collection
+                            </Button>
+                          </motion.div>
+                        </>
+                      ) : (
+                        <>
+                          <motion.div variants={itemVariants}>
+                            <div className="flex items-center mb-2">
+                              <FolderPlus className="w-4 h-4 mr-2 text-blue-400" />
+                              <Label htmlFor="collectionName" className="text-white">
+                                Collection Name
+                              </Label>
+                            </div>
+                            <Input
+                              type="text"
+                              id="collectionName"
+                              name="name"
+                              placeholder="My Collection"
+                              className="bg-[#243860] text-white border-gray-700 focus:border-blue-500"
+                              value={newCollectionData.name}
+                              onChange={handleNewCollectionChange}
+                              disabled={loading}
+                            />
+                            {errors.collectionName && (
+                              <motion.p
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center mt-1 text-sm text-red-500"
+                              >
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {errors.collectionName}
+                              </motion.p>
+                            )}
+                          </motion.div>
+
+                          <motion.div variants={itemVariants}>
+                            <div className="flex items-center mb-2">
+                              <ImageIcon className="w-4 h-4 mr-2 text-blue-400" />
+                              <Label htmlFor="collectionImage" className="text-white">
+                                Collection Image
+                              </Label>
+                            </div>
+                            <div className="p-4 text-center transition-colors border-2 border-gray-700 border-dashed rounded-lg hover:border-blue-500/50">
+                              <input
+                                type="file"
+                                id="collectionImage"
+                                accept="image/*"
+                                onChange={handleNewCollectionFileChange}
+                                className="hidden"
+                                disabled={loading}
+                              />
+                              {newCollectionPreviewUrl ? (
+                                <div className="space-y-4">
+                                  <div className="relative w-32 h-32 mx-auto overflow-hidden border-4 rounded-full border-blue-500/30">
+                                    <img
+                                      src={newCollectionPreviewUrl}
+                                      alt="Collection Preview"
+                                      className="object-cover w-full h-full"
+                                    />
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => document.getElementById("collectionImage")?.click()}
+                                    className="border-gray-700 text-white hover:bg-[#243860]"
+                                    disabled={loading}
+                                  >
+                                    Change Image
+                                  </Button>
+                                </div>
+                              ) : (
+                                <label
+                                  htmlFor="collectionImage"
+                                  className="flex flex-col items-center justify-center h-32 cursor-pointer"
+                                >
+                                  <Upload className="w-10 h-10 mb-2 text-gray-400" />
+                                  <p className="text-gray-400">Click to upload image</p>
+                                  <p className="mt-1 text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                                </label>
+                              )}
+                            </div>
+                            {errors.collectionImage && (
+                              <motion.p
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center mt-1 text-sm text-red-500"
+                              >
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {errors.collectionImage}
+                              </motion.p>
+                            )}
+                          </motion.div>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {formStep === 3 && (
+                    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-4">
                       <motion.div variants={itemVariants}>
                         <div className="flex items-center mb-2">
                           <ImageIcon className="w-4 h-4 mr-2 text-blue-400" />
@@ -442,7 +681,6 @@ export default function CreateCurrencyPage() {
                             Currency Image
                           </Label>
                         </div>
-
                         <div className="p-4 text-center transition-colors border-2 border-gray-700 border-dashed rounded-lg hover:border-blue-500/50">
                           <input
                             type="file"
@@ -452,7 +690,6 @@ export default function CreateCurrencyPage() {
                             className="hidden"
                             disabled={loading}
                           />
-
                           {previewUrl ? (
                             <div className="space-y-4">
                               <div className="relative w-32 h-32 mx-auto overflow-hidden border-4 rounded-full border-blue-500/30">
@@ -484,7 +721,6 @@ export default function CreateCurrencyPage() {
                             </label>
                           )}
                         </div>
-
                         {errors.image && (
                           <motion.p
                             initial={{ opacity: 0, y: -10 }}
@@ -497,7 +733,6 @@ export default function CreateCurrencyPage() {
                         )}
                       </motion.div>
 
-                      {/* Preview Card */}
                       {formData.symbol && formData.name && formData.price && (
                         <motion.div variants={itemVariants} className="mt-6">
                           <h3 className="mb-2 text-sm font-medium text-white">Preview</h3>
@@ -561,7 +796,7 @@ export default function CreateCurrencyPage() {
                       <div></div>
                     )}
 
-                    {formStep < 2 ? (
+                    {formStep < 3 ? (
                       <Button
                         type="button"
                         onClick={nextStep}
@@ -607,6 +842,5 @@ export default function CreateCurrencyPage() {
         </motion.div>
       </div>
     </Layout>
-  )
+  );
 }
-

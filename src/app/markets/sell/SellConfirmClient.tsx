@@ -1,7 +1,5 @@
 'use client';
 
-
-
 import { useSearchParams } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
@@ -95,6 +93,7 @@ const insertTrade = async (tradeData: {
   status: string;
   pricehistoryid: string;
   walletid: string;
+  collection_id?: string | null; // Added collection_id
 }) => {
   const { data, error } = await supabase
     .from('Trade')
@@ -110,6 +109,8 @@ function SellConfirmPage() {
   const searchParams = useSearchParams();
   const name = searchParams?.get('name');
   const price = searchParams?.get('price');
+  const assetid = searchParams?.get('assetid'); // Added assetid from query params
+  const collection_id = searchParams?.get('collection_id'); // Added collection_id from query params
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -137,8 +138,8 @@ function SellConfirmPage() {
 
   // Debug initial values
   useEffect(() => {
-    console.log('Initial values:', { name, price, userId });
-  }, [name, price, userId]);
+    console.log('Initial values:', { name, price, assetid, collection_id, userId });
+  }, [name, price, assetid, collection_id, userId]);
 
   // Handle the sell action
   const handleSell = async () => {
@@ -151,29 +152,30 @@ function SellConfirmPage() {
         throw new Error('Invalid user ID. Please log in again.');
       }
 
-      if (!name || !price) {
-        throw new Error('Missing asset name or price.');
+      if (!name || !price || !assetid) {
+        throw new Error('Missing asset name, price, or asset ID.');
       }
 
-      // Fetch the assetid based on the name
+      // Fetch the asset data to get the symbol (since we now have assetid from query params)
       const { data: assetData, error: assetError } = await supabase
         .from('Asset')
         .select('assetid, symbol')
+        .eq('assetid', assetid)
         .eq('name', name)
         .eq('isactive', true)
         .single();
 
       if (assetError || !assetData) {
-        throw new Error('Asset not found for the given name');
+        throw new Error('Asset not found for the given name and asset ID');
       }
-      const { assetid, symbol } = assetData;
+      const { symbol } = assetData;
 
       // Fetch or create wallet data for the specific asset
       const walletData = await fetchOrCreateWalletData(userId, assetid);
       console.log('Fetched or created wallet data:', walletData);
       const { walletid } = walletData;
 
-      // Verify the asset (using symbol instead of name for better matching)
+      // Verify the asset
       await verifyAsset(assetid, symbol);
       console.log('Verified asset with assetid:', assetid);
 
@@ -185,21 +187,22 @@ function SellConfirmPage() {
       // Validate all UUIDs
       validateUUIDs({ assetid, userId, pricehistoryid, walletid });
 
-      // Prepare trade data
+      // Prepare trade data with collection_id
       const tradeData = {
         assetid,
         userid: userId,
         status: 'Buy', // Initial status for listing
         pricehistoryid,
         walletid,
+        collection_id: collection_id || null, // Include collection_id
       };
 
       // Insert trade
       const tradeResult = await insertTrade(tradeData);
       console.log('Trade inserted successfully:', tradeResult);
 
-      // Redirect to personal-assets page
-      window.location.href = '/personal-assets';
+      // Redirect to personal page
+      window.location.href = '/markets';
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to list trade for sale:', errorMessage, error);
@@ -235,7 +238,7 @@ function SellConfirmPage() {
   }
 
   // Loading state
-  if (!searchParams || !name || !price || !userId) {
+  if (!searchParams || !name || !price || !assetid || !userId) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black bg-opacity-50">
         <p className="text-white">Loading...</p>
@@ -257,7 +260,7 @@ function SellConfirmPage() {
           </p>
           {error && <p className="mb-4 text-center text-red-500">{error}</p>}
           <div className="flex justify-between">
-            <Link href="/personal-assets">
+            <Link href="/personal">
               <Button variant="outline" className="px-6 py-3 text-lg text-white">
                 Cancel
               </Button>

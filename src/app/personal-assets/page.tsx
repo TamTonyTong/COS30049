@@ -33,7 +33,6 @@ import { Input } from "@/src/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/src/components/ui/dropdown-menu"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
 
-
 // Define Asset and Transaction types
 type Asset = {
   tradeid: string
@@ -44,6 +43,7 @@ type Asset = {
   totalValue: number
   assetid: string
   img?: string
+  collection_id: string | null // Added collection_id
 }
 
 type Transaction = {
@@ -97,7 +97,7 @@ export default function HomePage() {
       if (storedMetawallet) {
         setMetawallet(storedMetawallet);
       } else {
-        setMetawallet("N/A"); // Fallback if metawallet is not set
+        setMetawallet("N/A");
       }
     }
   }, []);
@@ -150,7 +150,6 @@ export default function HomePage() {
         }
         const data = await response.json();
 
-        // Map the fetched data to your state
         setAddress(data.publicaddress);
         setBalance(data.balance);
         setAssets(data.assets);
@@ -167,13 +166,11 @@ export default function HomePage() {
           }))
         );
         
-        // Show success notification
         setNotification({
           type: 'success',
           message: 'Data refreshed successfully'
         });
         
-        // Clear notification after 3 seconds
         setTimeout(() => {
           setNotification(null);
         }, 3000);
@@ -181,13 +178,11 @@ export default function HomePage() {
       } catch (error) {
         setError('Error fetching data');
         
-        // Show error notification
         setNotification({
           type: 'error',
           message: 'Failed to refresh data'
         });
         
-        // Clear notification after 3 seconds
         setTimeout(() => {
           setNotification(null);
         }, 3000);
@@ -272,7 +267,6 @@ export default function HomePage() {
         }
         const data = await response.json();
 
-        // Map the fetched data to your state
         setAddress(data.publicaddress);
         setBalance(data.balance);
         setAssets(data.assets);
@@ -289,13 +283,11 @@ export default function HomePage() {
           }))
         );
         
-        // Show success notification
         setNotification({
           type: 'success',
           message: 'Data refreshed successfully'
         });
         
-        // Clear notification after 3 seconds
         setTimeout(() => {
           setNotification(null);
         }, 3000);
@@ -303,13 +295,11 @@ export default function HomePage() {
       } catch (error) {
         setError('Error fetching data');
         
-        // Show error notification
         setNotification({
           type: 'error',
           message: 'Failed to refresh data'
         });
         
-        // Clear notification after 3 seconds
         setTimeout(() => {
           setNotification(null);
         }, 3000);
@@ -595,7 +585,7 @@ export default function HomePage() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" size="sm" className="text-gray-300 border-gray-700">
-                                <Filter className="w-4 h-4 mr-2" />
+                              <Filter className="w-4 h-4 mr-2" />
                                 Sort
                               </Button>
                             </DropdownMenuTrigger>
@@ -712,7 +702,12 @@ export default function HomePage() {
                                       <Link
                                         href={{
                                           pathname: '/markets/sell',
-                                          query: { name: asset.name, price: asset.price.toFixed(2) },
+                                          query: { 
+                                            name: asset.name, 
+                                            price: asset.price.toFixed(2),
+                                            assetid: asset.assetid, // Added assetid
+                                            collection_id: asset.collection_id || '', // Added collection_id
+                                          },
                                         }}
                                       >
                                         <Button 
@@ -851,4 +846,3 @@ export default function HomePage() {
     </Layout>
   );
 }
-

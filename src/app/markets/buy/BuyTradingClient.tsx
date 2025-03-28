@@ -29,7 +29,6 @@ export default function SecureTradingInterface() {
     const [isInvalid, setIsInvalid] = useState(false);
 
     useEffect(() => {
-        // Validate all query parameters
         const validation =
             !tradeid ||
             !metawallet ||
@@ -44,7 +43,6 @@ export default function SecureTradingInterface() {
             return;
         }
 
-        // Set data
         if (!metawallet || !isAddress(metawallet)) {
             setError("Invalid or missing recipient wallet address");
         }
@@ -115,7 +113,6 @@ export default function SecureTradingInterface() {
                 signer
             );
             setTradingContract(contract);
-
         } catch (err) {
             console.error(err);
             setError(err instanceof Error ? err.message : "Connection failed");
@@ -138,7 +135,6 @@ export default function SecureTradingInterface() {
             if (!isAddress(recipient)) throw new Error("Invalid recipient address");
             if (isNaN(Number(amount)) || Number(amount) <= 0) throw new Error("Invalid amount");
 
-            // Convert amount to wei
             const weiAmount = ethers.parseEther(amount);
 
             const tx = await tradingContract.initiateTrade(recipient, weiAmount, { value: weiAmount });
@@ -150,10 +146,10 @@ export default function SecureTradingInterface() {
 
             updateBalances(provider, account!);
 
-            // Fetch trade details to get assetid and seller's userid
+            // Fetch trade details to get assetid, seller's userid, and collection_id
             const { data: tradeData, error: tradeFetchError } = await supabase
                 .from("Trade")
-                .select("assetid, userid")
+                .select("assetid, userid, collection_id")
                 .eq("tradeid", tradeid)
                 .single();
 
@@ -165,6 +161,7 @@ export default function SecureTradingInterface() {
 
             const assetid = tradeData.assetid;
             const sellerUserId = tradeData.userid;
+            const collectionId = tradeData.collection_id;
             const buyerUserId = getUserID();
 
             // Update the trade status to "Sold" and set txid
@@ -200,6 +197,32 @@ export default function SecureTradingInterface() {
                 return;
             }
 
+            // Decrement nftsforsale in the Collection table
+            const { data: collectionData, error: fetchCollectionError } = await supabase
+                .from("Collection")
+                .select("nftsforsale")
+                .eq("collection_id", collectionId)
+                .single();
+
+            if (fetchCollectionError || !collectionData) {
+                console.error("Failed to fetch collection:", fetchCollectionError?.message);
+                setError("Failed to fetch collection data.");
+                return;
+            }
+
+            const newNftsforsale = Math.max((collectionData.nftsforsale || 0) - 1, 0);
+
+            const { error: updateCollectionError } = await supabase
+                .from("Collection")
+                .update({ nftsforsale: newNftsforsale })
+                .eq("collection_id", collectionId);
+
+            if (updateCollectionError) {
+                console.error("Failed to update nftsforsale:", updateCollectionError.message);
+                setError("Failed to update collection data.");
+                return;
+            }
+
             // Change ownership in the Wallet table
             const { error: walletError } = await supabase
                 .from("Wallet")
@@ -230,7 +253,7 @@ export default function SecureTradingInterface() {
                 return;
             }
 
-            //Set Current Balance
+            // Set Current Balance
             const balanceWei = await provider.getBalance(getStoredAddress());
             const balanceEth = parseFloat(ethers.formatEther(balanceWei)).toFixed(18);
 
@@ -244,13 +267,11 @@ export default function SecureTradingInterface() {
             // Show success message and redirect
             setError("Purchase successful! Redirecting to markets...");
             setTimeout(() => router.push("/markets"), 2000);
-
         } catch (err) {
             console.error("Transaction Error:", err);
 
             const errorMessage = (err instanceof Error) ? err.message : JSON.stringify(err);
 
-            // Handle user rejection specifically
             if (errorMessage.includes("user denied") || errorMessage.includes("ACTION_REJECTED")) {
                 setError("Transaction cancelled - no funds were transferred");
             } else {
@@ -305,8 +326,7 @@ export default function SecureTradingInterface() {
                     </div>
                 )}
                 {error && (
-                    <div className={`mt-4 p-3 rounded-lg border ${error.includes("cancelled") ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
-                        }`}>
+                    <div className={`mt-4 p-3 rounded-lg border ${error.includes("cancelled") ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
                         {error}
                     </div>
                 )}

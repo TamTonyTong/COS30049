@@ -220,7 +220,7 @@ export default function TradePage() {
 
       const transactionTimestamp = new Date(transactionData.timestamp).getTime();
       const currentTime = new Date().getTime();
-      const DELETION_DELAY_MS = 20000; // 30 minutes
+      const DELETION_DELAY_MS = 1800000; // 30 minutes
       const timeElapsed = currentTime - transactionTimestamp;
       const remainingDelay = Math.max(DELETION_DELAY_MS - timeElapsed, 0);
 

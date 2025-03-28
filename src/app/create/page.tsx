@@ -68,7 +68,6 @@ export default function CreateCurrencyPage() {
         const { data, error } = await supabase
           .from("Collection")
           .select("*")
-          .eq("creatorid", userId);
         if (error) {
           console.error("Error fetching collections:", JSON.stringify(error, null, 2));
           setErrors({ general: `Failed to load collections: ${error.message || "Unknown error"}` });

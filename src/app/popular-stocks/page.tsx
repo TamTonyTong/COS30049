@@ -23,8 +23,6 @@ import { Slider } from "@/src/components/ui/slider"
 import { RefreshCw, Info, Search, X, SlidersHorizontal, ArrowUp, ArrowDown, Sparkles } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/src/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
 import AssetDetailModal from "@/src/components/asset-detail-modal"
 
 interface Asset {
@@ -377,6 +375,14 @@ export default function MarketsPage() {
                     Market
                   </Button>
                 </Link>
+                <Link href="/collections">
+                  <Button
+                    variant="outline"
+                    className="text-white transition-all border-blue-500/30 hover:bg-blue-500/20 hover:border-blue-400/50 hover:shadow-glow-sm"
+                  >
+                    Collections
+                  </Button>
+                </Link>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -581,7 +587,7 @@ export default function MarketsPage() {
                           <div className="flex items-center">
                             {/* Mini NFT image */}
                             {asset.assettype?.toLowerCase() === "nft" && (
-                              <div className="relative w-6 h-6 mr-2 overflow-hidden rounded-full border border-blue-500/30 flex-shrink-0">
+                              <div className="relative flex-shrink-0 w-6 h-6 mr-2 overflow-hidden border rounded-full border-blue-500/30">
                                 <Image
                                   src={getAssetImageSrc(asset) || "/placeholder.svg?height=40&width=40"}
                                   alt={asset.name}
@@ -639,12 +645,8 @@ export default function MarketsPage() {
         </Card>
       </div>
 
-        {/* Asset Detail Modal */}
-      <AssetDetailModal
-        asset={selectedAsset}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {/* Asset Detail Modal */}
+      <AssetDetailModal asset={selectedAsset} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </Layout>
   )
 }

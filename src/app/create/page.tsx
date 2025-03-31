@@ -24,8 +24,11 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/src/components/ui/tooltip"
+import platformNFTABI from "@/contracts/PlatformNFT.json";
+import { ethers } from "ethers";
 
 export default function CreateCurrencyPage() {
+  const PLATFORM_NFT_ADDRESS = "0xe4d6664D5b191960273E9aE2eA698DA30FDF519f";
   const [formData, setFormData] = useState({ symbol: "", name: "", price: "" })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -93,30 +96,124 @@ export default function CreateCurrencyPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  const fetchWithTimeout = async (url: string, timeout = 3000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (validateForm() && userId) {
-      setLoading(true)
-      setErrors({})
+    e.preventDefault();
+    if (!validateForm() || !userId) {
+      if (!userId) setErrors({ general: "Please log in to create an NFT" });
+      return;
+    }
+
+    setLoading(true);
+    setErrors({});
+
+    try {
+      if (!window.ethereum) throw new Error("MetaMask required");
+
+      const { data: user, error: userError } = await supabase
+        .from("User")
+        .select("metawallet")
+        .eq("userid", userId)
+        .single();
+
+      if (userError || !user) {
+        throw new Error("Failed to fetch user wallet address");
+      }
+
+      const registeredWallet = user.metawallet?.toLowerCase();
+      if (!registeredWallet) {
+        throw new Error("No wallet address found for the user");
+      }
+
+      // Connecting wallet
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const currentAddress = await signer.getAddress();
+
+      if (currentAddress.toLowerCase() !== registeredWallet) {
+        throw new Error(`Connected wallet does not match registered wallet. Current address: ${currentAddress}. Registered address: ${registeredWallet}`);
+      }
+
+      // Minting NFT
+      const contract = new ethers.Contract(
+        PLATFORM_NFT_ADDRESS,
+        platformNFTABI,
+        signer
+      );
 
       try {
-        const assetId = uuidv4()
-        const priceHistoryId = uuidv4()
+        const tx = await contract.mint(currentAddress);
+        const receipt = await tx.wait();
+
+        // Processing transaction
+        const iface = new ethers.Interface(platformNFTABI);
+        const log = receipt.logs[0] ? iface.parseLog(receipt.logs[0]) : null;
+        if (!log) throw new Error("No valid event log found");
+        const tokenId = log.args.tokenId.toString();
+
+        const assetId = uuidv4();
+        const priceHistoryId = uuidv4();
 
         // Upload image to Supabase Storage
-        const file = selectedFile!
-        const fileExt = file.name.split(".").pop()
-        const fileName = `${assetId}.${fileExt}`
+        const file = selectedFile!;
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${assetId}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage.from("nft-img").upload(fileName, file)
+        const { error: uploadError } = await supabase.storage
+          .from("nft-img")
+          .upload(fileName, file);
 
         if (uploadError) {
-          throw new Error(`Failed to upload file: ${uploadError.message}`)
+          throw new Error(`Failed to upload file: ${uploadError.message}`);
         }
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("nft-img").getPublicUrl(fileName)
+        const { data: { publicUrl } } = supabase.storage
+          .from("nft-img")
+          .getPublicUrl(fileName);
+
+        // Fetching metadata
+        const tokenURI = await contract.tokenURI(tokenId);
+        const metadata = await fetchWithTimeout(tokenURI)
+          .then(r => r.json())
+          .catch(() => ({
+            name: formData.name,
+            image: publicUrl
+          }));
+
+        // Metamask minting
+        await window.ethereum?.request({
+          method: "wallet_watchAsset",
+          params: {
+            type: "ERC721",
+            options: {
+              address: PLATFORM_NFT_ADDRESS,
+              tokenId: tokenId,
+              name: formData.name,
+              symbol: formData.symbol,
+              image: publicUrl,
+              decimals: formData.price
+            }
+          }
+        });
 
         // Insert into Asset table
         const assetResponse = await fetch("/api/create", {
@@ -129,6 +226,7 @@ export default function CreateCurrencyPage() {
             table: "Asset",
             data: {
               assetid: assetId,
+              mint: tokenId,
               symbol: formData.symbol,
               name: formData.name,
               assettype: "NFT",
@@ -137,11 +235,11 @@ export default function CreateCurrencyPage() {
               img: publicUrl,
             },
           }),
-        })
+        });
 
         if (!assetResponse.ok) {
-          const errorData = await assetResponse.json()
-          throw new Error(errorData.error || "Failed to insert into Asset table")
+          const errorData = await assetResponse.json();
+          throw new Error(errorData.error || "Failed to insert into Asset table");
         }
 
         // Insert into PriceHistory table
@@ -162,28 +260,35 @@ export default function CreateCurrencyPage() {
               source: "User",
             },
           }),
-        })
+        });
 
         if (!priceHistoryResponse.ok) {
-          const errorData = await priceHistoryResponse.json()
-          throw new Error(errorData.error || "Failed to insert into PriceHistory table")
+          const errorData = await priceHistoryResponse.json();
+          throw new Error(errorData.error || "Failed to insert into PriceHistory table");
         }
 
-        setSuccess(true)
+        setSuccess(true);
         setTimeout(() => {
-          router.push("/personal-assets")
-        }, 2000)
-      } catch (error) {
-        setErrors({
-          general: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
-        })
-      } finally {
-        setLoading(false)
+          router.push("/personal-assets");
+        }, 2000);
+
+      } catch (error: any) {
+        // Check if the error is a user rejection from MetaMask
+        if (error.code === 4001 || error.message?.includes("user denied") || error.message?.includes("rejected")) {
+          setErrors({
+            general: "Create process canceled"
+          });
+          return;
+        }
+        throw error;
       }
-    } else if (!userId) {
+
+    } catch (error) {
       setErrors({
-        general: "Please log in to create a currency.",
-      })
+        general: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -298,13 +403,12 @@ export default function CreateCurrencyPage() {
                     {[0, 1, 2].map((step) => (
                       <motion.div
                         key={step}
-                        className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                          formStep === step
-                            ? "bg-blue-500 text-white"
-                            : formStep > step
-                              ? "bg-green-500/20 text-green-400 border border-green-500/50"
-                              : "bg-gray-700/50 text-gray-400"
-                        }`}
+                        className={`flex items-center justify-center w-8 h-8 rounded-full ${formStep === step
+                          ? "bg-blue-500 text-white"
+                          : formStep > step
+                            ? "bg-green-500/20 text-green-400 border border-green-500/50"
+                            : "bg-gray-700/50 text-gray-400"
+                          }`}
                         animate={formStep >= step ? { scale: [1, 1.2, 1] } : {}}
                         transition={{ duration: 0.3 }}
                       >

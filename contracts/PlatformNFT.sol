@@ -13,7 +13,7 @@ contract PlatformNFT is ERC721, Ownable {
     }
 
     // Mint a new NFT to a specified address
-    function mint(address to) public onlyOwner returns (uint256) {
+    function mint(address to) public returns (uint256) {
         require(to != address(0), "Cannot mint to zero address");
         _tokenIdCounter++;
         uint256 tokenId = _tokenIdCounter;

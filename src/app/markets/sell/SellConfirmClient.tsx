@@ -1,10 +1,8 @@
 'use client';
 
-
-
 import { useSearchParams } from 'next/navigation';
 export const dynamic = 'force-dynamic';
-import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -27,11 +25,11 @@ const fetchOrCreateWalletData = async (userId: string, assetid: string) => {
       .insert({
         userid: userId,
         assetid: assetid,
-        address: `addr_${userId}_${assetid}`, // Example address; adjust as needed
-        nonce: 0, // Default nonce
-        quantity: 1, // Default quantity
-        lockedbalance: 0, // Default locked balance
-        lastupdated: new Date().toISOString(), // Current timestamp
+        address: `addr_${userId}_${assetid}`,
+        nonce: 0,
+        quantity: 1,
+        lockedbalance: 0,
+        lastupdated: new Date().toISOString(),
       })
       .select('walletid, assetid, quantity')
       .single();
@@ -95,10 +93,13 @@ const insertTrade = async (tradeData: {
   status: string;
   pricehistoryid: string;
   walletid: string;
+  collection_id?: string | null;
 }) => {
   const { data, error } = await supabase
     .from('Trade')
-    .insert([tradeData]);
+    .insert([tradeData])
+    .select()
+    .single();
 
   if (error) {
     throw new Error(`Failed to insert trade: ${error.message}`);
@@ -110,11 +111,12 @@ function SellConfirmPage() {
   const searchParams = useSearchParams();
   const name = searchParams?.get('name');
   const price = searchParams?.get('price');
+  const assetid = searchParams?.get('assetid');
+  const collection_id = searchParams?.get('collection_id');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Fetch userId from localStorage or Supabase session
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUserId = localStorage.getItem("userid");
@@ -135,71 +137,90 @@ function SellConfirmPage() {
     }
   }, []);
 
-  // Debug initial values
   useEffect(() => {
-    console.log('Initial values:', { name, price, userId });
-  }, [name, price, userId]);
+    console.log('Initial values:', { name, price, assetid, collection_id, userId });
+  }, [name, price, assetid, collection_id, userId]);
 
-  // Handle the sell action
   const handleSell = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Validate userId
       if (!userId || !validate(userId)) {
         throw new Error('Invalid user ID. Please log in again.');
       }
 
-      if (!name || !price) {
-        throw new Error('Missing asset name or price.');
+      if (!name || !price || !assetid) {
+        throw new Error('Missing asset name, price, or asset ID.');
       }
 
-      // Fetch the assetid based on the name
+      if (!collection_id) {
+        throw new Error('Missing collection ID.');
+      }
+
       const { data: assetData, error: assetError } = await supabase
         .from('Asset')
         .select('assetid, symbol')
+        .eq('assetid', assetid)
         .eq('name', name)
         .eq('isactive', true)
         .single();
 
       if (assetError || !assetData) {
-        throw new Error('Asset not found for the given name');
+        throw new Error('Asset not found for the given name and asset ID');
       }
-      const { assetid, symbol } = assetData;
+      const { symbol } = assetData;
 
-      // Fetch or create wallet data for the specific asset
       const walletData = await fetchOrCreateWalletData(userId, assetid);
       console.log('Fetched or created wallet data:', walletData);
       const { walletid } = walletData;
 
-      // Verify the asset (using symbol instead of name for better matching)
       await verifyAsset(assetid, symbol);
       console.log('Verified asset with assetid:', assetid);
 
-      // Fetch the latest price history
       const priceHistoryData = await fetchPriceHistory(assetid);
       console.log('Fetched price history:', priceHistoryData);
       const { pricehistoryid } = priceHistoryData;
 
-      // Validate all UUIDs
       validateUUIDs({ assetid, userId, pricehistoryid, walletid });
 
-      // Prepare trade data
       const tradeData = {
         assetid,
         userid: userId,
-        status: 'Buy', // Initial status for listing
+        status: 'Buy',
         pricehistoryid,
         walletid,
+        collection_id: collection_id || null,
       };
 
-      // Insert trade
       const tradeResult = await insertTrade(tradeData);
       console.log('Trade inserted successfully:', tradeResult);
 
-      // Redirect to personal-assets page
-      window.location.href = '/personal-assets';
+      // Increment nftsforsale in the Collection table
+      const { data: collectionData, error: fetchCollectionError } = await supabase
+        .from('Collection')
+        .select('nftsforsale')
+        .eq('collection_id', collection_id)
+        .single();
+
+      if (fetchCollectionError || !collectionData) {
+        console.error('Error fetching collection:', fetchCollectionError?.message);
+        throw new Error('Failed to fetch collection data.');
+      }
+
+      const newNftsforsale = (collectionData.nftsforsale || 0) + 1;
+
+      const { error: updateCollectionError } = await supabase
+        .from('Collection')
+        .update({ nftsforsale: newNftsforsale })
+        .eq('collection_id', collection_id);
+
+      if (updateCollectionError) {
+        console.error('Error incrementing nftsforsale:', updateCollectionError.message);
+        throw new Error('Failed to update collection data.');
+      }
+
+      window.location.href = '/markets';
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to list trade for sale:', errorMessage, error);
@@ -209,7 +230,6 @@ function SellConfirmPage() {
     }
   };
 
-  // Redirect to login if userId is not found
   if (!userId && error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black bg-opacity-50">
@@ -234,8 +254,7 @@ function SellConfirmPage() {
     );
   }
 
-  // Loading state
-  if (!searchParams || !name || !price || !userId) {
+  if (!searchParams || !name || !price || !assetid || !userId) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black bg-opacity-50">
         <p className="text-white">Loading...</p>
@@ -257,7 +276,7 @@ function SellConfirmPage() {
           </p>
           {error && <p className="mb-4 text-center text-red-500">{error}</p>}
           <div className="flex justify-between">
-            <Link href="/personal-assets">
+            <Link href="/personal">
               <Button variant="outline" className="px-6 py-3 text-lg text-white">
                 Cancel
               </Button>

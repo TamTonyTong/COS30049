@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const assetIds = walletData.map((wallet) => wallet.assetid);
       const { data: assetData, error: assetError } = await supabase
         .from('Asset')
-        .select('assetid, symbol, name, img')
+        .select('assetid, symbol, name, img, collection_id') // Added collection_id
         .in('assetid', assetIds);
 
       if (assetError) throw assetError;
@@ -62,6 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           price: price,
           totalValue: wallet.quantity * price,
           assetid: wallet.assetid,
+          collection_id: asset?.collection_id || null, // Include collection_id
           isSelling: listedAssetIds.has(wallet.assetid),
         };
       });

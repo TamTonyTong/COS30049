@@ -344,12 +344,17 @@ export default function CreateCurrencyPage() {
         currentErrors.price = "Price must be a positive number"
       }
     } else if (formStep === 2) {
+      // Enforce that either a collection is selected or a new one is being created
       if (!formData.collectionId && !createNewCollection) {
         currentErrors.collection = "Please select a collection or create a new one"
       }
       if (createNewCollection) {
         if (!newCollectionData.name) currentErrors.collectionName = "Collection name is required"
         if (!newCollectionImage) currentErrors.collectionImage = "Collection image is required"
+      }
+      // If a collection is selected, ensure it's valid (not empty)
+      if (formData.collectionId && !collections.some(col => col.collection_id === formData.collectionId)) {
+        currentErrors.collection = "Invalid collection selected"
       }
     }
     setErrors(currentErrors)

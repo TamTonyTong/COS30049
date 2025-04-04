@@ -33,8 +33,6 @@ import {
 import { useRouter } from "next/navigation";
 import Layout from "../../components/layout";
 import Image from "next/image";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { motion } from "framer-motion";
 import AssetDetailModal from "@/src/components/asset-detail-modal-trade";
 
@@ -52,44 +50,47 @@ export default function TradePage() {
     pricehistoryid: string;
     walletid: string;
     txid: string | null;
-    description?: string;
-    owner?: string;
-    collection?: string;
-    attributes?: Array<{
-      trait_type: string;
-      value: string;
-    }>;
     createdat?: string;
-    tokenId?: string;
-    blockchain?: string;
     creatorid?: string;
     creatorMetawallet?: string;
   }
 
+  interface Collection {
+    id: string;
+    name: string;
+    image?: string;
+    totalsupply: number;
+    nftsforsale: number;
+    createdat: string | null;
+    creatorWallet: string;
+    trades: Trade[];
+  }
+
   const router = useRouter();
-  const [trades, setTrades] = useState<Trade[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
-  const [sortField, setSortField] = useState<"name" | "price">("name");
+  const [sortField, setSortField] = useState<"name" | "nftsforsale">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10]); // Default ETH range
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10]);
   const [debouncedPriceRange, setDebouncedPriceRange] = useState<[number, number]>([0, 10]);
   const [statusFilter, setStatusFilter] = useState<"all" | "Buy" | "Sold">("all");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [maxPriceValue, setMaxPriceValue] = useState(10); // Default max ETH value
+  const [maxPriceValue, setMaxPriceValue] = useState(10);
 
   useEffect(() => {
-    const fetchTrades = async () => {
+    const fetchCollections = async () => {
       try {
         setIsRefreshing(true);
         const response = await fetch("/api/trade");
@@ -97,21 +98,22 @@ export default function TradePage() {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        console.log("API response:", data); // Debug log
-        setTrades(data.trades || []); // Ensure trades is an array
+        console.log("API response:", data);
+        setCollections(data.collections || []);
 
         setLastUpdated(new Date());
 
         // Find the highest ETH price for filter range
+        const allTrades = data.collections?.flatMap((collection: Collection) => collection.trades) || [];
         const highestPriceEth =
-          data.trades && data.trades.length > 0
-            ? Math.ceil(Math.max(...data.trades.map((t: Trade) => t.price)) * 1.2) || 10
+          allTrades.length > 0
+            ? Math.ceil(Math.max(...allTrades.map((t: Trade) => t.price)) * 1.2) || 10
             : 10;
         setMaxPriceValue(highestPriceEth);
         setPriceRange([0, highestPriceEth]);
         setDebouncedPriceRange([0, highestPriceEth]);
 
-        data.trades.forEach((trade: Trade) => {
+        allTrades.forEach((trade: Trade) => {
           if (trade.status === "Sold" && trade.txid) {
             scheduleDelayedDeletion(trade.tradeid, trade.txid);
           }
@@ -125,7 +127,7 @@ export default function TradePage() {
       }
     };
 
-    fetchTrades();
+    fetchCollections();
 
     const subscription = supabase
       .channel("trade-changes")
@@ -136,18 +138,26 @@ export default function TradePage() {
           const updatedTrade = payload.new as Trade;
           if (updatedTrade.status === "Sold" && updatedTrade.txid) {
             scheduleDelayedDeletion(updatedTrade.tradeid, updatedTrade.txid);
-            setTrades((prevTrades) =>
-              prevTrades.map((trade) =>
-                trade.tradeid === updatedTrade.tradeid
-                  ? { ...trade, status: updatedTrade.status, txid: updatedTrade.txid }
-                  : trade,
-              ),
+            setCollections((prevCollections) =>
+              prevCollections.map((collection) => ({
+                ...collection,
+                trades: collection.trades.map((trade) =>
+                  trade.tradeid === updatedTrade.tradeid
+                    ? { ...trade, status: updatedTrade.status, txid: updatedTrade.txid }
+                    : trade,
+                ),
+              })),
             );
           }
         },
       )
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "Trade" }, (payload) => {
-        setTrades((prevTrades) => prevTrades.filter((trade) => trade.tradeid !== payload.old.tradeid));
+        setCollections((prevCollections) =>
+          prevCollections.map((collection) => ({
+            ...collection,
+            trades: collection.trades.filter((trade) => trade.tradeid !== payload.old.tradeid),
+          })),
+        );
       })
       .subscribe();
 
@@ -220,8 +230,13 @@ export default function TradePage() {
         if (deleteError) {
           console.error("Failed to delete trade:", deleteError.message);
         } else {
-          setTrades((prevTrades) => prevTrades.filter((t) => t.tradeid !== tradeid));
-          window.location.reload(); // Refresh the page after successful deletion
+          setCollections((prevCollections) =>
+            prevCollections.map((collection) => ({
+              ...collection,
+              trades: collection.trades.filter((t) => t.tradeid !== tradeid),
+            })),
+          );
+          window.location.reload();
         }
         return;
       }
@@ -254,8 +269,13 @@ export default function TradePage() {
             console.error("Failed to delete trade:", deleteError.message);
           } else {
             console.log(`Trade ${tradeid} deleted after ${DELETION_DELAY_MS / 1000} seconds`);
-            setTrades((prevTrades) => prevTrades.filter((t) => t.tradeid !== tradeid));
-            window.location.reload(); // Refresh the page after successful deletion
+            setCollections((prevCollections) =>
+              prevCollections.map((collection) => ({
+                ...collection,
+                trades: collection.trades.filter((t) => t.tradeid !== tradeid),
+              })),
+            );
+            window.location.reload();
           }
         } catch (err) {
           console.error("Error in delayed deletion:", err);
@@ -267,10 +287,10 @@ export default function TradePage() {
   };
 
   // Helper function to get sort label
-  const getSortLabel = (field: "name" | "price", order: "asc" | "desc"): string => {
-    const fieldLabels: Record<"name" | "price", string> = {
+  const getSortLabel = (field: "name" | "nftsforsale", order: "asc" | "desc"): string => {
+    const fieldLabels: Record<"name" | "nftsforsale", string> = {
       name: "Name",
-      price: "Price",
+      nftsforsale: "NFTs for Sale",
     };
     return `${fieldLabels[field]} (${order === "asc" ? "Low to High" : "High to Low"})`;
   };
@@ -279,11 +299,8 @@ export default function TradePage() {
   const getLastUpdatedText = () => {
     if (!lastUpdated) return "never";
 
-    // If it's less than a minute ago, show "just now"
     const diffMs = Date.now() - lastUpdated.getTime();
     if (diffMs < 60000) return "just now";
-
-    // Otherwise show the time
     return lastUpdated.toLocaleTimeString();
   };
 
@@ -295,18 +312,29 @@ export default function TradePage() {
     });
   }
 
+  // Format the createdat date
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Unknown";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   // Handle sort toggle
-  const handleSort = (field: "name" | "price") => {
+  const handleSort = (field: "name" | "nftsforsale") => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortOrder("desc"); // Default to descending when changing fields
+      setSortOrder("desc");
     }
   };
 
   // Get sort icon
-  const getSortIcon = (field: "name" | "price") => {
+  const getSortIcon = (field: "name" | "nftsforsale") => {
     if (sortField !== field) return null;
     return sortOrder === "asc" ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />;
   };
@@ -318,7 +346,6 @@ export default function TradePage() {
     } else if (filter.startsWith("Status:")) {
       setStatusFilter("all");
     } else {
-      // It's a sort filter
       setSortField("name");
       setSortOrder("asc");
     }
@@ -333,8 +360,8 @@ export default function TradePage() {
     setSearchTerm("");
   };
 
-  // Refresh trades
-  const refreshTrades = async () => {
+  // Refresh collections
+  const refreshCollections = async () => {
     try {
       setIsRefreshing(true);
       const response = await fetch("/api/trade");
@@ -342,7 +369,7 @@ export default function TradePage() {
         throw new Error("Network response was not ok");
       }
       const data = await response.json();
-      setTrades(data.trades || []);
+      setCollections(data.collections || []);
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -354,14 +381,14 @@ export default function TradePage() {
 
   // Handle opening the asset detail modal
   const handleOpenTradeDetail = (trade: Trade) => {
-    console.log("Trade object being passed to modal:", trade); // Debug log
+    console.log("Trade object being passed to modal:", trade);
     setSelectedTrade(trade);
     setIsModalOpen(true);
   };
 
   // Handle buy button click
   const handleBuyClick = (e: React.MouseEvent, trade: Trade) => {
-    e.stopPropagation(); // Prevent the row click from triggering
+    e.stopPropagation();
     const loggedInUserId = localStorage.getItem("userid");
     if (localStorage.getItem("isLoggedIn") === "false") {
       router.push("/login");
@@ -374,10 +401,40 @@ export default function TradePage() {
     }
   };
 
-  // Filter and sort trades
+  // Handle collection click
+  const handleCollectionClick = (collection: Collection) => {
+    setSelectedCollection(collection);
+    setSearchTerm("");
+  };
+
+  // Handle back to collections
+  const handleBackToCollections = () => {
+    setSelectedCollection(null);
+    setSearchTerm("");
+  };
+
+  // Filter and sort collections
+  const filteredAndSortedCollections = useMemo(() => {
+    const filtered = collections.filter(
+      (collection) =>
+        debouncedSearchTerm === "" ||
+        collection.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()),
+    );
+
+    return filtered.sort((a, b) => {
+      if (sortField === "name") {
+        return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+      } else {
+        return sortOrder === "asc" ? a.nftsforsale - b.nftsforsale : b.nftsforsale - a.nftsforsale;
+      }
+    });
+  }, [collections, debouncedSearchTerm, sortField, sortOrder]);
+
+  // Filter and sort trades within the selected collection
   const filteredAndSortedTrades = useMemo(() => {
-    // First filter by search term, price range, and status
-    const filtered = trades.filter((trade) => {
+    if (!selectedCollection) return [];
+
+    const filtered = selectedCollection.trades.filter((trade) => {
       const matchesSearch =
         debouncedSearchTerm === "" ||
         trade.symbol.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -390,7 +447,6 @@ export default function TradePage() {
       return matchesSearch && matchesPrice && matchesStatus;
     });
 
-    // Then sort the filtered trades
     return filtered.sort((a, b) => {
       if (sortField === "name") {
         return sortOrder === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
@@ -398,7 +454,7 @@ export default function TradePage() {
         return sortOrder === "asc" ? a.price - b.price : b.price - a.price;
       }
     });
-  }, [trades, debouncedSearchTerm, debouncedPriceRange, statusFilter, sortField, sortOrder]);
+  }, [selectedCollection, debouncedSearchTerm, debouncedPriceRange, statusFilter, sortField, sortOrder]);
 
   if (isLoading) {
     return (
@@ -425,7 +481,7 @@ export default function TradePage() {
               <Button
                 variant="outline"
                 className="mt-4 text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
-                onClick={refreshTrades}
+                onClick={refreshCollections}
               >
                 <RefreshCw className="w-4 h-4 mr-2" /> Try Again
               </Button>
@@ -436,20 +492,20 @@ export default function TradePage() {
     );
   }
 
-  if (trades.length === 0) {
+  if (collections.length === 0) {
     return (
       <Layout>
         <div className="container px-4 py-8 mx-auto">
           <Card className="border-blue-500/30 bg-[#1a2b4b]">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-white">No Trades Found</CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">No Collections Found</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-300">No trades are available.</p>
+              <p className="text-gray-300">No collections are available.</p>
               <Button
                 variant="outline"
                 className="mt-4 text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
-                onClick={refreshTrades}
+                onClick={refreshCollections}
               >
                 <RefreshCw className="w-4 h-4 mr-2" /> Refresh
               </Button>
@@ -464,24 +520,33 @@ export default function TradePage() {
     <Layout>
       <div className="container px-4 py-8 mx-auto">
         <Card className="border-blue-500/30 bg-[#0d1829] overflow-hidden">
-          {/* Animated background gradient */}
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-blue-900/5 via-indigo-900/5 to-purple-900/5"></div>
 
           <CardHeader className="relative">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-2xl font-bold text-white">
-                <Zap className="w-5 h-5 text-blue-400" />
-                Trade Market
-              </CardTitle>
+              <div>
+                <CardTitle className="flex items-center gap-2 text-2xl font-bold text-white">
+                  <Zap className="w-5 h-5 text-blue-400" />
+                  {selectedCollection ? `${selectedCollection.name} Collection` : "Trade Market"}
+                </CardTitle>
+                {selectedCollection && (
+                  <div className="mt-2 text-sm text-gray-400">
+                    <p>Created on: {formatDate(selectedCollection.createdat)}</p>
+                    <p>Creator Wallet: {selectedCollection.creatorWallet}</p>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-3">
                 <div className="text-sm text-gray-400">
-                  {filteredAndSortedTrades.length} of {trades.length} trades
+                  {selectedCollection
+                    ? `${filteredAndSortedTrades.length} of ${selectedCollection.trades.length} trades`
+                    : `${filteredAndSortedCollections.length} of ${collections.length} collections`}
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="text-blue-400 hover:text-blue-300 hover:bg-[#243860] hover:shadow-glow-sm transition-all"
-                  onClick={refreshTrades}
+                  onClick={refreshCollections}
                   disabled={isRefreshing}
                 >
                   <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
@@ -499,12 +564,15 @@ export default function TradePage() {
                   <Search className="w-5 h-5 ml-4 text-blue-400" />
                   <Input
                     type="text"
-                    placeholder="Search by symbol or name..."
+                    placeholder={
+                      selectedCollection
+                        ? `Search in ${selectedCollection.name}...`
+                        : "Search collections..."
+                    }
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="flex-1 text-white bg-transparent border-0 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
-
                   {searchTerm && (
                     <Button
                       variant="ghost"
@@ -576,13 +644,17 @@ export default function TradePage() {
                       <DropdownMenuGroup>
                         <DropdownMenuLabel className="text-xs text-gray-400">Sort By</DropdownMenuLabel>
                         <div className="grid grid-cols-2 gap-2 px-3 py-2">
-                          <Select value={sortField} onValueChange={(value) => setSortField(value as "name" | "price")}>
+                          <Select value={sortField} onValueChange={(value) => setSortField(value as "name" | "nftsforsale")}>
                             <SelectTrigger className="bg-[#243860] text-white border-gray-700 hover:border-blue-500/30 transition-colors">
                               <SelectValue placeholder="Field" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="name">Name</SelectItem>
-                              <SelectItem value="price">Price</SelectItem>
+                              {selectedCollection ? (
+                                <SelectItem value="price">Price</SelectItem>
+                              ) : (
+                                <SelectItem value="nftsforsale">NFTs for Sale</SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
 
@@ -645,79 +717,49 @@ export default function TradePage() {
               )}
             </div>
 
-            <div className="relative overflow-x-auto border rounded-md border-blue-500/20">
-              {/* Table glow effect on hover */}
-              <div
-                className={`absolute inset-0 opacity-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-blue-500/5 pointer-events-none transition-opacity duration-500 ${
-                  hoveredRow ? "opacity-100" : ""
-                }`}
-              ></div>
+            {selectedCollection ? (
+              // NFT Grid for Selected Collection
+              <div>
+                <div className="flex items-center mb-6">
+                  <button
+                    onClick={handleBackToCollections}
+                    className="flex items-center px-3 py-2 mr-4 text-sm text-blue-300 transition-all rounded-md bg-blue-500/20 hover:bg-blue-500/30 hover:shadow-glow-sm"
+                  >
+                    ← Back to Collections
+                  </button>
+                  <Badge className="ml-2 text-blue-300 bg-blue-500/20">
+                    {filteredAndSortedTrades.length} NFTs for Sale
+                  </Badge>
+                </div>
 
-              <Table>
-                <TableHeader className="bg-[#0d1829]/70">
-                  <TableRow className="hover:bg-[#0d1829] border-b border-blue-500/20">
-                    <TableHead className="text-white">Asset</TableHead>
-                    <TableHead className="text-white cursor-pointer" onClick={() => handleSort("name")}>
-                      <div className="flex items-center">Symbol {getSortIcon("name")}</div>
-                    </TableHead>
-                    <TableHead className="text-white">Name</TableHead>
-                    <TableHead className="text-right text-white cursor-pointer" onClick={() => handleSort("price")}>
-                      <div className="flex items-center justify-end">Price (ETH) {getSortIcon("price")}</div>
-                    </TableHead>
-                    <TableHead className="text-right text-white">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAndSortedTrades.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-gray-400">
-                        No trades found matching your criteria.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredAndSortedTrades.map((trade) => (
-                      <TableRow
+                {filteredAndSortedTrades.length === 0 ? (
+                  <div className="p-8 text-center text-gray-400 border rounded-md border-blue-500/20">
+                    No NFTs found matching your search criteria
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    {filteredAndSortedTrades.map((trade) => (
+                      <Card
                         key={trade.tradeid}
-                        className={`transition-all duration-200 border-b border-blue-500/10 hover:bg-[#1a2b4b]/50 cursor-pointer ${
-                          hoveredRow === trade.tradeid ? "bg-[#1a2b4b]/30 shadow-glow-sm" : ""
-                        }`}
-                        onMouseEnter={() => setHoveredRow(trade.tradeid)}
-                        onMouseLeave={() => setHoveredRow(null)}
+                        className="overflow-hidden transition-all border cursor-pointer bg-[#0d1829] border-blue-500/30 hover:border-blue-400/50 hover:shadow-glow group"
                         onClick={() => handleOpenTradeDetail(trade)}
                       >
-                        <TableCell className="text-white">
-                          <div className="relative w-12 h-12 overflow-hidden transition-all border rounded-md border-blue-500/20 hover:border-blue-400/50">
-                            <Image
-                              src={trade.img || "/placeholder.svg"}
-                              alt={`${trade.name} preview`}
-                              fill
-                              className="object-contain rounded-sm"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/placeholder.svg";
-                              }}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium text-white">
-                          <div className="flex items-center">
-                            <Badge variant="outline" className="mr-2 border-blue-500/30">
-                              {trade.symbol.toUpperCase()}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell
-                          className={`text-white ${hoveredRow === trade.tradeid ? "text-blue-300" : ""} transition-colors`}
-                        >
-                          {trade.name}
-                        </TableCell>
-                        <TableCell
-                          className={`text-right ${hoveredRow === trade.tradeid ? "text-blue-300" : "text-white"} transition-colors`}
-                        >
-                          {trade.price.toFixed(2)} ETH
-                        </TableCell>
-                        <TableCell className="text-right align-middle">
-                          {trade.status === "Sold" ? (
-                            <motion.div whileHover={{ scale: 1.05 }} className="inline-block">
+                        <div className="relative aspect-square">
+                          <Image
+                            src={trade.img || "/placeholder.svg?height=300&width=300"}
+                            alt={trade.name}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-t from-[#0d1829] via-transparent to-transparent group-hover:opacity-100"></div>
+                        </div>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-medium text-white truncate">{trade.name}</h3>
+                              <p className="text-sm text-blue-300">{trade.price.toFixed(2)} ETH</p>
+                            </div>
+                            {trade.status === "Sold" ? (
                               <Badge
                                 variant="secondary"
                                 className="relative px-3 py-1 overflow-hidden text-white rounded-lg shadow-md group bg-gradient-to-br from-gray-500 to-gray-700"
@@ -726,30 +768,87 @@ export default function TradePage() {
                                   <CheckCircle className="h-3.5 w-3.5 text-gray-300" />
                                   Sold
                                 </span>
-                                <span className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-br from-gray-600 to-gray-800 group-hover:opacity-100"></span>
                               </Badge>
-                            </motion.div>
-                          ) : (
-                            <motion.button
-                              onClick={(e) => handleBuyClick(e, trade)}
-                              whileHover={{ scale: 1.05, y: -2 }}
-                              whileTap={{ scale: 0.98 }}
-                              className="relative group overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white font-medium px-4 py-1.5 rounded-lg shadow-lg hover:shadow-blue-500/40 transition-all duration-300"
-                            >
-                              <span className="relative z-10 flex items-center justify-center gap-2">
-                                <Zap className="w-2 h-2 transition-transform duration-300 group-hover:rotate-12" />
-                                Buy
-                              </span>
-                              <span className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 group-hover:opacity-100"></span>
-                            </motion.button>
-                          )}
+                            ) : (
+                              <motion.button
+                                onClick={(e) => handleBuyClick(e, trade)}
+                                whileHover={{ scale: 1.05, y: -2 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="relative group overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white font-medium px-4 py-1.5 rounded-lg shadow-lg hover:shadow-blue-500/40 transition-all duration-300"
+                              >
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                  <Zap className="w-2 h-2 transition-transform duration-300 group-hover:rotate-12" />
+                                  Buy
+                                </span>
+                              </motion.button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Collections Table
+              <div className="relative overflow-x-auto border rounded-md border-blue-500/20">
+                <div
+                  className={`absolute inset-0 opacity-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-blue-500/5 pointer-events-none transition-opacity duration-500 ${
+                    hoveredRow ? "opacity-100" : ""
+                  }`}
+                ></div>
+
+                <Table>
+                  <TableHeader className="bg-[#0d1829]/70">
+                    <TableRow className="hover:bg-[#0d1829] border-b border-blue-500/20">
+                      <TableHead className="text-white">Image</TableHead>
+                      <TableHead className="text-white cursor-pointer" onClick={() => handleSort("name")}>
+                        <div className="flex items-center">Name {getSortIcon("name")}</div>
+                      </TableHead>
+                      <TableHead className="text-right text-white">Total Supply</TableHead>
+                      <TableHead className="text-right text-white cursor-pointer" onClick={() => handleSort("nftsforsale")}>
+                        <div className="flex items-center justify-end">NFTs for Sale {getSortIcon("nftsforsale")}</div>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAndSortedCollections.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="py-8 text-center text-gray-400">
+                          No collections found matching your criteria.
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ) : (
+                      filteredAndSortedCollections.map((collection) => (
+                        <TableRow
+                          key={collection.id}
+                          className={`transition-all duration-200 border-b border-blue-500/10 hover:bg-[#1a2b4b]/50 cursor-pointer ${
+                            hoveredRow === collection.id ? "bg-[#1a2b4b]/30 shadow-glow-sm" : ""
+                          }`}
+                          onMouseEnter={() => setHoveredRow(collection.id)}
+                          onMouseLeave={() => setHoveredRow(null)}
+                          onClick={() => handleCollectionClick(collection)}
+                        >
+                          <TableCell>
+                            <div className="relative w-10 h-10">
+                              <Image
+                                src={collection.image || "/placeholder.svg?height=40&width=40"}
+                                alt={collection.name}
+                                fill
+                                className="object-cover rounded"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium text-white">{collection.name}</TableCell>
+                          <TableCell className="text-right text-white">{collection.totalsupply}</TableCell>
+                          <TableCell className="text-right text-white">{collection.nftsforsale}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
             {/* Market info footer */}
             <div className="flex items-center justify-between mt-6 text-sm text-gray-400">
@@ -761,7 +860,7 @@ export default function TradePage() {
                 variant="outline"
                 size="sm"
                 className="text-blue-400 transition-all border-blue-500/30 hover:bg-blue-500/20 hover:shadow-glow-sm"
-                onClick={refreshTrades}
+                onClick={refreshCollections}
                 disabled={isRefreshing}
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />

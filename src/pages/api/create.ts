@@ -19,15 +19,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (table === "PriceHistory" && (!data.assetid || !data.price || !data.currencypair)) {
         throw new Error("Asset ID, price, and currency pair are required for PriceHistory table");
       }
+      if (table === "Collection" && (!data.name || !data.image)) {
+        throw new Error("Name and image are required for Collection table");
+      }
 
       let insertedData;
 
       // Insert data into Supabase
       if (table === "Asset") {
-        // Add the userId to the data object for the Asset table (as creatorid)
         const assetDataWithUserId = {
           ...data,
-          creatorid: userId, // Changed from userid to creatorid
+          creatorid: userId,
         };
 
         const { data: assetData, error: assetError } = await supabase
@@ -37,13 +39,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (assetError) throw assetError;
         insertedData = assetData;
 
-        // Insert into Wallet table with required fields only
         const walletData = {
-          userid: userId, // The initial owner is the creator
+          userid: userId,
           assetid: data.assetid,
-          address: `addr_${userId}_${data.assetid}`, // Example address; adjust as needed
-          quantity: 1, // Default quantity
-          lastupdated: new Date().toISOString(), // Current timestamp
+          address: `addr_${userId}_${data.assetid}`,
+          quantity: 1,
+          lastupdated: new Date().toISOString(),
         };
         const { data: walletDataResult, error: walletError } = await supabase
           .from("Wallet")
@@ -58,6 +59,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (priceHistoryError) throw priceHistoryError;
         insertedData = priceHistoryData;
+      } else if (table === "Collection") {
+        const collectionDataWithUserId = {
+          ...data,
+          creatorid: userId,
+        };
+
+        const { data: collectionData, error: collectionError } = await supabase
+          .from("Collection")
+          .insert([collectionDataWithUserId]);
+
+        if (collectionError) throw collectionError;
+        insertedData = collectionData;
       } else {
         throw new Error("Unsupported table");
       }
